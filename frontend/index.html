@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Minto — Rugby League Manager</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <div id="brand">Project <span>Minto</span></div>
+    <div id="topinfo"></div>
+    <button id="advanceBtn" onclick="UI.advance()">Advance</button>
+  </div>
+  <div id="shell">
+    <nav id="nav"></nav>
+    <main id="main"></main>
+  </div>
+</div>
+<div id="modal-bg" onclick="if(event.target===this)UI.closeModal()"><div id="modal"></div></div>
+<div id="toasts"></div>
+
+
+
+  <script src="src/engine/01-rng.js"></script>
+  <script src="src/engine/02-data.js"></script>
+  <script src="src/engine/03-players.js"></script>
+  <script src="src/engine/04-teams.js"></script>
+  <script src="src/engine/05-game.js"></script>
+  <script src="src/engine/06-selection.js"></script>
+  <script src="src/engine/07-match.js"></script>
+  <script src="src/engine/08-progression.js"></script>
+  <script src="src/engine/09-calendar.js"></script>
+  <script src="src/engine/09-ladder.js"></script>
+  <script src="src/engine/10-finals.js"></script>
+  <script src="src/engine/11-offseason.js"></script>
+  <script src="src/engine/12-save.js"></script>
+  <script src="src/ui/01-core.js"></script>
+  <script src="src/ui/02-wizard.js"></script>
+  <script src="src/ui/03-match-view.js"></script>
+  <script src="src/ui/pages/clubs.js"></script>
+  <script src="src/ui/pages/coach.js"></script>
+  <script src="src/ui/pages/achievements.js"></script>
+  <script src="src/ui/pages/contracts.js"></script>
+  <script src="src/ui/pages/dashboard.js"></script>
+  <script src="src/ui/pages/inbox.js"></script>
+  <script src="src/ui/pages/calendar.js"></script>
+  <script src="src/ui/pages/fixtures.js"></script>
+  <script src="src/ui/pages/history.js"></script>
+  <script src="src/ui/pages/hall-of-fame.js"></script>
+  <script src="src/ui/pages/injuryward.js"></script>
+  <script src="src/ui/pages/ladder.js"></script>
+  <script src="src/ui/pages/matchday.js"></script>
+  <script src="src/ui/pages/match-report.js"></script>
+  <script src="src/ui/pages/predictions.js"></script>
+  <script src="src/ui/pages/options.js"></script>
+  <script src="src/ui/pages/player-modal.js"></script>
+  <script src="src/ui/pages/squad.js"></script>
+  <script src="src/ui/pages/stats.js"></script>
+  <script src="src/ui/pages/season-leaders.js"></script>
+  <script src="src/ui/pages/fantasy.js"></script>
+  <script src="src/ui/pages/recruitment.js"></script>
+  <script src="src/ui/pages/records.js"></script>
+  <script src="src/ui/pages/tactics.js"></script>
+  <script src="src/ui/pages/teamsheet.js"></script>
+  <script src="src/ui/pages/training.js"></script>
+  <script src="src/ui/pages/staff.js"></script>
+  <script src="src/ui/pages/scouting.js"></script>
+  <script src="src/ui/pages/club-management.js"></script>
+  <script src="src/ui/04-offseason-view.js"></script>
+  <script src="src/ui/05-helpers.js"></script>
+  <script src="src/ui/06-boot.js"></script>
+</body>
+</html>

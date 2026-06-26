@@ -1,0 +1,14 @@
+{
+  "name": "project-minto-v2",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Project Minto — desktop rugby league management sim (Tauri + Rust engine)",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.3"
+  }
+}
