@@ -722,6 +722,45 @@ export function postMatch(t, pf, pa, lines){
     t.cohesion = clamp((t.cohesion||50) + delta, 0, 100);
     delete t._prevLineup;
   }
+  updateCombinationChemistry(t);
+}
+
+function combinationGroupsForTeam(t){
+  const ids = idxs => idxs.map(i => t.lineup && t.lineup[i]).filter(id => id != null);
+  return {
+    halves:{label:'Halves pairing', ids:ids([5,6])},
+    hookerHalves:{label:'Hooker/halves', ids:ids([5,6,8])},
+    spine:{label:'Spine', ids:ids([0,5,6,8])},
+    leftEdge:{label:'Left edge', ids:ids([3,4,11])},
+    rightEdge:{label:'Right edge', ids:ids([1,2,10])},
+    middle:{label:'Middle rotation', ids:ids([7,8,9,12,13,14,15,16])},
+    backThree:{label:'Back three', ids:ids([0,1,4])},
+  };
+}
+function combinationSignature(ids){
+  return ids.slice().sort((a,b)=>a-b).join('-');
+}
+function updateCombinationChemistry(t){
+  if(!t || !t.lineup) return;
+  t.combinations = t.combinations || {};
+  const groups = combinationGroupsForTeam(t);
+  for(const [key, group] of Object.entries(groups)){
+    if(group.ids.length < 2) continue;
+    const sig = combinationSignature(group.ids);
+    const prev = t.combinations[key] || {rating:46, matches:0, sig:null};
+    const same = prev.sig === sig;
+    const base = same ? prev.rating : Math.round(prev.rating * 0.55 + 42 * 0.45);
+    const gain = same ? 2.2 : 0.8;
+    t.combinations[key] = {
+      label:group.label,
+      sig,
+      ids:group.ids.slice(),
+      matches:same ? (prev.matches || 0) + 1 : 1,
+      rating:clamp(Math.round(base + gain + ((t.cohesion || 50) - 50) / 35), 25, 95),
+      updatedRound:G.round,
+      updatedYear:G.year,
+    };
+  }
 }
 export function updatePlayerForm(p, line, won, inTeam){
   if(!p) return;

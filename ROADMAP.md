@@ -121,6 +121,11 @@ Target: **full FM-level tactical depth**.
   hooker/halves, spine, left edge, right edge, middle rotation, back three, and
   full-team cohesion. Playing together raises chemistry; low chemistry increases
   timing errors and defensive misreads, while high chemistry improves execution.
+- First diagnostics slice implemented: club modals show channel attack/defence
+  ratings, channel stat output, and persisted combination chemistry that grows
+  when groups keep playing together. Remaining work is wiring chemistry into
+  match-engine execution/misread outcomes and adding richer channel telemetry as
+  the set-by-set engine lands.
 
 ### D. Representative & international depth
 - In-season Test fixtures/windows (V1 has State of Origin + a post-season

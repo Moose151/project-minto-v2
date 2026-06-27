@@ -1,6 +1,58 @@
 import { UI } from "../01-core.js";
 
 
+const TEAM_CHANNELS = [
+  {key:'middle', label:'Middle', slots:[7,8,9,12], atk:['strength','ballRunning','workRate','stamina'], def:['tackling','markerDef','strength','workRate']},
+  {key:'leftEdge', label:'Left edge', slots:[3,4,11], atk:['speed','acceleration','ballRunning','finishing'], def:['tackling','defRead','markerDef','workRate']},
+  {key:'rightEdge', label:'Right edge', slots:[1,2,10], atk:['speed','acceleration','ballRunning','finishing'], def:['tackling','defRead','markerDef','workRate']},
+  {key:'backThree', label:'Back three', slots:[0,1,4], atk:['speed','acceleration','catching','ballRunning'], def:['catching','defRead','lastDitch','kickAccuracy']},
+  {key:'spine', label:'Spine', slots:[0,5,6,8], atk:['playmaking','vision','shortPass','kickAccuracy'], def:['decisionMaking','composure','tackling','defRead']},
+];
+
+const TEAM_COMBINATIONS = [
+  {key:'halves', label:'Halves', slots:[5,6]},
+  {key:'hookerHalves', label:'Hooker/halves', slots:[5,6,8]},
+  {key:'spine', label:'Spine', slots:[0,5,6,8]},
+  {key:'leftEdge', label:'Left edge', slots:[3,4,11]},
+  {key:'rightEdge', label:'Right edge', slots:[1,2,10]},
+  {key:'middle', label:'Middle rotation', slots:[7,8,9,12,13,14,15,16]},
+  {key:'backThree', label:'Back three', slots:[0,1,4]},
+];
+
+function diagPlayers(t, slots){
+  return slots.map(i => ({slot:i, p:G.players[t.lineup && t.lineup[i]]})).filter(x=>x.p);
+}
+function diagAvg(players, attrs){
+  if(!players.length) return 0;
+  return Math.round(players.reduce((s,x)=>s + attrs.reduce((a,k)=>a+(x.p.attrs[k]||50),0) / attrs.length,0) / players.length);
+}
+function diagStats(players){
+  return players.reduce((s,x)=>{
+    const st = x.p.s || {};
+    s.g += st.g || 0; s.t += st.t || 0; s.runs += st.runs || 0; s.m += st.m || 0;
+    s.lb += st.lb || 0; s.err += st.err || 0; s.tk += st.tk || 0; s.mt += st.mt || 0;
+    s.ks += st.ks || 0; s.km += st.km || 0;
+    return s;
+  }, {g:0,t:0,runs:0,m:0,lb:0,err:0,tk:0,mt:0,ks:0,km:0});
+}
+function diagSignature(ids){
+  return ids.slice().sort((a,b)=>a-b).join('-');
+}
+function diagChemistry(t, combo){
+  const players = diagPlayers(t, combo.slots);
+  const ids = players.map(x=>x.p.id);
+  const saved = t.combinations && t.combinations[combo.key];
+  if(saved && saved.sig === diagSignature(ids)) return {rating:saved.rating, matches:saved.matches || 0, fresh:true};
+  if(players.length < 2) return {rating:35, matches:0, fresh:false};
+  const avgFit = players.reduce((s,x)=>s + slotSpecialistFit(x.p, x.slot) + familiarity(x.p, SLOTS[x.slot].pos), 0) / (players.length * 2);
+  const avgIQ = players.reduce((s,x)=>s + ((x.p.attrs.decisionMaking||50) + (x.p.attrs.composure||50)) / 2, 0) / players.length;
+  return {rating:clamp(Math.round(34 + avgFit * 22 + (avgIQ - 50) * .32 + ((t.cohesion || 50) - 50) * .18), 25, 88), matches:0, fresh:false};
+}
+function diagBar(v){
+  const color = v >= 72 ? 'var(--green)' : v < 48 ? 'var(--red)' : 'var(--accent)';
+  return `<span style="display:inline-flex;align-items:center;gap:5px;min-width:62px;justify-content:flex-end"><span style="width:34px;height:5px;background:var(--line);border-radius:4px;overflow:hidden"><span style="display:block;width:${clamp(v,0,100)}%;height:100%;background:${color}"></span></span><b style="color:${color}">${v}</b></span>`;
+}
+
 /* Clubs browser + club squad modal */
 Object.assign(UI, {
   _teamsSort: 'ladder',
@@ -77,6 +129,7 @@ Object.assign(UI, {
     ${coachLine}${newCoachBadge}
     ${facSummary}
     <div class="team-rating-row" style="margin:8px 0 12px">${teamRatingPill(t,'overall','OVR')}${teamRatingPill(t,'atk','ATT')}${teamRatingPill(t,'def','DEF')}${teamRatingPill(t,'coh','COH')}</div>
+    ${UI.teamDiagnosticsHtml(t)}
     ${godTeam}
     <div style="max-height:440px;overflow-y:auto"><table><thead><tr>
       <th class="noclick">Player</th><th class="noclick num">Age</th><th class="noclick">Pos</th>
@@ -90,6 +143,48 @@ Object.assign(UI, {
     </tr>`).join('')}
     </tbody></table></div>
     <div class="btnrow" style="margin-top:12px"><button class="btn" onclick="UI.closeModal()">Close</button></div>`);
+	  },
+
+  teamDiagnosticsHtml(t){
+    if(!t || !t.lineup) return '';
+    const channelRows = TEAM_CHANNELS.map(ch => {
+      const players = diagPlayers(t, ch.slots);
+      const names = players.map(x=>G.players[x.p.id]).filter(Boolean).map(p=>p.name.split(' ').slice(-1)[0]).join(' / ') || '-';
+      const atk = diagAvg(players, ch.atk);
+      const def = diagAvg(players, ch.def);
+      const st = diagStats(players);
+      return `<tr>
+        <td><b>${esc(ch.label)}</b><br><span style="font-size:10px;color:var(--muted)">${esc(names)}</span></td>
+        <td class="num">${diagBar(atk)}</td>
+        <td class="num">${diagBar(def)}</td>
+        <td class="num">${st.t}T · ${st.lb}LB</td>
+        <td class="num">${st.m}m · ${st.runs}R</td>
+        <td class="num">${st.tk}/${st.mt}</td>
+        <td class="num">${st.err}</td>
+      </tr>`;
+    }).join('');
+    const comboRows = TEAM_COMBINATIONS.map(c => {
+      const players = diagPlayers(t, c.slots);
+      const chem = diagChemistry(t, c);
+      const names = players.map(x=>x.p.name.split(' ').slice(-1)[0]).join(' / ') || '-';
+      const status = chem.matches ? `${chem.matches} match${chem.matches===1?'':'es'} together` : 'projected';
+      return `<tr>
+        <td><b>${esc(c.label)}</b><br><span style="font-size:10px;color:var(--muted)">${esc(names)}</span></td>
+        <td class="num">${diagBar(chem.rating)}</td>
+        <td style="font-size:11px;color:var(--muted)">${esc(status)}</td>
+      </tr>`;
+    }).join('');
+    return `<div class="grid2" style="gap:10px;margin:10px 0 12px">
+      <div class="card" style="padding:8px;overflow-x:auto">
+        <h2 class="sec" style="margin:2px 4px 8px;font-size:12px">Channel diagnostics</h2>
+        <table><thead><tr><th class="noclick">Channel</th><th class="noclick num">Attack</th><th class="noclick num">Defence</th><th class="noclick num">Score</th><th class="noclick num">Yardage</th><th class="noclick num">Tk/MT</th><th class="noclick num">Err</th></tr></thead><tbody>${channelRows}</tbody></table>
+      </div>
+      <div class="card" style="padding:8px;overflow-x:auto">
+        <h2 class="sec" style="margin:2px 4px 8px;font-size:12px">Combination chemistry</h2>
+        <table><thead><tr><th class="noclick">Group</th><th class="noclick num">Chem</th><th class="noclick">Built from</th></tr></thead><tbody>${comboRows}</tbody></table>
+        <p style="font-size:10px;color:var(--muted);margin:6px 4px 0">Playing matches together raises chemistry. New combinations are projected from role fit, position familiarity, decision making and team cohesion.</p>
+      </div>
+    </div>`;
   },
 
   teamEditModal(id){

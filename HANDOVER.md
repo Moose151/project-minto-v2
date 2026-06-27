@@ -34,6 +34,13 @@ _Updated every session._
   league term for player partnerships/groups; "chemistry" or "cohesion" is the
   rating. Playing together should improve chemistry; low chemistry should create
   timing errors/defensive misreads, high chemistry should improve execution.
+- **Latest work on that note:** implemented the first team-page diagnostics slice.
+  Club modals now show channel attack/defence ratings, channel production stats
+  (tries, line breaks, metres, runs, tackles/missed tackles, errors), and
+  combination chemistry for halves, hooker/halves, spine, edges, middle rotation,
+  and back three. The match engine now persists `t.combinations` after matches so
+  repeated groups build chemistry over time; new groupings project chemistry from
+  role fit, position familiarity, decision making, composure, and team cohesion.
 - **User clarified desired simulation depth:** add a strong manager-impact loop:
   Wednesday staff/scout pre-match analysis with accuracy based on staff ratings;
   actionable opponent tendencies and vulnerabilities; and pre-match/in-match
@@ -183,6 +190,10 @@ cd frontend && npx vite build
   actionable tactical changes.
   - First slice done: report generation, inbox item, Tactics-page display, and
     quick-apply attack focus. Match Day also exposes the focus before kick-off.
+- **Team-page tactical diagnostics:** First slice done on club modals. It shows
+  channel ratings/stat output and persisted combination chemistry. Remaining work:
+  feed the chemistry rating directly into timing errors, defensive misreads,
+  attacking execution, and richer channel stats as the set-by-set engine lands.
 - **In-match management (Feature B)**: The second half currently plays out automatically.
   Adding a pause at the 60' mark (2/3 of the way through) for another sub window and
   tactical adjustment would make the live-watch experience richer. Tactical switches
