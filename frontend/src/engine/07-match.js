@@ -91,54 +91,94 @@ export function simMatchFirstHalf(m, isFinal){
   return {h1Events: _buildHalfFeedEvents(det1_h, det1_a, th, ta, h1_hs, h1_as)};
 }
 
+/* ---------- second half: 40–60 minutes ---------- */
 export function simMatchSecondHalf(m, isFinal, powerMod){
-  if(!m._htPending) return {h2Events:[]};
+  if(!m._htPending) return {h2aEvents:[]};
   const prev = m._matchSetup;
-  const {th, ta, venue, slot, weather, crowd, ticketPrice, bwTryMod, bwKickMod, crowdHomeMod, hKickMod, aKickMod, hAdj, isMagicRound, conservative, isCoachH, isCoachA} = prev;
+  const {th, ta, weather, crowdHomeMod, hKickMod, aKickMod, hAdj, conservative, isCoachH, isCoachA} = prev;
   const h1 = m._h1;
-  // Re-compute lineup power with current lineup (subs may have been applied)
+  // Re-compute lineup power with current lineup (HT subs may have been applied)
   const ph2 = lineupPower(th), pa2 = lineupPower(ta);
   const ratH2 = Math.min((ph2.atk*hAdj)/pa2.def,1.65), ratA2 = Math.min(pa2.atk/(ph2.def*hAdj),1.65);
   const coachPM = powerMod || 1.0;
+  m._htPowerMod = coachPM; // saved so simMatchFinalChunk can compound it
   const hTryMod2 = (isCoachH&&conservative)?prev.hTryMod*0.93:prev.hTryMod;
   const aTryMod2 = (isCoachA&&conservative)?prev.aTryMod*0.93:prev.aTryMod;
   const expH2 = clamp(2.85*Math.pow(ratH2,1.65)*rf(.87,1.13)*hTryMod2*crowdHomeMod*coachPM*tacticalFocusTryMod(th, ta),0.7,9);
   const expA2 = clamp(2.85*Math.pow(ratA2,1.65)*rf(.87,1.13)*aTryMod2*tacticalFocusTryMod(ta, th)/Math.sqrt(crowdHomeMod),0.7,9);
-  const h2_triesH = poisson(expH2 * 0.5);
-  const h2_triesA = poisson(expA2 * 0.5);
+  // 40–60 min: one quarter of expected full-game tries
+  const h2_triesH = poisson(expH2 * 0.25);
+  const h2_triesA = poisson(expA2 * 0.25);
   const ctx_h2 = {weather, conservative:isCoachH&&conservative, kickMod:hKickMod};
   const ctx_a2 = {weather, conservative:isCoachA&&conservative, kickMod:aKickMod};
   const det2_h = {}, det2_a = {};
-  const h2_goalsH = simTeamStats(th, h2_triesH, det2_h, ph2.kick*hKickMod, ctx_h2, {isHalf:true, isSecondHalf:true, skipStats:true});
-  const h2_goalsA = simTeamStats(ta, h2_triesA, det2_a, pa2.kick*aKickMod, ctx_a2, {isHalf:true, isSecondHalf:true, skipStats:true});
-  // Merge first + second half stats
-  const mergedH = mergeStatDicts(h1.det_h, det2_h);
-  const mergedA = mergeStatDicts(h1.det_a, det2_a);
-  const triesH = h1.triesH + h2_triesH, triesA = h1.triesA + h2_triesA;
-  const goalsH = h1.goalsH + h2_goalsH, goalsA = h1.goalsA + h2_goalsA;
+  const h2_goalsH = simTeamStats(th, h2_triesH, det2_h, ph2.kick*hKickMod, ctx_h2, {isHalf:true, isSecondHalf:true, isEarlySecond:true, skipStats:true});
+  const h2_goalsA = simTeamStats(ta, h2_triesA, det2_a, pa2.kick*aKickMod, ctx_a2, {isHalf:true, isSecondHalf:true, isEarlySecond:true, skipStats:true});
+  const hs2 = h1.hs1 + h2_triesH*4 + h2_goalsH*2;
+  const as2 = h1.as1 + h2_triesA*4 + h2_goalsA*2;
+  m._h2 = {det_h:det2_h, det_a:det2_a, goalsH:h2_goalsH, goalsA:h2_goalsA, triesH:h2_triesH, triesA:h2_triesA, hs2, as2};
+  m._60Pending = true;
+  delete m._htPending;
+  const h2aEvents = _buildHalfFeedEvents(det2_h, det2_a, th, ta, hs2, as2,
+    {lo:41, hi:59, startH:h1.hs1, startA:h1.as1});
+  return {h2aEvents};
+}
+
+/* ---------- final chunk: 60–80 minutes ---------- */
+export function simMatchFinalChunk(m, isFinal, extraPowerMod){
+  if(!m._60Pending) return {h2bEvents:[]};
+  const prev = m._matchSetup;
+  const {th, ta, weather, crowdHomeMod, hKickMod, aKickMod, hAdj, conservative, isCoachH, isCoachA} = prev;
+  const h1 = m._h1, h2 = m._h2;
+  // Re-compute lineup power (60' subs may have been applied)
+  const ph3 = lineupPower(th), pa3 = lineupPower(ta);
+  const ratH3 = Math.min((ph3.atk*hAdj)/pa3.def,1.65), ratA3 = Math.min(pa3.atk/(ph3.def*hAdj),1.65);
+  const htPM = m._htPowerMod || 1.0;
+  const coachPM = htPM * (extraPowerMod || 1.0);
+  const hTryMod3 = (isCoachH&&conservative)?prev.hTryMod*0.93:prev.hTryMod;
+  const aTryMod3 = (isCoachA&&conservative)?prev.aTryMod*0.93:prev.aTryMod;
+  const expH3 = clamp(2.85*Math.pow(ratH3,1.65)*rf(.87,1.13)*hTryMod3*crowdHomeMod*coachPM*tacticalFocusTryMod(th, ta),0.7,9);
+  const expA3 = clamp(2.85*Math.pow(ratA3,1.65)*rf(.87,1.13)*aTryMod3*tacticalFocusTryMod(ta, th)/Math.sqrt(crowdHomeMod),0.7,9);
+  // 60–80 min: one quarter of expected full-game tries
+  const h3_triesH = poisson(expH3 * 0.25);
+  const h3_triesA = poisson(expA3 * 0.25);
+  const ctx_h3 = {weather, conservative:isCoachH&&conservative, kickMod:hKickMod};
+  const ctx_a3 = {weather, conservative:isCoachA&&conservative, kickMod:aKickMod};
+  const det3_h = {}, det3_a = {};
+  const h3_goalsH = simTeamStats(th, h3_triesH, det3_h, ph3.kick*hKickMod, ctx_h3, {isHalf:true, isSecondHalf:true, isFinalChunk:true, skipStats:true});
+  const h3_goalsA = simTeamStats(ta, h3_triesA, det3_a, pa3.kick*aKickMod, ctx_a3, {isHalf:true, isSecondHalf:true, isFinalChunk:true, skipStats:true});
+  // Merge all three phases and finalise
+  const mergedH = mergeStatDicts(mergeStatDicts(h1.det_h, h2.det_h), det3_h);
+  const mergedA = mergeStatDicts(mergeStatDicts(h1.det_a, h2.det_a), det3_a);
+  const triesH = h1.triesH + h2.triesH + h3_triesH;
+  const triesA = h1.triesA + h2.triesA + h3_triesA;
+  const goalsH = h1.goalsH + h2.goalsH + h3_goalsH;
+  const goalsA = h1.goalsA + h2.goalsA + h3_goalsA;
   let hs = triesH*4 + goalsH*2, as = triesA*4 + goalsA*2;
-  // Field goals
   if(Math.abs(hs-as)<=1 && rnd()<.5){ if(rnd()<.5 && th.matchPrefs?.fieldGoal!==false){ hs+=1; awardFieldGoal(th,mergedH,m.det.events); } else if(ta.matchPrefs?.fieldGoal!==false){ as+=1; awardFieldGoal(ta,mergedA,m.det.events); } }
   if(isFinal && hs===as){ if(rnd()<.5 && th.matchPrefs?.fieldGoal!==false){ hs+=1; awardFieldGoal(th,mergedH,m.det.events); } else if(ta.matchPrefs?.fieldGoal!==false){ as+=1; awardFieldGoal(ta,mergedA,m.det.events); } }
-  // Build full det
   const det = m.det;
   det.h = mergedH; det.a = mergedA;
   setDerivedMatchStats(det, triesH, triesA);
   genInfringements(th, det, mergedH);
   genInfringements(ta, det, mergedA);
-  // Apply merged stats to p.s / p.career
   applyMatchStats(th, mergedH);
   applyMatchStats(ta, mergedA);
   m.played = true; m.hs = hs; m.as = as;
   awardVotes(th, ta, det);
   postMatch(th, hs, as, mergedH); postMatch(ta, as, hs, mergedA);
   applyTribunalBans(det);
-  delete m._htPending;
-  const h2Events = _buildHalfFeedEvents(det2_h, det2_a, th, ta, hs, as);
-  return {h2Events};
+  delete m._60Pending;
+  const h2bEvents = _buildHalfFeedEvents(det3_h, det3_a, th, ta, hs, as,
+    {lo:62, hi:79, startH:h2.hs2, startA:h2.as2});
+  return {h2bEvents};
 }
 
-export function _buildHalfFeedEvents(det_h, det_a, th, ta, finalScoreH, finalScoreA){
+// opts: {lo, hi, startH, startA}
+// lo/hi: minute range for narrative events; startH/startA: cumulative score at start of this segment
+export function _buildHalfFeedEvents(det_h, det_a, th, ta, finalScoreH, finalScoreA, opts){
+  const evLo = opts && opts.lo != null ? opts.lo : null;
+  const evHi = opts && opts.hi != null ? opts.hi : null;
   const tryEvs = [...(det_h._tryEvents||[]).map(e=>({...e,side:'h'})), ...(det_a._tryEvents||[]).map(e=>({...e,side:'a'}))].sort((a,b)=>a.min-b.min);
   const penEvs = [...(det_h._penGoalEvents||[]).map(e=>({...e,side:'h'})), ...(det_a._penGoalEvents||[]).map(e=>({...e,side:'a'}))].sort((a,b)=>a.min-b.min);
   const TRY_DESC = {FB:['weaves through to score','chips and catches it himself','sprints clear on the full back'],WG:['dives over in the corner','finishes brilliantly','plants it down in-goal'],CE:['powers through','steps inside to score','bulldozes over'],FE:['catches them napping','produces something special','beats the last defender'],HB:['darts from dummy half','slips through the gap','wrong-foots the defence'],PR:['crashes over from close range','powers through three defenders','rumbles over'],HK:['darts from dummy half to score','snipes from short range','catches the defence off guard'],SR:['barges over','charges over the line','takes the direct option'],LK:['leads from the front','charges over','shows his class to dot down'],BE:['finishes the move off','gets the reward','crashes over']};
@@ -146,7 +186,9 @@ export function _buildHalfFeedEvents(det_h, det_a, th, ta, finalScoreH, finalSco
   const ASSIST_VERBS = ['provides the scoring pass for','fires the ball to','puts','threads a perfect ball to'];
   const injMins = {};
   for(const [sKey, sObj] of [['h',det_h],['a',det_a]]) for(const [id,l] of Object.entries(sObj)) if(l&&typeof l==='object'&&!Array.isArray(l)&&l.injMin) injMins[sKey+':'+id]=l.injMin;
-  let sH=0, sA=0;
+  // Score starts from the cumulative total at the start of this segment
+  let sH = (opts && opts.startH) || 0;
+  let sA = (opts && opts.startA) || 0;
   const all = [];
   for(const ev of tryEvs){
     const team=ev.side==='h'?th:ta, scorer=G.players[ev.scorerId], assist=ev.assistId?G.players[ev.assistId]:null, kicker=ev.kickerId?G.players[ev.kickerId]:null;
@@ -190,9 +232,10 @@ export function _buildHalfFeedEvents(det_h, det_a, th, ta, finalScoreH, finalSco
     'knocks on under pressure — referee signals repeat set.',
     'fails to secure the ball — handling error.',
   ];
-  // Detect half from try event minutes: second half events have min > 40
-  const isFirstHalf = !tryEvs.some(e => e.min > 40);
-  const lo = isFirstHalf ? 8 : 45, hi = isFirstHalf ? 37 : 74;
+  // Determine narrative event minute range from provided opts or detected half
+  const isFirstHalf = evLo == null ? !tryEvs.some(e => e.min > 40) : (evLo < 41);
+  const lo = evLo != null ? Math.max(evLo, evLo + 5) : (isFirstHalf ? 8 : 45);
+  const hi = evHi != null ? evHi - 2 : (isFirstHalf ? 37 : 74);
   for(const [det, team] of [[det_h,th],[det_a,ta]]){
     let topBreaker = null, topLb = 0, topDefender = null, topTk = 0;
     const errPlayers = [];
@@ -321,7 +364,7 @@ export function simMatch(m, isFinal){
   const expA = clamp(2.85 * Math.pow(ratA, 1.65) * rf(.87,1.13) * aTryMod * tacticalFocusTryMod(ta, th) / Math.sqrt(crowdHomeMod), 0.7, 9);
   let triesH = poisson(expH), triesA = poisson(expA);
   if(isFinal && triesH===triesA && rnd()<.5) (rnd()<.5? triesH++ : triesA++);
-  // Approximate half-time split for comeback detection (roughly 40-60% of tries in first half)
+  // Approximate half-time split for HT score display (not used in final result)
   const htSplitH = ri(0, triesH), htSplitA = ri(0, triesA);
   const htGoalH = triesH > 0 ? Math.round((htSplitH / triesH) * (triesH * 0.65)) : 0;
   const htGoalA = triesA > 0 ? Math.round((htSplitA / triesA) * (triesA * 0.65)) : 0;
@@ -388,8 +431,10 @@ function setDerivedMatchStats(det, triesH, triesA){
 export function simTeamStats(t, tries, out, kickSkill, weatherCtx, opts){
   const isHalf = opts && opts.isHalf;
   const isSecondHalf = opts && opts.isSecondHalf;
+  const isEarlySecond = opts && opts.isEarlySecond; // 40–60 min segment
+  const isFinalChunk = opts && opts.isFinalChunk;   // 60–80 min segment
   const skipStats = opts && opts.skipStats;
-  // First-half only uses starters (bench haven't come on yet); second-half and full-match use all 17
+  // First-half only uses starters; second-half and full-match use all 17
   const sliceEnd = (isHalf && !isSecondHalf) ? 13 : 17;
   const players = t.lineup.slice(0, sliceEnd).map((id,i)=>({p:G.players[id], slot:i})).filter(x=>x.p);
   if(!t.roles) assignDefaultTeamRoles(t);
@@ -399,10 +444,10 @@ export function simTeamStats(t, tries, out, kickSkill, weatherCtx, opts){
   const weatherEffects = weatherMatchEffects(weatherCtx && weatherCtx.weather);
   const handlingMod = weatherCtx && weatherCtx.conservative ? 1 + (weatherEffects.handling - 1) * 0.45 : weatherEffects.handling;
   simTerritoryKicks(t, players, out, weatherCtx);
-  // Minute ranges for events
-  const evMinLo = isHalf ? (isSecondHalf ? 42 : 2) : 2;
-  const evMinHi = isHalf ? (isSecondHalf ? 78 : 38) : 78;
-  const penMinLo = isHalf ? (isSecondHalf ? 42 : 5) : 5;
+  // Minute ranges for events — 80-minute game: 0–40 first half, 41–80 second half
+  const evMinLo = isHalf ? (isFinalChunk ? 62 : isSecondHalf ? 41 : 2) : 2;
+  const evMinHi = isHalf ? (isFinalChunk ? 79 : isEarlySecond ? 59 : isSecondHalf ? 79 : 39) : 79;
+  const penMinLo = isHalf ? (isFinalChunk ? 62 : isSecondHalf ? 41 : 5) : 5;
   for(let i=0;i<tries;i++){
     const pool = players.map(x=>({x, w: (tryW[SLOTS[x.slot].pos]||.5) * (x.p.attrs.finishing+x.p.attrs.ballRunning+x.p.attrs.speed+x.p.attrs.acceleration)/240 }));
     const total = pool.reduce((s,e)=>s+e.w,0);
@@ -466,8 +511,14 @@ export function simTeamStats(t, tries, out, kickSkill, weatherCtx, opts){
       focusErrMod = 0.94;
       focusKickMod = ['half','back','hk'].includes(grp) ? 1.10 : 1.03;
     }
+    // Player minutes per segment (drives stat scaling via mins/80)
+    // Full match: starters 68–80, bench 18–42
+    // First half (40 min): starters 34–40, bench 0–8 (unlikely to play first half)
+    // 40–60 and 60–80 segments (20 min each): starters 16–22, bench 4–14
     const mins = isHalf
-      ? (x.slot<13 ? ri(32, 42) : ri(8, 18))
+      ? (isFinalChunk || isEarlySecond
+          ? (x.slot<13 ? ri(16,22) : ri(4,14))
+          : (x.slot<13 ? ri(34,40) : ri(0, 8)))
       : (x.slot<13 ? (grp==='fwd' && x.p.pos==='PR' ? ri(45,62) : ri(68,80)) : ri(18,42));
     line.min = (line.min||0) + mins;
     const runBase = {fwd:13, hk:7, half:6, back:12}[grp];
@@ -515,7 +566,9 @@ export function simTeamStats(t, tries, out, kickSkill, weatherCtx, opts){
       x.p.injuries.unshift({y:G.year, r:G.round+1, n:inj.n, weeks:x.p.injury.weeks});
       if(x.p.injury.weeks >= 4) x.p.attrs.injury = clamp(x.p.attrs.injury - ri(1,3), 20, 99);
       line.inj = inj.n;
-      line.injMin = isHalf ? (isSecondHalf ? ri(42,72) : ri(10,36)) : ri(10,72);
+      line.injMin = isHalf
+        ? (isFinalChunk ? ri(62,79) : isEarlySecond ? ri(41,59) : ri(10,39))
+        : ri(10,79);
     }
     if(skipStats) continue;
     // Season stats, career, club bucket — deferred when skipStats=true
@@ -851,7 +904,7 @@ export function applyTribunalBans(det){
 }
 
 if (typeof window !== 'undefined') Object.assign(window, {
-  simMatchFirstHalf, simMatchSecondHalf, simMatch, lineupPower, positionRoleFit,
+  simMatchFirstHalf, simMatchSecondHalf, simMatchFinalChunk, simMatch, lineupPower, positionRoleFit,
   zoneTacticsMod, simTeamStats, mergeStatDicts, applyMatchStats, awardFieldGoal,
   rolePlayer, postMatch, updatePlayerForm, genInfringements, applyTribunalBans,
   weatherMatchEffects, evMaxForDet,

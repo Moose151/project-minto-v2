@@ -224,7 +224,7 @@ Object.assign(UI, {
       UI._watchH1Events = h1Events;
       UI._watchMyM = myM;
       UI._watchEarlyMatches = prepRes.earlyMatches || [];
-      UI._60minDone = false;
+      UI._watchPhase = 'first-half';
       UI.go('watchgame');
       return;
     }
@@ -246,38 +246,35 @@ Object.assign(UI, {
     }
     const myM = games.find(m=>m.h===G.coach.teamId || m.a===G.coach.teamId);
     if(!myM){ UI.go('matchday'); return ''; }
-    UI._htSubPlans = {}; // Reset sub plans for new game
+    UI._htSubPlans = {};
+    UI._60SubPlans = {};
+    UI._watchPhase = 'first-half';
     const h = G.teams[myM.h], a = G.teams[myM.a];
-    const mineIsH = myM.h === G.coach.teamId;
 
-    const lineupCol = (team, side) => {
+    const lineupCol = (team) => {
       const rows = Array.from({length:17}, (_,i) => {
         const p = G.players[team.lineup[i]];
-        if(!p) return `<div style="display:flex;gap:8px;align-items:center;padding:3px 0;border-bottom:1px solid var(--line);opacity:.3"><span style="color:var(--dim);min-width:18px;font-size:11px">${i+1}</span><span style="font-size:12px;color:var(--muted)">—</span></div>`;
-        return `<div style="display:flex;gap:8px;align-items:center;padding:3px 0;border-bottom:1px solid var(--line)">
-          <span style="color:var(--dim);min-width:18px;font-size:11px">${i+1}</span>
-          <span style="flex:1;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</span>
-          <span class="pos-tag" style="font-size:10px">${p.pos}</span>
-          <span class="ovr ${ovrCls(p.ovr)}" style="font-size:11px">${p.ovr}</span>
+        if(!p) return `<div style="display:flex;gap:6px;align-items:center;padding:2px 0;border-bottom:1px solid var(--line);opacity:.3"><span style="color:var(--dim);min-width:16px;font-size:10px">${i+1}</span><span style="font-size:11px;color:var(--muted)">—</span></div>`;
+        return `<div style="display:flex;gap:6px;align-items:center;padding:2px 0;border-bottom:1px solid var(--line)">
+          <span style="color:var(--dim);min-width:16px;font-size:10px">${i+1}</span>
+          <span style="flex:1;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</span>
+          <span class="pos-tag" style="font-size:9px">${p.pos}</span>
         </div>`;
       }).join('');
-      return `<div style="min-width:160px"><div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">${esc(team.nick)}</div>${rows}</div>`;
+      return `<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${esc(team.nick)}</div>${rows}</div>`;
     };
 
-    // Start feed after render — use pre-built first-half events if available (split-match flow)
+    // Start feed after render
     setTimeout(() => {
       let events;
       if(UI._watchH1Events){
         const h1 = UI._watchH1Events;
         UI._watchH1Events = null;
-        // Add kick-off line at the start
-        const h = G.teams[myM.h], a = G.teams[myM.a];
         const kickOff = {min:0, txt:`Kick off at ${myM.det.venue||'the stadium'}. ${myM.det.weather||'Clear'} conditions, crowd of ${(myM.det.crowd||15000).toLocaleString()}.`};
         events = [kickOff, ...h1];
-        // Append a HT marker at end of first half events
         const htH = myM.det.htScore ? myM.det.htScore.h : 0;
         const htA = myM.det.htScore ? myM.det.htScore.a : 0;
-        events.push({min:40, txt:`⏸ HALF TIME — ${h.nick} ${htH}–${htA} ${a.nick}`});
+        events.push({min:40, txt:`⏸ HALF TIME — ${h.nick} ${htH}–${htA} ${a.nick} (10-minute break)`});
       } else {
         events = UI._buildFeed(myM);
       }
@@ -285,36 +282,37 @@ Object.assign(UI, {
     }, 120);
 
     return `<div style="margin-bottom:12px">
-      <div id="wg-header" style="background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;text-align:center;margin-bottom:16px">
+      <div id="wg-header" style="background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;text-align:center;margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap">
-          <div style="text-align:center">${teamLogo(h,48)}<div style="font-weight:700;margin-top:4px">${esc(h.nick)}</div></div>
-          <div style="font-family:var(--disp);font-size:48px;font-weight:900;min-width:120px;text-align:center;letter-spacing:.04em">
+          <div style="text-align:center">${teamLogo(h,40)}<div style="font-weight:700;margin-top:4px;font-size:13px">${esc(h.nick)}</div></div>
+          <div style="font-family:var(--disp);font-size:44px;font-weight:900;min-width:110px;text-align:center;letter-spacing:.04em">
             <span id="wg-scoreH" style="color:var(--dim)">–</span>
-            <span style="color:var(--muted);font-size:32px;margin:0 4px">:</span>
+            <span style="color:var(--muted);font-size:28px;margin:0 4px">:</span>
             <span id="wg-scoreA" style="color:var(--dim)">–</span>
           </div>
-          <div style="text-align:center">${teamLogo(a,48)}<div style="font-weight:700;margin-top:4px">${esc(a.nick)}</div></div>
+          <div style="text-align:center">${teamLogo(a,40)}<div style="font-weight:700;margin-top:4px;font-size:13px">${esc(a.nick)}</div></div>
         </div>
-        <div id="wg-banner" style="font-size:13px;color:var(--muted);margin-top:8px">⚽ Match in progress…</div>
-        <div style="font-size:11px;color:var(--dim);margin-top:4px">${esc(myM.det.venue||'Stadium')} · ${esc(myM.det.weather||'')} · Round ${G.round} · ${(myM.det.crowd||0).toLocaleString()} crowd</div>
+        <div id="wg-banner" style="font-size:12px;color:var(--muted);margin-top:6px">⚽ Kick off — 80 min match</div>
+        <div style="font-size:10px;color:var(--dim);margin-top:2px">${esc(myM.det.venue||'Stadium')} · ${esc(myM.det.weather||'')} · ${(myM.det.crowd||0).toLocaleString()} crowd</div>
       </div>
-      <div style="display:grid;grid-template-columns:200px 1fr;gap:16px">
-        <div style="display:flex;flex-direction:column;gap:16px">
-          ${lineupCol(h,'h')}
-          ${lineupCol(a,'a')}
+      <div style="display:grid;grid-template-columns:160px 1fr 220px;gap:12px;align-items:start">
+        <div>
+          ${lineupCol(h)}
+          ${lineupCol(a)}
         </div>
         <div>
           <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
             <h2 class="sec" style="margin:0">Live Feed</h2>
-            <div class="btnrow" style="margin:0;gap:6px">
-              <span style="font-size:11px;color:var(--muted)">Speed:</span>
+            <div class="btnrow" style="margin:0;gap:4px">
+              <span style="font-size:10px;color:var(--muted)">Speed:</span>
               ${[1,2,4,8].map(v=>`<button id="wg-spd-${v}" class="btn sm ${UI._watchSpeed===v?'primary':''}" onclick="UI.setWatchSpeed(${v})">${v}x</button>`).join('')}
             </div>
           </div>
-          <div id="wg-feedBox" style="background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px;min-height:300px;max-height:520px;overflow-y:auto;font-size:13px"></div>
+          <div id="wg-feedBox" style="background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px;min-height:320px;max-height:540px;overflow-y:auto;font-size:13px"></div>
         </div>
+        <div id="wg-coachPanel">${UI._buildCoachingPanel(myM, 'first-half')}</div>
       </div>
-      <div id="wg-postMatch" style="display:none;margin-top:20px"></div>
+      <div id="wg-postMatch" style="display:none;margin-top:16px"></div>
       <div class="btnrow" style="margin-top:12px">
         <button class="btn" onclick="UI.go('matchday')">Back to Match Day</button>
         <button class="btn" id="wg-allResultsBtn" style="display:none" onclick="UI.showRoundResults(UI._watchGameRound,UI._watchGameTitle||'Match result')">All results</button>
@@ -322,27 +320,66 @@ Object.assign(UI, {
     </div>`;
   },
 
-  // Used for second-half events in the split-match flow (separate list, no HT pause)
+  _buildCoachingPanel(myM, phase){
+    const t = myTeam();
+    const prefs = t.matchPrefs || {};
+    const focus = prefs.attackFocus || 'balanced';
+    const phaseNote = phase === 'first-half'
+      ? '<div style="font-size:10px;color:var(--dim);margin-top:3px">Focus change queues for half time</div>'
+      : phase === 'early-second'
+      ? '<div style="font-size:10px;color:var(--dim);margin-top:3px">Focus change queues for 60 minutes</div>'
+      : '';
+    const focusOpts = [['balanced','Balanced'],['middle','Middle'],['left','Left edge'],['right','Right edge'],['territory','Territory']];
+    const focusBtns = focusOpts.map(([k,l])=>`<button class="btn sm${focus===k?' primary':''}" onclick="myTeam().matchPrefs.attackFocus='${k}';UI._refreshCoachPanel()" style="font-size:10px;padding:3px 7px">${l}</button>`).join('');
+    const penOpts = [['auto','Auto'],['kickTouch','Kick touch'],['tap','Tap'],['penaltyGoal','Pen goal']];
+    const penSel = penOpts.map(([v,l])=>`<option value="${v}" ${prefs.penalty===v?'selected':''}>${l}</option>`).join('');
+    const gameplanOpts = [['attacking','Attacking'],['balanced','Balanced'],['grinding','Grinding']];
+    const gameplanSel = gameplanOpts.map(([v,l])=>`<option value="${v}" ${(t.plan||'balanced')===v?'selected':''}>${l}</option>`).join('');
+    return `<div class="card" style="padding:12px;position:sticky;top:8px">
+      <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--accent);letter-spacing:.07em;margin-bottom:10px">Coaching</div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:700">Attack focus</div>
+        <div style="display:flex;flex-wrap:wrap;gap:3px">${focusBtns}</div>
+        ${phaseNote}
+      </div>
+      <div style="margin-bottom:8px">
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;font-weight:700">Penalty preference</div>
+        <select style="font-size:11px;width:100%" onchange="myTeam().matchPrefs.penalty=this.value">${penSel}</select>
+      </div>
+      <div>
+        <div style="font-size:10px;color:var(--muted);margin-bottom:3px;font-weight:700">Game plan</div>
+        <select style="font-size:11px;width:100%" onchange="myTeam().plan=this.value">${gameplanSel}</select>
+      </div>
+    </div>`;
+  },
+
+  _refreshCoachPanel(){
+    const panel = document.getElementById('wg-coachPanel');
+    if(panel && UI._watchMyM) panel.innerHTML = UI._buildCoachingPanel(UI._watchMyM, UI._watchPhase || 'first-half');
+  },
+
+  // Reveals a pre-built event list (used for split-match 40-60 and 60-80 phases)
   _revealFeedPageList(events, i, myM){
     if(UI.page !== 'watchgame') return;
     const box = document.getElementById('wg-feedBox');
-    // 60-minute pause: offer final instructions once per match
-    if(box && !UI._60minDone && i < events.length && events[i].min >= 60){
-      UI._60minDone = true;
-      UI._60minResumeEvents = events;
-      UI._60minResumeIdx = i;
-      UI._60minResumeMatch = myM;
-      const postMatch = document.getElementById('wg-postMatch');
-      if(postMatch){ postMatch.style.display = ''; postMatch.innerHTML = UI._build60MinPanel(); }
-      return;
-    }
-    if(!box || i>=events.length){
-      // List exhausted — add FULL TIME if not yet appended
+    if(!box || i >= events.length){
+      // Events exhausted — check which phase we just finished
+      if(myM && myM._60Pending){
+        // 40–60 done: show 60-minute coaching panel
+        UI._watchPhase = 'early-second';
+        UI._refreshCoachPanel();
+        const postMatch = document.getElementById('wg-postMatch');
+        if(postMatch){ postMatch.style.display = ''; postMatch.innerHTML = UI._build60MinPanel(myM); }
+        return;
+      }
       if(myM && myM.played && box){
+        // 60–80 done: full time
         const h = G.teams[myM.h], a = G.teams[myM.a];
         const ftTxt = `FULL TIME — ${h.nick} ${myM.hs}–${myM.as} ${a.nick}`;
-        box.innerHTML += `<div style="padding:5px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:baseline"><span style="color:var(--dim);font-size:11px;min-width:28px;flex-shrink:0">80'</span><span style="color:var(--accent)">${ftTxt}</span></div>`;
+        box.innerHTML += `<div style="padding:5px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:baseline"><span style="color:var(--dim);font-size:11px;min-width:28px;flex-shrink:0">80'</span><span style="color:var(--accent);font-weight:700">${ftTxt}</span></div>`;
         box.scrollTop = box.scrollHeight;
+        UI._watchPhase = 'fulltime';
+        UI._refreshCoachPanel();
         UI._handleFullTime(myM);
       }
       return;
@@ -416,7 +453,7 @@ Object.assign(UI, {
     }
     if(e.txt && e.txt.includes('HALF TIME')){
       const banner = document.getElementById('wg-banner');
-      if(banner) banner.textContent = '⏸ Half time';
+      if(banner) banner.textContent = '⏸ Half time — 10 minute break';
       const htSc = UI._extractLiveScore(e.txt) || (myM.det.htScore ? {h:myM.det.htScore.h,a:myM.det.htScore.a} : null);
       if(htSc){ const sh=document.getElementById('wg-scoreH'),sa=document.getElementById('wg-scoreA'); if(sh)sh.textContent=htSc.h; if(sa)sa.textContent=htSc.a; }
       UI._htEvents = events; UI._htNextIdx = i + 1; UI._htMatch = myM;
@@ -658,11 +695,11 @@ Object.assign(UI, {
     const subsHtml = subRows ? `<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)">
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Substitutions <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></div>
       ${subRows}
-      ${subCount>0?`<p style="font-size:11px;color:var(--accent);margin:5px 0 0">${subCount} sub${subCount>1?'s':''} planned — will take effect at start of second half</p>`:''}
+      ${subCount>0?`<p style="font-size:11px;color:var(--accent);margin:5px 0 0">${subCount} sub${subCount>1?'s':''} planned — will take effect early in the second half</p>`:''}
     </div>` : '';
     return `<div class="card" style="border-color:var(--accent);padding:14px">
-      <h2 class="sec" style="margin-top:0;color:var(--accent)">Half-Time</h2>
-      <p style="font-size:12px;color:var(--muted);margin:0 0 12px">HT: <b>${myHT}–${oppHT}</b> · ${situationText}</p>
+      <h2 class="sec" style="margin-top:0;color:var(--accent)">Half Time — 10 min break</h2>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 12px">40' — HT: <b>${myHT}–${oppHT}</b> · ${situationText}</p>
       ${subsHtml}
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Team Talk</div>
       <div class="grid2" style="gap:8px">
@@ -760,20 +797,19 @@ Object.assign(UI, {
     const postMatch = document.getElementById('wg-postMatch');
     if(postMatch){ postMatch.style.display = 'none'; postMatch.innerHTML = ''; }
     const myM = UI._htMatch;
-    // Apply planned substitutions (updates lineup before second-half power is computed)
     UI._applyHtSubs(myM);
-    // If this is a split-match (first half was simulated incrementally), simulate second half now
+    // Split-match: simulate 40–60 now; 60–80 will be simulated after 60' instructions
     if(myM && myM._htPending && typeof simMatchSecondHalf === 'function'){
       const powerMod = POWER_MOD[choice] || 1.0;
-      const {h2Events} = simMatchSecondHalf(myM, false, powerMod);
+      const {h2aEvents} = simMatchSecondHalf(myM, false, powerMod);
       autoSave();
-      // Insert any queued sub events from _applyHtSubs into h2Events
       const subEvents = (UI._htEvents || []).slice(UI._htNextIdx || 0).filter(e=>e.txt && e.txt.startsWith('↕ SUB'));
-      const allH2 = [...(subEvents||[]), ...h2Events].sort((a,b)=>a.min-b.min);
+      const allH2a = [...(subEvents||[]), ...h2aEvents].sort((a,b)=>a.min-b.min);
       const banner = document.getElementById('wg-banner');
-      if(banner) banner.textContent = '▶ Second half underway…';
-      // Play the second-half events directly
-      UI._revealFeedPageList(allH2, 0, myM);
+      if(banner) banner.textContent = '▶ Second half — 40 to 60 minutes';
+      UI._watchPhase = 'early-second';
+      UI._refreshCoachPanel();
+      UI._revealFeedPageList(allH2a, 0, myM);
       return;
     }
     // Fallback: pre-simulated feed
@@ -781,30 +817,82 @@ Object.assign(UI, {
     setTimeout(()=>UI._revealFeedPage(events, nextIdx, myM), 350);
   },
 
-  _build60MinPanel(){
+  _build60MinPanel(myM){
     const sh = document.getElementById('wg-scoreH');
     const sa = document.getElementById('wg-scoreA');
     const scoreNote = (sh && sa && sh.textContent !== '–') ? ` Score: ${sh.textContent}–${sa.textContent}.` : '';
+    const t = myTeam();
+    if(!UI._60SubPlans) UI._60SubPlans = {};
+    // Bench players still available (those not already used at HT)
+    const usedOut = new Set(Object.values(UI._60SubPlans).filter(v=>v!==''&&v!=null));
+    const benchRows = [13,14,15,16].map(benchSlot => {
+      const benchId = t.lineup[benchSlot];
+      const p = benchId != null ? G.players[benchId] : null;
+      if(!p) return '';
+      const chosen = UI._60SubPlans[benchSlot];
+      const starterOpts = Array.from({length:13},(_,si) => {
+        const sid = t.lineup[si]; const sp = G.players[sid]; if(!sp) return '';
+        const taken = usedOut.has(si) && (+chosen !== si);
+        return `<option value="${si}" ${+chosen===si?'selected':''} ${taken?'disabled':''}>#${si+1} ${esc(sp.name)} (${sp.pos})</option>`;
+      }).join('');
+      return `<div style="display:flex;gap:6px;align-items:center;padding:3px 0;font-size:12px">
+        <span style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis"><b>${esc(p.name)}</b> <span class="pos-tag" style="font-size:10px">${p.pos}</span></span>
+        <select style="font-size:11px;max-width:150px" onchange="UI._set60SubPlan(${benchSlot},this.value)">
+          <option value="">Stay on bench</option>${starterOpts}
+        </select>
+      </div>`;
+    }).filter(Boolean).join('');
+
     const OPTS = [
-      {key:'push',    label:'Push for the win',   txt:'The coach signals for more. The forwards target the line as the game enters its final phase.'},
-      {key:'hold',    label:'Sit on the result',  txt:'Keep it tight. Discipline in defence, no loose carries — protect the scoreboard.'},
-      {key:'grind',   label:'Grind it out',        txt:'Physical, structured rugby. Control the ruck speed and make them earn every metre.'},
-      {key:'attack',  label:'Attack wide',         txt:'Spread it wide and use the edges. The coach wants ball-in-hand through the backline.'},
+      {key:'push',  label:'Push for the win', pm:1.07, txt:'The coach demands more. Forwards target the line, backs look for opportunities.'},
+      {key:'hold',  label:'Hold the lead',     pm:0.97, txt:'Protect the scoreboard. Discipline, no loose carries — grind the clock out.'},
+      {key:'grind', label:'Grind it out',      pm:1.00, txt:'Physical and structured. Control the ruck speed and make them earn every metre.'},
+      {key:'wide',  label:'Attack wide',       pm:1.05, txt:'Spread the ball and use the edges. The coach wants ball-in-hand.'},
     ];
-    return `<div style="background:var(--card);border:1px solid var(--accent-a50);border-radius:10px;padding:14px 16px;margin-top:16px">
-      <div style="font-weight:700;font-size:14px;color:var(--accent);margin-bottom:2px">60' — Final Instructions</div>
-      <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Set the tone for the final 20 minutes.${scoreNote}</p>
-      <div class="btnrow" style="flex-wrap:wrap;gap:8px">
-        ${OPTS.map(o=>`<button class="btn" onclick="UI._resume60Min('${o.key}','${o.txt.replace(/'/g,'\\\'')}')">${esc(o.label)}</button>`).join('')}
-        <button class="btn" style="color:var(--muted)" onclick="UI._resume60Min('pass','')">Continue watching</button>
-      </div>
+    // Pre-build buttons outside the template literal to avoid regex-in-template parse issues
+    const optBtns = OPTS.map(o => {
+      const oc = 'UI._applyFinalChunk(' + JSON.stringify(o.key) + ',' + JSON.stringify(o.txt) + ',' + o.pm + ')';
+      return '<button class="btn" onclick="' + oc + '" style="text-align:left;height:auto;padding:8px 10px"><div style="font-weight:700;margin-bottom:2px;font-size:12px">' + o.label + '</div><div style="font-size:10px;color:var(--muted);white-space:normal">' + o.txt + '</div></button>';
+    }).join('');
+    return `<div class="card" style="border-color:var(--accent);padding:14px">
+      <h2 class="sec" style="margin-top:0;color:var(--accent)">60 Minutes — Final Quarter</h2>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 12px">20 minutes remaining.${scoreNote} Set instructions for the run home.</p>
+      ${benchRows ? '<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)"><div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Late subs</div>' + benchRows + '</div>' : ''}
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Game plan</div>
+      <div class="grid2" style="gap:6px">${optBtns}</div>
     </div>`;
   },
 
-  _resume60Min(key, txt){
-    const events = UI._60minResumeEvents;
-    const i = UI._60minResumeIdx;
-    const myM = UI._60minResumeMatch;
+  _set60SubPlan(benchSlot, outSlotStr){
+    if(!UI._60SubPlans) UI._60SubPlans = {};
+    if(outSlotStr===''||outSlotStr==null){ delete UI._60SubPlans[benchSlot]; }
+    else { UI._60SubPlans[benchSlot] = +outSlotStr; }
+    const panel = document.getElementById('wg-postMatch');
+    if(panel && UI._watchMyM) panel.innerHTML = UI._build60MinPanel(UI._watchMyM);
+  },
+
+  _apply60Subs(myM){
+    if(!myM || !UI._60SubPlans) return;
+    const t = myTeam();
+    const subEvents = [];
+    for(const [benchSlotStr, outSlot] of Object.entries(UI._60SubPlans)){
+      if(outSlot===undefined||outSlot===null||outSlot==='') continue;
+      const benchSlot = +benchSlotStr;
+      const inId = t.lineup[benchSlot], outId = t.lineup[+outSlot];
+      const inPlayer = G.players[inId], outPlayer = G.players[outId];
+      if(!inPlayer||!outPlayer) continue;
+      t.lineup[+outSlot] = inId; t.lineup[benchSlot] = outId;
+      myM.det.subs = myM.det.subs || [];
+      const subMin = ri(61,70);
+      myM.det.subs.push({outId,inId,outSlot:+outSlot,benchSlot,min:subMin});
+      subEvents.push({min:subMin, txt:`↕ SUB — ${inPlayer.name} on for ${outPlayer.name} (${t.nick})`});
+    }
+    UI._60SubPlans = {};
+    return subEvents;
+  },
+
+  _applyFinalChunk(key, txt, extraPM){
+    const myM = UI._watchMyM;
     const postMatch = document.getElementById('wg-postMatch');
     if(postMatch){ postMatch.style.display = 'none'; postMatch.innerHTML = ''; }
     if(txt){
@@ -814,7 +902,18 @@ Object.assign(UI, {
         box.scrollTop = box.scrollHeight;
       }
     }
-    UI._revealFeedPageList(events, i, myM);
+    // Apply any 60' sub changes (updates lineup before simMatchFinalChunk re-computes power)
+    const subEvs = UI._apply60Subs(myM) || [];
+    if(myM && myM._60Pending && typeof simMatchFinalChunk === 'function'){
+      const {h2bEvents} = simMatchFinalChunk(myM, false, extraPM || 1.0);
+      autoSave();
+      const allH2b = [...subEvs, ...h2bEvents].sort((a,b)=>a.min-b.min);
+      const banner = document.getElementById('wg-banner');
+      if(banner) banner.textContent = '▶ Final 20 minutes — 60 to 80';
+      UI._watchPhase = 'final-chunk';
+      UI._refreshCoachPanel();
+      UI._revealFeedPageList(allH2b, 0, myM);
+    }
   },
 
   _buildFeed(m){
