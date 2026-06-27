@@ -27,6 +27,13 @@ _Updated every session._
   9. Verified syntax/build plus browser smoke test: generate career -> complete
      preseason -> advance to Wednesday -> report appears -> Tactics shows report
      -> tactical focus applies -> match sim completes.
+- **New design note from user:** add a team-page tactical diagnostics view showing
+  attack/defence by channel: middle, left edge, right edge, back three/backfield
+  (wingers + fullback), and spine (fullback + halves + hooker). Also add
+  **combination chemistry** ratings for player groups. "Combination" is the rugby
+  league term for player partnerships/groups; "chemistry" or "cohesion" is the
+  rating. Playing together should improve chemistry; low chemistry should create
+  timing errors/defensive misreads, high chemistry should improve execution.
 - **User clarified desired simulation depth:** add a strong manager-impact loop:
   Wednesday staff/scout pre-match analysis with accuracy based on staff ratings;
   actionable opponent tendencies and vulnerabilities; and pre-match/in-match

@@ -112,6 +112,15 @@ Target: **full FM-level tactical depth**.
   counters determine whether the plan works.
 - First slice implemented: Wednesday report stores `G.matchIntel`, appears in
   inbox, links to Tactics, and quick-applies attacking focus.
+- Team-page diagnostics view: show attacking and defensive output/weakness by
+  middle, left edge, right edge, back three/backfield (wingers + fullback), and
+  spine (fullback + halves + hooker). Include metres, tries, line breaks,
+  missed tackles, errors, kick pressure, ruck speed, territory, and scoring
+  involvement as the engine begins tracking them.
+- Add **combination chemistry** ratings for player groups: halves pairing,
+  hooker/halves, spine, left edge, right edge, middle rotation, back three, and
+  full-team cohesion. Playing together raises chemistry; low chemistry increases
+  timing errors and defensive misreads, while high chemistry improves execution.
 
 ### D. Representative & international depth
 - In-season Test fixtures/windows (V1 has State of Origin + a post-season

@@ -131,6 +131,29 @@ target is that the match engine resolves these trade-offs credibly: good plans
 with suitable players should improve the odds; poor plans, unsuitable players,
 bad scouting, fatigue, or elite opposition should expose the coach.
 
+### Team channel diagnostics and combinations
+
+The team page should eventually include a tactical diagnostics view that shows
+how the squad performs by channel, both in attack and defence:
+
+- middle
+- left edge
+- right edge
+- back three / backfield: wingers and fullback
+- spine: fullback, halves, and hooker
+
+This view should show current strengths, season output, and opposition-facing
+weaknesses: metres, tries, line breaks, errors, missed tackles, kick pressure,
+ruck speed, territory, and scoring involvement by channel where the engine has
+that data.
+
+It should also show **combination chemistry**: a rating for how familiar players
+are with each other and how well they work as a unit. Playing matches together
+raises this over time. Useful groups include halves pairing, hooker/halves,
+spine, left edge, right edge, middle rotation, back three, and full-team
+cohesion. Low chemistry should mean more timing errors, defensive misreads, and
+missed attacking opportunities; high chemistry should improve execution.
+
 ## Architecture (intent)
 
 ```
