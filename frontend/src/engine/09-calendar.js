@@ -153,6 +153,8 @@ export function simGamesForDow(dow){
   for(const m of sortMatchesBySlot(round)){
     if(m.played) continue;
     if(slotDow(m.slot) !== dow) continue;
+    // Clear stale split-phase flags from old saves before simming
+    if(m._htPending || m._60Pending){ delete m._htPending; delete m._60Pending; delete m._matchSetup; delete m._h1; delete m._h2; delete m._htPowerMod; }
     simMatch(m, false);
     played.push(m);
   }

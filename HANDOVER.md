@@ -4,6 +4,81 @@ _Updated every session._
 
 ## ⏸️ Session Pause Note (for the next assistant)
 
+**Latest session work — continuous watch-game rewrite (complete):**
+
+Replaced the old three-phase split-match system (0–40 / HT team-talk / 40–60 / 60–80) with a
+fully continuous event stream. Subs and tactical changes can now happen at any point.
+
+Key changes across `07-match.js` and `matchday.js`:
+
+1. **`buildMatchEventStream(m, isFinal)`** added to `07-match.js`. Calls `simMatch` once at
+   kick-off, tags all events with `evType` and `stoppage:bool`, inserts kickoff / halftime /
+   fulltime markers, and returns a sorted flat list. No mid-game re-simulation.
+
+2. **`_revealFeedContinuous(events, i, myM)`** — new streaming function. Time-gap-based delays:
+   `delay = Math.max(150, round(gapMins × 7500 / watchSpeed))` → 80 min ≈ 10 real min at 1×.
+   Flushes `_subQueue` at every `stoppage:true` event (never at half-time).
+
+3. **`_toggleWatchPause()`** — pause/resume. Saves index, clears timeout, resumes from same point.
+
+4. **`_flushSubQueue(myM, atMin)`** — applies queued subs, swaps lineup slots, writes to
+   `myM.det.subs`, emits sub events spliced in after the current stoppage.
+
+5. **`_addSubToQueue()` / `_removeSubFromQueue(qi)`** — add from dropdowns, remove by index.
+
+6. **`_buildCoachingPanel(myM)`** — rebuilt without `phase` parameter. Sub queue UI replaces old
+   `_coachSubPlans` selectors. Live "Queue" button + pending list with remove buttons.
+   All existing tactic controls (attack focus, game intent, offloads, defence, pressure target,
+   penalty, game plan) preserved.
+
+7. **`p_watchgame()`** rewritten: speed slider (0.25–16×, range input), pause button, lineups +
+   feed + coaching panel in a 3-col grid. Score initialises to "0", not "–".
+
+8. **Old functions removed:** `_revealFeedPage`, `_revealFeedPageList`, `_buildTeamTalkHtml`,
+   `_setCoachSubPlan`, `_applyHtSubs`, `_applyTeamTalk`, `_applyQueuedSubs`.
+
+Build clean: 54 modules, 588 kB, no errors.
+
+**Pending / known limitations:**
+- Match outcome is pre-generated at kick-off — mid-game tactical changes affect the coaching
+  panel copy and sub queue but cannot retroactively change the simulated result. Accepted as
+  Phase 1 limitation; deep set-by-set engine (Feature A) will fix this later.
+- Half-time is a non-stoppage event — no subs are applied there (by design, per user spec).
+- The "All results" button and post-match report still rely on `_handleFullTime` (unchanged).
+
+**Previous session work:**
+1. **Sub plan consolidation complete.** `_setHtSubPlan` → `_setCoachSubPlan`; `_applyHtSubs`
+   delegates to `_applyQueuedSubs(myM, 'ht')`. Single `UI._coachSubPlans` shared between HT
+   modal and coaching panel sidebar.
+2. **Coaching panel — full in-match control suite.** Panel now includes: bench sub selectors
+   (applied at HT or 60'); attack focus; game intent (Chase/Normal/Protect); offloads
+   (Low/Normal/High); defence (Structured/Aggressive); pressure target (select an opponent
+   player); penalty preference; game plan. Sticky, scrollable, always visible during watch game.
+3. **Game intent wired into engine.** `matchPrefs.gameIntent`: chase = +8%/+6% tries (both
+   teams), protect = -7%/-5%. Re-read at each chunk independently.
+4. **Offload risk and defensive style wired in.** `offloadRisk` modifies error chance (+/-9%)
+   and line breaks (+/-12%). `defStyle` aggressive increases own missed tackles (+18%);
+   opponent's aggressive defence increases the attacking team's line breaks (+8%).
+5. **Target player pressure.** Coaching panel shows a dropdown of key opponent players (HB,
+   FE, HK, WG, CE, FB, SR, LK). Targeting one reduces their runs (-20%), metres (-25%),
+   and increases their error chance (+20%). Passed via `opts.targetPlayerId` to simTeamStats.
+   `targetPlayerId` is cleared at match start in `autoSetAIMatchPrefs`.
+6. **Combination chemistry wired into match execution.** Per-player `chemRating` from
+   `t.combinations` adjusts error chance (~±8%) and line breaks (~±12%).
+7. **AI tactical variety.** `autoSetAIMatchPrefs` runs at `_matchSetup` for non-coached teams,
+   randomly assigning weighted attack focus, game intent, offload risk, and defensive style
+   each match. Makes the tactical system bidirectional.
+8. **Tactics page expanded.** "Match settings" card includes all 4 tactical controls with
+   radio-row selectors and effect descriptions. Quick-apply buttons now include aggressive
+   defence and offload suggestions based on the opponent report's attack/weakness analysis.
+9. **Match Day focusCard expanded.** Game intent, offloads, and defensive style are now
+   settable pre-kick-off alongside the existing attack focus.
+10. **Match report: line breaks added.** LB column in player stats table; "Line breaks" row
+    in team summary stats comparison (only shown if either team has LBs > 0).
+11. Build clean — 54 modules, ~584 kB, no errors.
+
+
+
 **Continuation session complete.** Frontend build clean: 54 modules, ~550 kB, no errors.
 
 - **Latest work after simulation-depth brief:** Implemented the first tactical
@@ -219,12 +294,13 @@ cd frontend && npx vite build
   channel ratings/stat output and persisted combination chemistry. Remaining work:
   feed the chemistry rating directly into timing errors, defensive misreads,
   attacking execution, and richer channel stats as the set-by-set engine lands.
-- **In-match management (Feature B)**: The second half currently plays out automatically.
-  Adding a pause at the 60' mark (2/3 of the way through) for another sub window and
-  tactical adjustment would make the live-watch experience richer. Tactical switches
-  should include middle/left/right focus, tempo, offload risk, field-position kicking,
-  defensive aggression, rush pressure, and target-player instructions.
-  - Next technical step: split second-half simulation into 40-60 and 60-80 chunks so
-    60-minute tactical changes can affect the remaining result, not just messaging.
+- **In-match management (Feature B)**: ✅ Complete. The coaching panel has:
+  attack focus, game intent (chase/normal/protect), offloads (low/normal/high), defence
+  (structured/aggressive), pressure target (specific opponent player), subs, penalty, game
+  plan. All wired into the match engine with meaningful per-chunk effects. AI teams also
+  receive random tactical settings each match. The Tactics page and Match Day page both
+  expose these pre-match. Tactic-aware narrative events now fire in both the split watch-game
+  and sim-to-result feeds, reflecting offloads, territory focus, chase/protect intent,
+  aggressive defence, and pressure targeting by name.
 - **Replace placeholder app icons** with real branding.
 - **Onboarding** (Feature E): A clearer "what to do first" overlay for new saves.

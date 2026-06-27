@@ -112,7 +112,7 @@ export const UI = {
       : trainingPending ? 'Review Training →'
       : recoveryPending ? 'Review Recovery →'
       : selectionPending ? 'Submit Team List →'
-      : stop && stop.key === 'match' && !onBye ? 'Play Match Day'
+      : stop && stop.key === 'match' && !onBye ? (UI.page === 'matchday' ? (UI._matchMode === 'watch' ? 'Kick Off →' : 'Sim to Result →') : 'Match Day →')
       : onBye && stop && stop.key === 'match' ? 'Advance (Bye)'
       : 'Next Day';
   },

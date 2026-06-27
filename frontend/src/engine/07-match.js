@@ -12,6 +12,20 @@ function avgAttrs(players, keys){
   if(!players.length) return 56;
   return players.reduce((s,p)=>s + keys.reduce((a,k)=>a+(p.attrs[k]||50),0)/keys.length, 0) / players.length;
 }
+// Returns {hMod, aMod} try-rate multipliers driven by the coached team's current game intent.
+// chase: coached team opens up (+8%), opposition benefits too (+6%)
+// protect: coached team slows down (-7%), opposition also scores less (-5%)
+function gameIntentMods(th, ta, isCoachH, isCoachA){
+  const coachPrefs = isCoachH ? th.matchPrefs : isCoachA ? ta.matchPrefs : null;
+  const intent = coachPrefs && coachPrefs.gameIntent || 'normal';
+  if(intent === 'chase'){
+    return { hMod: isCoachH ? 1.08 : 1.06, aMod: isCoachA ? 1.08 : 1.06 };
+  }
+  if(intent === 'protect'){
+    return { hMod: isCoachH ? 0.93 : 0.95, aMod: isCoachA ? 0.93 : 0.95 };
+  }
+  return { hMod: 1, aMod: 1 };
+}
 function tacticalFocusTryMod(att, def){
   const focus = att.matchPrefs && att.matchPrefs.attackFocus || 'balanced';
   if(focus === 'balanced') return 1;
@@ -28,6 +42,22 @@ function tacticalFocusTryMod(att, def){
   const atkScore = avgAttrs(tacticalChannelEntries(att, attackSide, false), atkKeys);
   const defScore = avgAttrs(tacticalChannelEntries(def, defendSide, true), defKeys);
   return clamp(1 + (atkScore - defScore) / 420, 0.93, 1.08);
+}
+function autoSetAIMatchPrefs(team, coachId){
+  if(!team.matchPrefs) team.matchPrefs = {};
+  const p = team.matchPrefs;
+  if(team.id === coachId){
+    // Clear target pressure each new match (it was set for a previous opponent)
+    delete p.targetPlayerId;
+    return;
+  }
+  // Re-randomise AI settings each match so teams feel varied
+  p.attackFocus = pick(['balanced','balanced','balanced','middle','middle','left','right','territory']);
+  p.gameIntent  = pick(['normal','normal','normal','normal','chase','protect']);
+  p.offloadRisk = pick(['normal','normal','normal','low','low','high']);
+  p.defStyle    = pick(['structured','structured','structured','aggressive']);
+  // AI teams can also target a specific opposing player occasionally
+  p.targetPlayerId = null; // cleared; set after lineups are known if needed
 }
 export function _matchSetup(m, isFinal){
   const th = G.teams[m.h], ta = G.teams[m.a];
@@ -49,6 +79,8 @@ export function _matchSetup(m, isFinal){
   const bwKickMod = weather==='Heavy rain'?.88:weather==='Light rain'?.93:weather==='Windy'?.90:weather==='Humid'?.97:1;
   const badWeather = weather==='Heavy rain'||weather==='Windy';
   const coachId = G.coach ? G.coach.teamId : -1;
+  autoSetAIMatchPrefs(th, coachId);
+  autoSetAIMatchPrefs(ta, coachId);
   const coachTeam = G.teams.find(t=>t.id===coachId);
   const conservative = badWeather && coachTeam && coachTeam.matchPrefs && coachTeam.matchPrefs.weatherTactics==='conservative';
   const isCoachH = th.id===coachId, isCoachA = ta.id===coachId;
@@ -78,8 +110,8 @@ export function simMatchFirstHalf(m, isFinal){
   const h1_triesH = poisson(expH * 0.5);
   const h1_triesA = poisson(expA * 0.5);
   const det1_h = {}, det1_a = {};
-  const h1_goalsH = simTeamStats(th, h1_triesH, det1_h, ph.kick*hKickMod, ctx_h, {isHalf:true, skipStats:true});
-  const h1_goalsA = simTeamStats(ta, h1_triesA, det1_a, pa.kick*aKickMod, ctx_a, {isHalf:true, skipStats:true});
+  const h1_goalsH = simTeamStats(th, h1_triesH, det1_h, ph.kick*hKickMod, ctx_h, {isHalf:true, skipStats:true, oppDefStyle:ta.matchPrefs&&ta.matchPrefs.defStyle, targetPlayerId:ta.matchPrefs&&ta.matchPrefs.targetPlayerId});
+  const h1_goalsA = simTeamStats(ta, h1_triesA, det1_a, pa.kick*aKickMod, ctx_a, {isHalf:true, skipStats:true, oppDefStyle:th.matchPrefs&&th.matchPrefs.defStyle, targetPlayerId:th.matchPrefs&&th.matchPrefs.targetPlayerId});
   const h1_hs = h1_triesH*4 + h1_goalsH*2;
   const h1_as = h1_triesA*4 + h1_goalsA*2;
   // Store setup and first-half state for second half
@@ -104,16 +136,17 @@ export function simMatchSecondHalf(m, isFinal, powerMod){
   m._htPowerMod = coachPM; // saved so simMatchFinalChunk can compound it
   const hTryMod2 = (isCoachH&&conservative)?prev.hTryMod*0.93:prev.hTryMod;
   const aTryMod2 = (isCoachA&&conservative)?prev.aTryMod*0.93:prev.aTryMod;
-  const expH2 = clamp(2.85*Math.pow(ratH2,1.65)*rf(.87,1.13)*hTryMod2*crowdHomeMod*coachPM*tacticalFocusTryMod(th, ta),0.7,9);
-  const expA2 = clamp(2.85*Math.pow(ratA2,1.65)*rf(.87,1.13)*aTryMod2*tacticalFocusTryMod(ta, th)/Math.sqrt(crowdHomeMod),0.7,9);
+  const intent2 = gameIntentMods(th, ta, isCoachH, isCoachA);
+  const expH2 = clamp(2.85*Math.pow(ratH2,1.65)*rf(.87,1.13)*hTryMod2*crowdHomeMod*coachPM*tacticalFocusTryMod(th, ta)*intent2.hMod,0.7,9);
+  const expA2 = clamp(2.85*Math.pow(ratA2,1.65)*rf(.87,1.13)*aTryMod2*tacticalFocusTryMod(ta, th)/Math.sqrt(crowdHomeMod)*intent2.aMod,0.7,9);
   // 40–60 min: one quarter of expected full-game tries
   const h2_triesH = poisson(expH2 * 0.25);
   const h2_triesA = poisson(expA2 * 0.25);
   const ctx_h2 = {weather, conservative:isCoachH&&conservative, kickMod:hKickMod};
   const ctx_a2 = {weather, conservative:isCoachA&&conservative, kickMod:aKickMod};
   const det2_h = {}, det2_a = {};
-  const h2_goalsH = simTeamStats(th, h2_triesH, det2_h, ph2.kick*hKickMod, ctx_h2, {isHalf:true, isSecondHalf:true, isEarlySecond:true, skipStats:true});
-  const h2_goalsA = simTeamStats(ta, h2_triesA, det2_a, pa2.kick*aKickMod, ctx_a2, {isHalf:true, isSecondHalf:true, isEarlySecond:true, skipStats:true});
+  const h2_goalsH = simTeamStats(th, h2_triesH, det2_h, ph2.kick*hKickMod, ctx_h2, {isHalf:true, isSecondHalf:true, isEarlySecond:true, skipStats:true, oppDefStyle:ta.matchPrefs&&ta.matchPrefs.defStyle, targetPlayerId:ta.matchPrefs&&ta.matchPrefs.targetPlayerId});
+  const h2_goalsA = simTeamStats(ta, h2_triesA, det2_a, pa2.kick*aKickMod, ctx_a2, {isHalf:true, isSecondHalf:true, isEarlySecond:true, skipStats:true, oppDefStyle:th.matchPrefs&&th.matchPrefs.defStyle, targetPlayerId:th.matchPrefs&&th.matchPrefs.targetPlayerId});
   const hs2 = h1.hs1 + h2_triesH*4 + h2_goalsH*2;
   const as2 = h1.as1 + h2_triesA*4 + h2_goalsA*2;
   m._h2 = {det_h:det2_h, det_a:det2_a, goalsH:h2_goalsH, goalsA:h2_goalsA, triesH:h2_triesH, triesA:h2_triesA, hs2, as2};
@@ -137,16 +170,17 @@ export function simMatchFinalChunk(m, isFinal, extraPowerMod){
   const coachPM = htPM * (extraPowerMod || 1.0);
   const hTryMod3 = (isCoachH&&conservative)?prev.hTryMod*0.93:prev.hTryMod;
   const aTryMod3 = (isCoachA&&conservative)?prev.aTryMod*0.93:prev.aTryMod;
-  const expH3 = clamp(2.85*Math.pow(ratH3,1.65)*rf(.87,1.13)*hTryMod3*crowdHomeMod*coachPM*tacticalFocusTryMod(th, ta),0.7,9);
-  const expA3 = clamp(2.85*Math.pow(ratA3,1.65)*rf(.87,1.13)*aTryMod3*tacticalFocusTryMod(ta, th)/Math.sqrt(crowdHomeMod),0.7,9);
+  const intent3 = gameIntentMods(th, ta, isCoachH, isCoachA);
+  const expH3 = clamp(2.85*Math.pow(ratH3,1.65)*rf(.87,1.13)*hTryMod3*crowdHomeMod*coachPM*tacticalFocusTryMod(th, ta)*intent3.hMod,0.7,9);
+  const expA3 = clamp(2.85*Math.pow(ratA3,1.65)*rf(.87,1.13)*aTryMod3*tacticalFocusTryMod(ta, th)/Math.sqrt(crowdHomeMod)*intent3.aMod,0.7,9);
   // 60–80 min: one quarter of expected full-game tries
   const h3_triesH = poisson(expH3 * 0.25);
   const h3_triesA = poisson(expA3 * 0.25);
   const ctx_h3 = {weather, conservative:isCoachH&&conservative, kickMod:hKickMod};
   const ctx_a3 = {weather, conservative:isCoachA&&conservative, kickMod:aKickMod};
   const det3_h = {}, det3_a = {};
-  const h3_goalsH = simTeamStats(th, h3_triesH, det3_h, ph3.kick*hKickMod, ctx_h3, {isHalf:true, isSecondHalf:true, isFinalChunk:true, skipStats:true});
-  const h3_goalsA = simTeamStats(ta, h3_triesA, det3_a, pa3.kick*aKickMod, ctx_a3, {isHalf:true, isSecondHalf:true, isFinalChunk:true, skipStats:true});
+  const h3_goalsH = simTeamStats(th, h3_triesH, det3_h, ph3.kick*hKickMod, ctx_h3, {isHalf:true, isSecondHalf:true, isFinalChunk:true, skipStats:true, oppDefStyle:ta.matchPrefs&&ta.matchPrefs.defStyle, targetPlayerId:ta.matchPrefs&&ta.matchPrefs.targetPlayerId});
+  const h3_goalsA = simTeamStats(ta, h3_triesA, det3_a, pa3.kick*aKickMod, ctx_a3, {isHalf:true, isSecondHalf:true, isFinalChunk:true, skipStats:true, oppDefStyle:th.matchPrefs&&th.matchPrefs.defStyle, targetPlayerId:th.matchPrefs&&th.matchPrefs.targetPlayerId});
   // Merge all three phases and finalise
   const mergedH = mergeStatDicts(mergeStatDicts(h1.det_h, h2.det_h), det3_h);
   const mergedA = mergeStatDicts(mergeStatDicts(h1.det_a, h2.det_a), det3_a);
@@ -213,25 +247,41 @@ export function _buildHalfFeedEvents(det_h, det_a, th, ta, finalScoreH, finalSco
       if(l.fdo) for(let i=0;i<l.fdo;i++) all.push({min:ri(8,maxKickMin),txt:`${p.name} (${team.nick}) pins the opposition in-goal and forces a drop-out.`});
     }
   }
-  // Narrative commentary events from aggregate stats
-  const LINEBREAK_PHRASES = [
-    'breaks the line and charges downfield!',
-    'beats two defenders and surges forward!',
-    'finds a gap and makes massive metres!',
-    'shows great footwork to burst through the line!',
-    'beats the first defender and gets into open space!',
-  ];
-  const TACKLE_PHRASES = [
-    'makes another crunching tackle.',
-    'puts in a big defensive hit.',
-    'wraps up perfectly — another strong tackle.',
-    'working relentlessly in the defensive line.',
-  ];
-  const ERROR_PHRASES = [
-    'loses the ball in contact — costly knock-on.',
-    'knocks on under pressure — referee signals repeat set.',
-    'fails to secure the ball — handling error.',
-  ];
+  // Per-segment score context (used to vary tactic commentary)
+  const curH = finalScoreH, curA = finalScoreA;
+  const margin = Math.abs(curH - curA);
+  const leaderNick = curH > curA ? th.nick : curA > curH ? ta.nick : null;
+  const trailingNick = curH < curA ? th.nick : curA < curH ? ta.nick : null;
+  const marginDesc = margin <= 2 ? 'a point' : margin <= 6 ? `${margin}` : `${margin}`;
+  const isClose = margin <= 6;
+
+  // Position-aware line-break descriptions
+  const lbDesc = p => {
+    const isForward = ['PR','SR','LK','HK'].includes(p.pos);
+    const isBack = ['WG','CE','FB'].includes(p.pos);
+    return isForward
+      ? pick(['charges through two tacklers and makes massive metres!','drives through the middle and breaks clear!','bursts through the line and draws the fullback!','takes contact and comes out the other side — breaks away!','crashes off the ruck and exploits a gap in the line!'])
+      : isBack
+      ? pick(['cuts inside and sprints clear!','steps off his right and gets into open space!','rounds the last man and gets away!','shows great footwork and finds the gap!','ghosts through the defensive line!'])
+      : pick(['finds a gap and makes big metres!','beats a man on the outside and goes!','breaks a tackle and charges downfield!','steps off both feet and gets away!','gets to the edge and breaks the line!']);
+  };
+  // Position-aware tackle descriptions
+  const tkDesc = p => {
+    const isForward = ['PR','SR','LK','HK'].includes(p.pos);
+    return isForward
+      ? pick(['drives through the tackle, wrapping him up and rolling him back.','puts in another bone-shaking hit — leading by example.','comes off the line early and smothers the play.','hammers the ball-carrier and strips the momentum.','is taking no prisoners — another dominant carry stopped.'])
+      : pick(['wraps up perfectly and drags him to ground.','puts in a big defensive hit — the line is holding.','makes the important tackle at the ruck.','reads the play and cuts him off cold.','is everywhere in defence — an outstanding shift.']);
+  };
+  const errDesc = () => pick([
+    'drops it cold — the referee signals repeat set.',
+    'loses the ball in contact — a let-off for the defence.',
+    'coughs it up under pressure — the defenders celebrating.',
+    'spills a short ball — an uncharacteristic error.',
+    'knocks on and the opposition get a repeat set.',
+    'fails to gather the pass — ball on the ground.',
+    'can\'t hold on in traffic — knock-on.',
+  ]);
+
   // Determine narrative event minute range from provided opts or detected half
   const isFirstHalf = evLo == null ? !tryEvs.some(e => e.min > 40) : (evLo < 41);
   const lo = evLo != null ? Math.max(evLo, evLo + 5) : (isFirstHalf ? 8 : 45);
@@ -247,11 +297,98 @@ export function _buildHalfFeedEvents(det_h, det_a, th, ta, finalScoreH, finalSco
       if((l.err||0) >= 1) errPlayers.push(p);
     }
     if(topBreaker && topLb >= 1)
-      all.push({min: ri(lo, Math.min(lo+20, hi)), txt: `${topBreaker.name} (${team.nick}) ${pick(LINEBREAK_PHRASES)}`});
+      all.push({min: ri(lo, Math.min(lo+20, hi)), txt: `${topBreaker.name} (${team.nick}) ${lbDesc(topBreaker)}`});
     if(topDefender && topTk >= 6)
-      all.push({min: ri(lo+5, hi-5), txt: `${topDefender.name} (${team.nick}) ${pick(TACKLE_PHRASES)}`});
+      all.push({min: ri(lo+5, hi-5), txt: `${topDefender.name} (${team.nick}) ${tkDesc(topDefender)}`});
     if(errPlayers.length && rnd() < 0.6)
-      all.push({min: ri(lo+8, hi), txt: `${errPlayers[0].name} (${team.nick}) ${pick(ERROR_PHRASES)}`});
+      all.push({min: ri(lo+8, hi), txt: `${errPlayers[0].name} (${team.nick}) ${errDesc()}`});
+  }
+
+  // Tactic-aware narrative events — context-sensitive, composite construction
+  for(const [det, team, oppTeam] of [[det_h,th,ta],[det_a,ta,th]]){
+    const prefs = team.matchPrefs || {};
+    const oppPrefs = oppTeam.matchPrefs || {};
+    const lineupPlayers = (team.lineup||[]).slice(0,13).map(id=>G.players[id]).filter(Boolean);
+    const topForward = lineupPlayers.filter(p=>['PR','SR','LK','HK'].includes(p.pos)).sort((a,b)=>(b.attrs.ballRunning||50)+(b.attrs.strength||50)-(a.attrs.ballRunning||50)-(a.attrs.strength||50))[0];
+    const kicker = [...lineupPlayers].sort((a,b)=>(b.attrs.placeKick||b.attrs.kicking||50)-(a.attrs.placeKick||a.attrs.kicking||50))[0];
+    const targeted = oppPrefs.targetPlayerId ? G.players[oppPrefs.targetPlayerId] : null;
+    const isTeamLeading = (team.id === th.id) ? curH > curA : curA > curH;
+    const isTeamTrailing = (team.id === th.id) ? curH < curA : curA < curH;
+
+    // High offloads — forward-named, composite action + result
+    if(prefs.offloadRisk === 'high' && topForward){
+      const setup = pick([`${topForward.name} takes contact`,`${topForward.name} drives through two defenders`,`${topForward.name} absorbs a hit in the middle`]);
+      const result = pick(['and fires an offload to keep the play alive!','and pops it out of the tackle — the ball stays alive!','and releases off the ground — brilliant instinct!','and finds the runner at his hip — heads-up league!',`and keeps it alive — ${team.nick} looking dangerous.`]);
+      all.push({min: ri(lo, hi), txt: `${setup} ${result}`});
+    }
+
+    // Low offloads — RL-correct language, no rugby union phrasing
+    if(prefs.offloadRisk === 'low' && topForward && rnd() < 0.55){
+      all.push({min: ri(lo, hi), txt: pick([
+        `${topForward.name} (${team.nick}) takes it up hard and goes to ground cleanly — the forwards keeping it tight.`,
+        `${topForward.name} (${team.nick}) drives through contact and presents the ball back — disciplined carry.`,
+        `${topForward.name} (${team.nick}) accepts the tackle and recycles cleanly — ${team.nick} not giving anything away.`,
+        `${topForward.name} (${team.nick}) keeps it tight through the ruck — no risks through the middle.`,
+        `${topForward.name} (${team.nick}) completes the set carry and goes to ground — ${team.nick} are grinding it out.`,
+      ])});
+    }
+
+    // Territory attack focus — kicker named, varied kick types
+    if(prefs.attackFocus === 'territory' && kicker){
+      all.push({min: ri(lo, hi), txt: pick([
+        `${kicker.name} (${team.nick}) puts boot to ball and finds touch inside their 20 — ${team.nick} working the field position.`,
+        `${kicker.name} (${team.nick}) cuts the angle and sends it to the corner flag — forcing them to play from deep.`,
+        `${kicker.name} (${team.nick}) chips a grubber into the in-goal and wins the drop-out — territory won.`,
+        `${kicker.name} (${team.nick}) finds the sideline with a raking kick — excellent field position for ${team.nick}.`,
+        `${kicker.name} (${team.nick}) kicks long and pins ${oppTeam.nick} inside their own 10 — controlled pressure from ${team.nick}.`,
+      ])});
+    }
+
+    // Game intent — chase (score-contextual)
+    if(prefs.gameIntent === 'chase' && rnd() < 0.7){
+      const trailNote = isTeamTrailing ? pick([`Down by ${marginDesc}, `,`Chasing the game, `,`With points needed, `]) : '';
+      all.push({min: ri(lo+5, hi), txt: pick([
+        `${trailNote}${team.nick} shifting the ball at speed — they want it in hand.`,
+        `${trailNote}${team.nick} are refusing to kick — every set is an attacking opportunity.`,
+        `${trailNote}${team.nick} throwing it wide at every chance — backs getting plenty of ball.`,
+        `${team.nick} backing themselves to score from anywhere — expansive stuff.`,
+        `${team.nick} moving it quickly off the ruck — no intention of slowing this down.`,
+      ])});
+    }
+
+    // Game intent — protect (score-contextual)
+    if(prefs.gameIntent === 'protect' && rnd() < 0.7){
+      const leadNote = isTeamLeading ? pick([`Leading by ${marginDesc}, `,`Ahead by ${marginDesc}, `,`With the lead to protect, `]) : '';
+      all.push({min: ri(lo+5, hi), txt: pick([
+        `${leadNote}${team.nick} kicking on last tackle — slowing the game down.`,
+        `${leadNote}${team.nick} working the kick game, finding touch and earning field position.`,
+        `${team.nick} taking the safe option — the forwards driving deep into the tackle.`,
+        `${team.nick} happy to kick it dead and reset the line — no risks.`,
+        `${leadNote}${team.nick} slowing the ruck and kicking to the corners — game management on display.`,
+      ])});
+    }
+
+    // Aggressive defence — rush-defence language, named forward
+    if(prefs.defStyle === 'aggressive' && topForward){
+      all.push({min: ri(lo+3, hi-3), txt: pick([
+        `${topForward.name} (${team.nick}) leads the rush and gets up in the halfback's face — no time to set.`,
+        `${topForward.name} (${team.nick}) flies out of the defensive line and smothers the play.`,
+        `${topForward.name} (${team.nick}) is dominating the line-speed — ${oppTeam.nick} can't get set before the pressure arrives.`,
+        `${topForward.name} (${team.nick}) comes off the line hard and puts in a crunching shot — ${team.nick} flying up in defence.`,
+        `${team.nick} are blitzing the line on every tackle — ${topForward.name} leading the charge.`,
+      ])});
+    }
+
+    // Pressure target — named player, varied approaches
+    if(targeted && oppPrefs.targetPlayerId === targeted.id && rnd() < 0.75){
+      all.push({min: ri(lo+5, hi), txt: pick([
+        `${targeted.name} (${team.nick}) gets the ball and two ${oppTeam.nick} defenders are on him immediately — he is clearly being targeted.`,
+        `${targeted.name} (${team.nick}) finding no room — ${oppTeam.nick} have the rush defence set specifically for him.`,
+        `Every time ${targeted.name} gets the ball, ${oppTeam.nick} have extra defenders there — the staff plan is obvious.`,
+        `${targeted.name} (${team.nick}) is being funnelled into the sideline on every carry — no space being offered.`,
+        `${targeted.name} (${team.nick}) draws the rush defence again — ${oppTeam.nick} are committed to shutting him down.`,
+      ])});
+    }
   }
 
   all.sort((a,b)=>a.min-b.min);
@@ -373,8 +510,8 @@ export function simMatch(m, isFinal){
   const aConservative = isCoachA && conservative;
   const det = {h:{}, a:{}, events:[], suspensions:[], venue, weather, crowd, ticketPrice, weatherTryMod, weatherKickMod, htScore, slot,
     weatherEffects: weatherMatchEffects(weather)};
-  const goalsH = simTeamStats(th, triesH, det.h, ph.kick * hKickMod, {weather, conservative:hConservative, kickMod:hKickMod});
-  const goalsA = simTeamStats(ta, triesA, det.a, pa.kick * aKickMod, {weather, conservative:aConservative, kickMod:aKickMod});
+  const goalsH = simTeamStats(th, triesH, det.h, ph.kick * hKickMod, {weather, conservative:hConservative, kickMod:hKickMod}, {oppDefStyle:ta.matchPrefs&&ta.matchPrefs.defStyle, targetPlayerId:ta.matchPrefs&&ta.matchPrefs.targetPlayerId});
+  const goalsA = simTeamStats(ta, triesA, det.a, pa.kick * aKickMod, {weather, conservative:aConservative, kickMod:aKickMod}, {oppDefStyle:th.matchPrefs&&th.matchPrefs.defStyle, targetPlayerId:th.matchPrefs&&th.matchPrefs.targetPlayerId});
   // Infringements (after stats so they don't affect scoring math)
   genInfringements(th, det, det.h);
   genInfringements(ta, det, det.a);
@@ -434,6 +571,12 @@ export function simTeamStats(t, tries, out, kickSkill, weatherCtx, opts){
   const isEarlySecond = opts && opts.isEarlySecond; // 40–60 min segment
   const isFinalChunk = opts && opts.isFinalChunk;   // 60–80 min segment
   const skipStats = opts && opts.skipStats;
+  // Tactical prefs that affect player-level stats
+  const offloadRisk = t.matchPrefs && t.matchPrefs.offloadRisk || 'normal';
+  const ownDefStyle = t.matchPrefs && t.matchPrefs.defStyle || 'structured';
+  const oppDefStyle = opts && opts.oppDefStyle || 'structured';
+  // Target player pressure: opponent's coached team singled out this player for pressure
+  const targetPlayerId = opts && opts.targetPlayerId || null;
   // First-half only uses starters; second-half and full-match use all 17
   const sliceEnd = (isHalf && !isSecondHalf) ? 13 : 17;
   const players = t.lineup.slice(0, sliceEnd).map((id,i)=>({p:G.players[id], slot:i})).filter(x=>x.p);
@@ -528,19 +671,45 @@ export function simTeamStats(t, tries, out, kickSkill, weatherCtx, opts){
     const mBase = {fwd:130, hk:80, half:70, back:140}[grp];
     line.m = Math.max(0, Math.round(mBase * mins/80 * (x.p.attrs.strength+x.p.attrs.speed+x.p.attrs.ballRunning)/195 * rf(.65,1.4) * focusRunMod));
     const formAdj = ((x.p.form == null ? 50 : x.p.form) - 50) / 100;
-    const errChance = (1 - (x.p.attrs.ballSecurity*.55+x.p.attrs.catching*.25+x.p.attrs.composure*.20)/130) * clamp(1 - formAdj*.55, .72, 1.28) * handlingMod * focusErrMod;
+    // Pressure target: the opposition's coaching staff is focusing defensive pressure on this player
+    const isTargeted = targetPlayerId && x.p.id === targetPlayerId;
+    const pressureRunMod  = isTargeted ? 0.80 : 1;
+    const pressureErrMod  = isTargeted ? 1.20 : 1;
+    line.runs = Math.max(0, Math.round(line.runs * pressureRunMod));
+    line.m    = Math.max(0, Math.round(line.m    * (isTargeted ? 0.75 : 1)));
+    const errChance = (1 - (x.p.attrs.ballSecurity*.55+x.p.attrs.catching*.25+x.p.attrs.composure*.20)/130) * clamp(1 - formAdj*.55, .72, 1.28) * handlingMod * focusErrMod * chemErrMod * offErrMod * pressureErrMod;
     line.err = rnd() < errChance ? ri(1, weatherEffects.handling >= 1.45 && rnd() < .22 ? 3 : 2) : 0;
     const mtRate = clamp((90 - (x.p.attrs.tackling*0.55 + x.p.attrs.markerDef*0.35 + x.p.attrs.workRate*0.10)) / 120, 0.04, 0.35);
-    line.mt = Math.max(0, Math.round(line.tk * mtRate * rf(0.5, 1.5)));
+    line.mt = Math.max(0, Math.round(line.tk * mtRate * rf(0.5, 1.5) * ownDefMtMod));
     const footwork = x.p.attrs.stepSkill != null ? x.p.attrs.stepSkill : (x.p.attrs.agility*.65 + x.p.attrs.ballRunning*.35);
     const lbSkill = (x.p.attrs.speed*0.35 + x.p.attrs.acceleration*0.30 + footwork*0.35);
     const lbRate = clamp((lbSkill - 48) / 500, 0.003, 0.10);
-    line.lb = Math.max(0, Math.round(line.runs * lbRate * rf(0.4, 1.8) * focusLbMod));
+    line.lb = Math.max(0, Math.round(line.runs * lbRate * rf(0.4, 1.8) * focusLbMod * chemLbMod * offLbMod * oppDefLbMod));
     if(['FE','HB','HK','FB'].includes(x.p.pos)){
       const lbaBase = {HB:2.2, FE:1.8, HK:1.5, FB:0.8}[x.p.pos] || 0.8;
       const lbaSkill = (x.p.attrs.vision + x.p.attrs.shortPass + x.p.attrs.playmaking) / 195;
       line.lba = Math.max(0, Math.round(lbaBase * lbaSkill * rf(0.3, 1.8)));
     }
+    // Combination chemistry: high rating reduces errors and improves line breaks
+    // Chemistry is group-based; neutral is ~50, max 95, min 25
+    const combs = t.combinations || {};
+    const chemRating = (
+      (x.slot===5||x.slot===6) ? (combs.halves&&combs.halves.rating) :
+      x.slot===8 ? (combs.hookerHalves&&combs.hookerHalves.rating) :
+      x.slot===0 ? (combs.spine&&combs.spine.rating) :
+      (x.slot===3||x.slot===4||x.slot===11) ? (combs.leftEdge&&combs.leftEdge.rating) :
+      (x.slot===1||x.slot===2||x.slot===10) ? (combs.rightEdge&&combs.rightEdge.rating) :
+      (x.slot===7||x.slot===9||x.slot>=12) ? (combs.middle&&combs.middle.rating) : null
+    );
+    const chemErrMod = chemRating != null ? clamp(1 - (chemRating - 50)/700, 0.90, 1.15) : 1;
+    const chemLbMod  = chemRating != null ? clamp(1 + (chemRating - 50)/600, 0.88, 1.12) : 1;
+    // Offload risk: high = more ambitious offloads → more LBs and errors; low = conservative → fewer of both
+    const offLbMod  = offloadRisk === 'high' ? 1.12 : offloadRisk === 'low' ? 0.88 : 1;
+    const offErrMod = offloadRisk === 'high' ? 1.09 : offloadRisk === 'low' ? 0.93 : 1;
+    // Opponent's aggressive defence creates committed tacklers who can be beaten for line breaks
+    const oppDefLbMod = oppDefStyle === 'aggressive' ? 1.08 : 1;
+    // Own aggressive defence: over-committed, higher missed tackle risk
+    const ownDefMtMod = ownDefStyle === 'aggressive' ? 1.18 : 1;
     const isPrimaryKicker = kicker && kicker.id === x.p.id;
     const ksBase = {half: isPrimaryKicker ? 22 : 14, hk: 4, back: 2, fwd: 1}[grp] || 1;
     line.ks = Math.max(0, Math.round(ksBase * rf(0.6, 1.4) * focusKickMod));
@@ -903,9 +1072,60 @@ export function applyTribunalBans(det){
   }
 }
 
+/* ---------- continuous watch-game event stream ---------- */
+// Runs the full simulation once, returns a typed, sorted event list for the watch view.
+// Events carry { min, evType, stoppage, txt }.
+// stoppage:true events are where queued substitutions are applied.
+// Half-time is deliberately NOT a stoppage — no subs at the break.
+export function buildMatchEventStream(m, isFinal){
+  // Clear stale split-phase flags from old saves so simMatch can run cleanly
+  if(m._htPending || m._60Pending){ delete m._htPending; delete m._60Pending; delete m._matchSetup; delete m._h1; delete m._h2; delete m._htPowerMod; }
+  if(!m.played) simMatch(m, isFinal);
+  const th = G.teams[m.h], ta = G.teams[m.a];
+  const det = m.det;
+
+  // Narrative + try/pen/injury/40-20/dropout events across full 80 min
+  const raw = _buildHalfFeedEvents(det.h, det.a, th, ta, m.hs, m.as, {lo:2, hi:78});
+
+  // Tag each event with a semantic type and stoppage flag
+  const tag = ev => {
+    const t = ev.txt || '';
+    if(t.startsWith('TRY'))                                        return {...ev, evType:'try',      stoppage:true};
+    if(t.includes('slots a penalty goal')||t.includes('misses the penalty')) return {...ev, evType:'penalty',  stoppage:true};
+    if(t.startsWith('Injury'))                                     return {...ev, evType:'injury',   stoppage:true};
+    if(t.includes('40/20'))                                        return {...ev, evType:'4020',     stoppage:true};
+    if(t.includes('forces a drop-out'))                            return {...ev, evType:'dropout',  stoppage:true};
+    if(t.includes('knock-on')||t.includes('drops it cold')||t.includes('coughs it up')||t.includes('spills')||t.includes("can't hold"))
+                                                                   return {...ev, evType:'error',    stoppage:true};
+    return {...ev, evType:'narrative', stoppage:false};
+  };
+  const events = raw.map(tag);
+
+  // Kick-off
+  events.push({min:0, evType:'kickoff', stoppage:false,
+    txt:`Kick off at ${det.venue||'the stadium'}. ${det.weather||'Clear'} conditions, crowd of ${(det.crowd||0).toLocaleString()}.`});
+
+  // Half-time — NOT a stoppage (no subs at the break)
+  const ht = det.htScore||{h:0,a:0};
+  events.push({min:40, evType:'halftime', stoppage:false,
+    txt:`⏸ HALF TIME — ${th.nick} ${ht.h}–${ht.a} ${ta.nick}`});
+
+  // Field goals from det.events
+  for(const ev of (det.events||[])){
+    if(ev.pts===1) events.push({...ev, evType:'fieldgoal', stoppage:true});
+  }
+
+  // Full-time marker
+  events.push({min:80, evType:'fulltime', stoppage:false,
+    txt:`FULL TIME — ${th.nick} ${m.hs}–${m.as} ${ta.nick}`});
+
+  events.sort((a,b)=>a.min-b.min);
+  return events;
+}
+
 if (typeof window !== 'undefined') Object.assign(window, {
-  simMatchFirstHalf, simMatchSecondHalf, simMatchFinalChunk, simMatch, lineupPower, positionRoleFit,
-  zoneTacticsMod, simTeamStats, mergeStatDicts, applyMatchStats, awardFieldGoal,
-  rolePlayer, postMatch, updatePlayerForm, genInfringements, applyTribunalBans,
+  simMatchFirstHalf, simMatchSecondHalf, simMatchFinalChunk, simMatch, buildMatchEventStream,
+  lineupPower, positionRoleFit, zoneTacticsMod, simTeamStats, mergeStatDicts, applyMatchStats,
+  awardFieldGoal, rolePlayer, postMatch, updatePlayerForm, genInfringements, applyTribunalBans,
   weatherMatchEffects, evMaxForDet,
 });

@@ -43,7 +43,23 @@ Object.assign(UI, {
         return;
       }
     }
-    const res = G.phase === 'regular' && typeof advanceCalendarDay === 'function' ? advanceCalendarDay() : advanceRound();
+    // On match day: route to the matchday page rather than auto-simming the coached team's game.
+    // From matchday, the user chooses Watch or Sim via the page buttons.
+    if(stop && stop.key === 'match' && !onBye && G.phase === 'regular'){
+      if(UI.page !== 'matchday'){ UI.go('matchday'); return; }
+      // Already on matchday — delegate to playMatchDay so watch/sim mode is respected
+      UI.playMatchDay(UI._matchMode === 'watch');
+      return;
+    }
+    let res;
+    try {
+      res = G.phase === 'regular' && typeof advanceCalendarDay === 'function' ? advanceCalendarDay() : advanceRound();
+    } catch(err) {
+      console.error('advance error:', err);
+      UI.toast('Error advancing day — check console. (' + (err && err.message || err) + ')');
+      UI.render();
+      return;
+    }
     autoSave();
     if(res && (res.type === 'day' || res.type === 'round') && res.stop && res.stop.page && UI.page !== res.stop.page){
       UI.page = res.stop.page;

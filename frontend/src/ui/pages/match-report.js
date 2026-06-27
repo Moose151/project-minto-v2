@@ -27,12 +27,12 @@ Object.assign(UI, {
 
     // Aggregate team stats from detail objects
     const sumDet = det => {
-      const s = {t:0,gl:0,ga:0,fg:0,tk:0,mt:0,runs:0,m:0,err:0,inf:0,k4020:0,fdo:0,ks:0,km:0};
+      const s = {t:0,gl:0,ga:0,fg:0,tk:0,mt:0,runs:0,m:0,lb:0,err:0,inf:0,k4020:0,fdo:0,ks:0,km:0};
       for(const [,l] of Object.entries(det)){
         if(!l || typeof l !== 'object' || Array.isArray(l)) continue;
         s.t   += l.t||0; s.gl += l.gl||0; s.ga  += l.ga||0;  s.fg  += l.fg||0;
         s.tk  += l.tk||0;s.mt += l.mt||0; s.runs+= l.runs||0; s.m  += l.m||0;
-        s.err += l.err||0; s.inf+=l.inf||0; s.k4020+=l.k4020||0; s.fdo+=l.fdo||0;
+        s.lb  += l.lb||0; s.err += l.err||0; s.inf+=l.inf||0; s.k4020+=l.k4020||0; s.fdo+=l.fdo||0;
         s.ks  += l.ks||0; s.km += l.km||0;
       }
       return s;
@@ -117,6 +117,7 @@ Object.assign(UI, {
             <th class="noclick num" style="padding:2px 3px">TA</th>
             <th class="noclick num" style="padding:2px 3px">G</th>
             <th class="noclick num" style="padding:2px 3px">Runs</th>
+            <th class="noclick num" style="padding:2px 3px">LB</th>
             <th class="noclick num" style="padding:2px 3px">Tk</th>
             <th class="noclick num" style="padding:2px 3px">MT</th>
             <th class="noclick num" style="padding:2px 3px">Err</th>
@@ -130,6 +131,7 @@ Object.assign(UI, {
               <td class="num" style="padding:2px 3px;color:var(--muted)">${l.ta||'—'}</td>
               <td class="num" style="padding:2px 3px">${l.gl!=null&&l.ga!=null?l.gl+'/'+l.ga:'—'}</td>
               <td class="num" style="padding:2px 3px">${l.runs||'—'}</td>
+              <td class="num" style="padding:2px 3px;color:${(l.lb||0)>0?'var(--green)':'inherit'}">${l.lb||'—'}</td>
               <td class="num" style="padding:2px 3px">${l.tk||'—'}</td>
               <td class="num" style="padding:2px 3px;color:${(l.mt||0)>2?'var(--red)':'inherit'}">${l.mt||'—'}</td>
               <td class="num" style="padding:2px 3px;color:${(l.err||0)?'var(--accent)':'inherit'}">${l.err||'—'}</td>
@@ -192,6 +194,7 @@ Object.assign(UI, {
           ${statCmp('Tackles', mySt.tk, oppSt.tk)}
           ${statCmp('Missed tackles', mySt.mt, oppSt.mt, undefined, undefined, true)}
           ${statCmp('Run metres', mySt.m, oppSt.m)}
+          ${mySt.lb||oppSt.lb ? statCmp('Line breaks', mySt.lb, oppSt.lb) : ''}
           ${statCmp('Errors', mySt.err, oppSt.err, undefined, undefined, true)}
           ${statCmp('Infringements', mySt.inf, oppSt.inf, undefined, undefined, true)}
           ${mySt.k4020||oppSt.k4020 ? statCmp('40/20s', mySt.k4020, oppSt.k4020) : ''}
