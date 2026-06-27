@@ -45,6 +45,13 @@ _Updated every session._
   inbox key type mismatch: `createdAt` numbers were compared against the string
   key stored by the click handler, so items marked read but never opened. Inbox
   keys are now normalised to strings, and expanded reports preserve line breaks.
+- **Report style decision:** match and pre-match reports should read like real
+  staff/media reports, not expose game ratings. Latest change removes visible
+  player OVR/channel score language from the Wednesday opponent report, changes
+  Tactics report confidence from a percentage to a qualitative staff read, makes
+  post-match analysis describe performances in prose, and removes the `Rtg`
+  column from the full match report player table. Internal ratings can still
+  drive sorting/recommendations; do not print them in report copy.
 - **User clarified desired simulation depth:** add a strong manager-impact loop:
   Wednesday staff/scout pre-match analysis with accuracy based on staff ratings;
   actionable opponent tendencies and vulnerabilities; and pre-match/in-match

@@ -234,6 +234,32 @@ function noisyRating(v, confidence){
   const spread = clamp((95 - confidence) / 5, 1, 12);
   return clamp(Math.round(v + gauss(0, spread)), 20, 99);
 }
+function reportConfidenceText(confidence){
+  if(confidence >= 80) return 'The staff read is strong';
+  if(confidence >= 62) return 'The staff read is reasonably clear';
+  if(confidence >= 45) return 'The staff read is cautious';
+  return 'The staff read is tentative';
+}
+function channelGradeText(v, high){
+  if(high){
+    if(v >= 78) return 'their clearest route to points';
+    if(v >= 66) return 'a regular source of momentum';
+    if(v >= 54) return 'part of their shape, but not dominant';
+    return 'unlikely to be their first option';
+  }
+  if(v <= 42) return 'an area to attack early';
+  if(v <= 54) return 'a channel worth testing';
+  if(v <= 66) return 'fairly solid, but can be moved around';
+  return 'one of their better-defended areas';
+}
+function playerReportTag(p){
+  if(!p) return 'unknown';
+  if(p.repTeam) return 'representative class';
+  if(p.age <= 23 && p.pot >= 82) return 'high-upside';
+  if(p.age >= 30) return 'senior';
+  if((p.s && (p.s.t || p.s.ta || p.s.m > 900)) || p.form >= 65) return 'in-form';
+  return 'first-grade';
+}
 function channelEntries(entries, channel){
   const slots = {
     middle:[7,8,9,12],
@@ -247,7 +273,7 @@ function topBy(entries, fn){
   return entries.slice().sort((a,b)=>fn(b)-fn(a))[0] || null;
 }
 function describePlayer(p){
-  return p ? `${p.name} (${p.pos}, OVR ${p.ovr})` : 'unknown';
+  return p ? `${p.name} (${p.pos}, ${playerReportTag(p)})` : 'unknown';
 }
 function buildOpponentAnalysis(myT, opp, match, ctx){
   const staff = staffReportConfidence();
@@ -281,10 +307,10 @@ function buildOpponentAnalysis(myT, opp, match, ctx){
   const weak = weakChannels[0];
   const primary = attackChannels[0];
   const lineupLine = entries.slice(0,13).map(x=>`${SLOTS[x.slot].n}. ${x.p.name}`).join(', ');
-  const staffLine = `Staff confidence: ${confidence}% (${staff.attack ? staff.attack.name : 'No attack coach'}, ${staff.defence ? staff.defence.name : 'No defence coach'}, scout ${staff.scout ? staff.scout.name : 'unassigned'}).`;
-  const attackLine = `How they score: ${primary.label} grades highest (${primary.rating}/99). Secondary threats: ${attackChannels.slice(1,3).map(x=>`${x.label} ${x.rating}`).join(', ')}.`;
+  const staffLine = `${reportConfidenceText(confidence)}. Notes compiled by ${staff.attack ? staff.attack.name : 'the attack staff'}, ${staff.defence ? staff.defence.name : 'the defensive staff'} and ${staff.scout ? staff.scout.name : 'the scouting desk'}.`;
+  const attackLine = `How they score: ${primary.label} looks like ${channelGradeText(primary.rating, true)}. Secondary threats are ${attackChannels.slice(1,3).map(x=>`${x.label} (${channelGradeText(x.rating, true)})`).join(' and ')}.`;
   const threatLine = `Key threats: ${describePlayer(playmaker && playmaker.p)} organising shape; ${describePlayer(strike && strike.p)} as strike runner; ${describePlayer(yardage && yardage.p)} for yardage/ruck speed.`;
-  const vulnLine = `Vulnerability: ${weak.label} looks the softest area (${weak.rating}/99). Middle ${middleDef}, left edge ${leftDef}, right edge ${rightDef}.`;
+  const vulnLine = `Vulnerability: ${weak.label} looks like ${channelGradeText(weak.rating, false)}. Staff notes: middle is ${channelGradeText(middleDef, false)}, their left edge is ${channelGradeText(leftDef, false)}, and their right edge is ${channelGradeText(rightDef, false)}.`;
   const recommendation = weak.key === 'middle'
     ? 'Recommendation: start with a middle-dominance plan, use your best carriers, and chase fast play-the-balls before shifting wide.'
     : weak.key === 'left'

@@ -18,6 +18,7 @@ Object.assign(UI, {
       ['right','Attack right','Shift more ball to your right edge; higher edge-error risk.'],
       ['territory','Territory','More kicking, safer possession and field-position pressure.'],
     ];
+    const readLabel = c => c >= 80 ? 'Strong staff read' : c >= 62 ? 'Clear staff read' : c >= 45 ? 'Cautious staff read' : 'Tentative staff read';
     const opt = (role, scoreRole) => active.slice().sort((a,b)=>roleScore(b,scoreRole)-roleScore(a,scoreRole)).map(p=>
       `<option value="${p.id}" ${t.roles[role]===p.id?'selected':''}>${esc(p.name)} (${p.pos}) · ${Math.round(roleScore(p,scoreRole))}</option>`
     ).join('');
@@ -48,7 +49,7 @@ Object.assign(UI, {
       </div>
       <div class="card"><h2 class="sec" style="margin-top:0">Latest opponent report</h2>
         ${latestIntel ? `
-          <p style="font-size:12px;color:var(--muted);margin:0 0 8px">Confidence ${latestIntel.confidence}% · Round ${latestIntel.round}</p>
+          <p style="font-size:12px;color:var(--muted);margin:0 0 8px">${readLabel(latestIntel.confidence || 50)} · Round ${latestIntel.round}</p>
           <p style="font-size:12px;line-height:1.5;margin:0 0 8px">${esc(latestIntel.recommendation || 'No recommendation recorded.')}</p>
           <div class="btnrow" style="margin:0">
             ${(latestIntel.weakChannels && latestIntel.weakChannels[0] && latestIntel.weakChannels[0].key === 'middle') ? `<button class="btn sm primary" onclick="myTeam().matchPrefs.attackFocus='middle';UI.toast('Match focus set to dominate middle.');UI.render()">Apply middle focus</button>` : ''}

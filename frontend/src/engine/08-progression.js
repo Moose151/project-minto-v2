@@ -830,9 +830,17 @@ export function generateWeeklyMedia(round, myM){
   const drew = pf === pa;
   const mineDet = mineHome ? myM.det.h : myM.det.a;
   const top = Object.entries(mineDet).map(([id,l])=>({p:G.players[id], l})).filter(x=>x.p).sort((a,b)=>b.l.r-a.l.r)[0];
+  const performanceNote = line => {
+    if(!line || !line.r) return 'put in an honest shift';
+    if(line.r >= 8.2) return 'was outstanding';
+    if(line.r >= 7.2) return 'was one of the best on the park';
+    if(line.r >= 6.4) return 'made a steady contribution';
+    if(line.r < 5.0) return 'had a difficult afternoon';
+    return 'worked hard without taking control';
+  };
   const resultWord = drew ? 'draw with' : won ? 'beat' : 'fall to';
   const margin = Math.abs(pf-pa);
-  const topLine = top ? ` ${top.p.name} led the side with a ${top.l.r.toFixed(1)} rating${top.l.t ? ` and ${top.l.t} ${top.l.t===1?'try':'tries'}` : ''}.` : '';
+  const topLine = top ? ` ${top.p.name} ${performanceNote(top.l)}${top.l.t ? ` and crossed ${top.l.t===1?'for a try':`for ${top.l.t} tries`}` : ''}.` : '';
   addNews(`${mt.nick} ${resultWord} ${opp.nick} ${pf}-${pa}${drew ? '' : ` by ${margin}`}.${topLine}`, {
     title: drew ? 'Points Shared' : won ? 'Result: Win Banked' : 'Result: Work To Do',
     type: 'match',
@@ -863,11 +871,11 @@ export function generateWeeklyMedia(round, myM){
     const myTk  = Object.values(mineDet).reduce((s,l)=>s+(l.tk||0), 0);
     const myErr = Object.values(mineDet).reduce((s,l)=>s+(l.err||0), 0);
     const myRuns= Object.values(mineDet).reduce((s,l)=>s+(l.runs||0), 0);
-    const perfLines = topMine.map(x=>`${x.p.name} (${x.l.r.toFixed(1)}${x.l.t?', '+x.l.t+'T':''})`).join('; ');
-    const oppStar = topOpp[0] ? ` Opponent standout: ${topOpp[0].p.name} (${topOpp[0].l.r.toFixed(1)}).` : '';
-    const statsLine = `Tackles ${myTk} · Errors ${myErr} · Runs ${myRuns}.`;
+    const perfLines = topMine.map(x=>`${x.p.name} ${performanceNote(x.l)}${x.l.t ? `, crossing ${x.l.t===1?'once':`${x.l.t} times`}` : ''}`).join('; ');
+    const oppStar = topOpp[0] ? ` ${topOpp[0].p.name} was the opposition player who caused the most problems.` : '';
+    const statsLine = `${myTk > 330 ? 'The defensive workload was heavy' : 'The defensive workload was manageable'}, ${myErr > 10 ? 'but the error count kept pressure on the side' : 'and the side generally protected the ball well'}. ${myRuns > 170 ? 'The forwards gave the team enough carries to play from.' : 'The team struggled to build enough carries through the middle.'}`;
     addNews(
-      `${won?'Victory':'Defeat'} — ${pf}-${pa}${drew?' (draw)':''}. Standouts: ${perfLines||'-'}.${oppStar} ${statsLine}`,
+      `${won?'Victory':'Defeat'} — ${pf}-${pa}${drew?' (draw)':''}. Standouts: ${perfLines||'no clear standout'}.${oppStar} ${statsLine}`,
       {
         title: 'Post-Match Analysis',
         type: 'analysis',

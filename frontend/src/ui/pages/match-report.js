@@ -121,7 +121,6 @@ Object.assign(UI, {
             <th class="noclick num" style="padding:2px 3px">MT</th>
             <th class="noclick num" style="padding:2px 3px">Err</th>
             <th class="noclick num" style="padding:2px 3px">Inf</th>
-            <th class="noclick num" style="padding:2px 3px">Rtg</th>
           </tr></thead>
           <tbody>${rows.map(({p,l})=>`
             <tr style="border-bottom:1px solid var(--line);cursor:pointer" onclick="UI.playerModal(${p.id})">
@@ -135,7 +134,6 @@ Object.assign(UI, {
               <td class="num" style="padding:2px 3px;color:${(l.mt||0)>2?'var(--red)':'inherit'}">${l.mt||'—'}</td>
               <td class="num" style="padding:2px 3px;color:${(l.err||0)?'var(--accent)':'inherit'}">${l.err||'—'}</td>
               <td class="num" style="padding:2px 3px;color:${(l.inf||0)?'var(--red)':'inherit'}">${l.inf||'—'}</td>
-              <td class="num" style="padding:2px 3px;font-weight:700;color:${(l.r||0)>=8?'var(--green)':(l.r||0)<5?'var(--red)':'inherit'}">${l.r ? l.r.toFixed(1) : '—'}</td>
             </tr>`).join('')}
           </tbody>
         </table>
