@@ -112,6 +112,10 @@ Target: **full FM-level tactical depth**.
   counters determine whether the plan works.
 - First slice implemented: Wednesday report stores `G.matchIntel`, appears in
   inbox, links to Tactics, and quick-applies attacking focus.
+- Report copy should use real analyst context instead of game ratings: league
+  ranks for middle metres, edge scoring, defensive vulnerability, player leader
+  notes such as tackle-bust leaders, and clear caveats when a claim is staff
+  modelled rather than directly tracked.
 - Team-page diagnostics view: show attacking and defensive output/weakness by
   middle, left edge, right edge, back three/backfield (wingers + fullback), and
   spine (fullback + halves + hooker). Include metres, tries, line breaks,

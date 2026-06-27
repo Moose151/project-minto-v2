@@ -52,6 +52,13 @@ _Updated every session._
   post-match analysis describe performances in prose, and removes the `Rtg`
   column from the full match report player table. Internal ratings can still
   drive sorting/recommendations; do not print them in report copy.
+- **Latest report-depth addition:** Wednesday reports now add league-context
+  analyst notes such as where the opponent ranks for middle metres, edge tries,
+  staff-modelled tries-conceded risk on the weak channel, and whether an
+  opposition player is top five for tackle busts by the staff count. Current
+  channel attack rankings use existing player season stats by lineup slot;
+  defensive conceded-by-channel is still modelled from the lineup until the
+  deeper set-by-set/channel telemetry lands.
 - **User clarified desired simulation depth:** add a strong manager-impact loop:
   Wednesday staff/scout pre-match analysis with accuracy based on staff ratings;
   actionable opponent tendencies and vulnerabilities; and pre-match/in-match

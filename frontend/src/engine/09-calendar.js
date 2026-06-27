@@ -275,6 +275,71 @@ function topBy(entries, fn){
 function describePlayer(p){
   return p ? `${p.name} (${p.pos}, ${playerReportTag(p)})` : 'unknown';
 }
+function rankOrdinal(rank){
+  return typeof ord === 'function' ? ord(rank) : `${rank}${rank===1?'st':rank===2?'nd':rank===3?'rd':'th'}`;
+}
+function rankTeamsBy(fn, desc){
+  return G.teams.map(t=>({team:t, value:fn(t)})).sort((a,b)=>desc ? b.value-a.value : a.value-b.value);
+}
+function teamRankLine(team, rows, label, opts){
+  opts = opts || {};
+  const idx = rows.findIndex(r=>r.team.id === team.id);
+  if(idx < 0) return '';
+  const rank = idx + 1;
+  const n = rows.length;
+  const isHook = opts.always || rank <= 5 || rank > n - 5;
+  if(!isHook) return '';
+  const band = rank <= 5 ? `rank ${rankOrdinal(rank)} in the league` : `sit in the bottom five`;
+  return `${team.nick} ${band} ${label}.`;
+}
+function vulnerabilityRankPhrase(team, rows, channelLabel){
+  const idx = rows.findIndex(r=>r.team.id === team.id);
+  if(idx < 0) return '';
+  const rank = idx + 1;
+  const n = rows.length;
+  if(rank <= 5) return `among the five most vulnerable sides for ${channelLabel}`;
+  if(rank > n - 5) return `among the stronger sides for ${channelLabel}`;
+  return `around mid-table for ${channelLabel}`;
+}
+function currentLineupEntries(t){
+  if(!validateLineup(t)) autoPick(t);
+  return t.lineup.slice(0,17).map((id,i)=>({p:G.players[id], slot:i})).filter(x=>x.p);
+}
+function channelSeasonStat(t, channel, stat){
+  return channelEntries(currentLineupEntries(t), channel).reduce((s,x)=>s+((x.p.s && x.p.s[stat]) || 0), 0);
+}
+function channelDefenceModel(t, channel){
+  const keys = channel === 'middle'
+    ? ['tackling','markerDef','strength','workRate']
+    : ['tackling','defRead','markerDef','workRate'];
+  return groupScore(channelEntries(currentLineupEntries(t), channel), keys);
+}
+function estimatedTackleBusts(p){
+  const s = p.s || {};
+  const carryProfile = ((p.attrs.ballRunning||50) + (p.attrs.strength||50) + (p.attrs.acceleration||50)) / 3;
+  return Math.round((s.lb || 0) * 4 + (s.runs || 0) * clamp((carryProfile - 48) / 85, 0.05, 0.46));
+}
+function leagueContextNotes(opp, entries, weak){
+  const notes = [];
+  const middleMetres = rankTeamsBy(t=>channelSeasonStat(t, 'middle', 'm'), true);
+  const leftTries = rankTeamsBy(t=>channelSeasonStat(t, 'left', 't'), true);
+  const rightTries = rankTeamsBy(t=>channelSeasonStat(t, 'right', 't'), true);
+  const weakDefRisk = rankTeamsBy(t=>channelDefenceModel(t, weak.key), false);
+  const middleLine = teamRankLine(opp, middleMetres, 'for metres through the middle');
+  const edgeLine = weak.key === 'middle'
+    ? ''
+    : teamRankLine(opp, weak.key === 'right' ? rightTries : leftTries, `for tries down ${weak.key === 'right' ? 'their right edge' : 'their left edge'}`);
+  const riskLine = vulnerabilityRankPhrase(opp, weakDefRisk, weak.key === 'middle' ? 'middle-third defensive risk' : `${weak.key}-edge tries-conceded risk`);
+  if(middleLine) notes.push(middleLine);
+  if(edgeLine) notes.push(edgeLine);
+  if(riskLine) notes.push(`Staff model has them ${riskLine}.`);
+  const playerRows = Object.values(G.players).filter(p=>p && p.s && p.s.g).map(p=>({p, tb:estimatedTackleBusts(p)})).sort((a,b)=>b.tb-a.tb);
+  const topBust = entries.map(x=>x.p).map(p=>({p, pos:playerRows.findIndex(r=>r.p.id===p.id), tb:estimatedTackleBusts(p)}))
+    .filter(x=>x.pos >= 0 && x.pos < 5 && x.tb > 0).sort((a,b)=>a.pos-b.pos)[0];
+  if(topBust) notes.push(`${topBust.p.name} is top five in the league for tackle busts by the staff count.`);
+  if(!notes.length) notes.push('There is not enough season data for firm league-ranking claims yet; staff are leaning more heavily on traits and recent selection.');
+  return `League context: ${notes.join(' ')}`;
+}
 function buildOpponentAnalysis(myT, opp, match, ctx){
   const staff = staffReportConfidence();
   const confidence = staff.confidence;
@@ -311,6 +376,7 @@ function buildOpponentAnalysis(myT, opp, match, ctx){
   const attackLine = `How they score: ${primary.label} looks like ${channelGradeText(primary.rating, true)}. Secondary threats are ${attackChannels.slice(1,3).map(x=>`${x.label} (${channelGradeText(x.rating, true)})`).join(' and ')}.`;
   const threatLine = `Key threats: ${describePlayer(playmaker && playmaker.p)} organising shape; ${describePlayer(strike && strike.p)} as strike runner; ${describePlayer(yardage && yardage.p)} for yardage/ruck speed.`;
   const vulnLine = `Vulnerability: ${weak.label} looks like ${channelGradeText(weak.rating, false)}. Staff notes: middle is ${channelGradeText(middleDef, false)}, their left edge is ${channelGradeText(leftDef, false)}, and their right edge is ${channelGradeText(rightDef, false)}.`;
+  const contextLine = leagueContextNotes(opp, entries, weak);
   const recommendation = weak.key === 'middle'
     ? 'Recommendation: start with a middle-dominance plan, use your best carriers, and chase fast play-the-balls before shifting wide.'
     : weak.key === 'left'
@@ -330,7 +396,7 @@ function buildOpponentAnalysis(myT, opp, match, ctx){
     weakChannels,
     keyThreats: [playmaker && playmaker.p && playmaker.p.id, strike && strike.p && strike.p.id, yardage && yardage.p && yardage.p.id].filter(Boolean),
     recommendation,
-    body: `${staffLine}\nExpected XIII: ${lineupLine}\n${attackLine}\n${threatLine}\n${vulnLine}\n${injuryLine}\n${recommendation}\n${targetLine}`
+    body: `${staffLine}\nExpected XIII: ${lineupLine}\n${attackLine}\n${contextLine}\n${threatLine}\n${vulnLine}\n${injuryLine}\n${recommendation}\n${targetLine}`
   };
 }
 
