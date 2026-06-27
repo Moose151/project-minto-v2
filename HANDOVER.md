@@ -41,6 +41,10 @@ _Updated every session._
   and back three. The match engine now persists `t.combinations` after matches so
   repeated groups build chemistry over time; new groupings project chemistry from
   role fit, position familiarity, decision making, composure, and team cohesion.
+- **Inbox fix:** analysis/news items can now expand correctly. The bug was an
+  inbox key type mismatch: `createdAt` numbers were compared against the string
+  key stored by the click handler, so items marked read but never opened. Inbox
+  keys are now normalised to strings, and expanded reports preserve line breaks.
 - **User clarified desired simulation depth:** add a strong manager-impact loop:
   Wednesday staff/scout pre-match analysis with accuracy based on staff ratings;
   actionable opponent tendencies and vulnerabilities; and pre-match/in-match

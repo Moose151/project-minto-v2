@@ -6,6 +6,17 @@ Object.assign(UI, {
   _inboxFilter: 'all',
   _inboxExpanded: null,
 
+  _inboxKey(n){
+    return String(n.createdAt || (n.y+'_'+n.r+'_'+(n.title||'')));
+  },
+
+  _toggleInboxItem(key){
+    key = String(key);
+    UI._markRead(key);
+    UI._inboxExpanded = UI._inboxExpanded === key ? null : key;
+    UI.render();
+  },
+
   p_inbox(){
     const CATS = [
       ['all',            'All'],
@@ -52,10 +63,12 @@ Object.assign(UI, {
     }).filter(Boolean).join('');
 
     const itemHtml = n => {
-      const key = n.createdAt || (n.y+'_'+n.r+'_'+(n.title||''));
+      const key = UI._inboxKey(n);
+      const jsKey = JSON.stringify(key).replace(/"/g, '&quot;');
       const exp = UI._inboxExpanded === key;
       const isUnread = !n.read;
-      const preview = (n.body || n.txt || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      const rawBody = n.body || n.txt || '';
+      const preview = esc(rawBody);
       const playerLink = n.playerId && G.players[n.playerId]
         ? `<button class="btn sm" style="margin-top:6px" onclick="event.stopPropagation();UI.playerModal(${n.playerId})">View ${esc(G.players[n.playerId].name)}</button>`
         : '';
@@ -76,7 +89,7 @@ Object.assign(UI, {
         milestone:     `<button class="btn sm" onclick="event.stopPropagation();UI.go('squad')">Squad →</button>`,
         league:        `<button class="btn sm" onclick="event.stopPropagation();UI.go('ladder')">Ladder →</button>`,
       }[n.type] || '';
-      return `<div class="inbox-item${exp?' expanded':''}${isUnread?' unread':''}" onclick="UI._markRead(\`${key}\`);UI._inboxExpanded=(UI._inboxExpanded===\`${key}\`?null:\`${key}\`);UI.render()">
+      return `<div class="inbox-item${exp?' expanded':''}${isUnread?' unread':''}" onclick="UI._toggleInboxItem(${jsKey})">
         <div class="inbox-header">
           <span class="inbox-tone" style="color:${toneColor(n.tone)}">${toneIcon(n.tone)}</span>
           <span class="inbox-title" style="${isUnread?'font-weight:700':'color:var(--muted)'}">${esc(n.title||n.tag||'Club News')}</span>
@@ -84,8 +97,8 @@ Object.assign(UI, {
           <span class="inbox-meta" style="margin-left:auto">R${n.r||'?'} · ${n.y||G.year}</span>
         </div>
         ${exp
-          ? `<div class="inbox-body">${preview}<div class="btnrow" style="margin-top:8px">${playerLink}${teamLink}${actionBtn}</div></div>`
-          : `<div class="inbox-preview" style="${isUnread?'color:var(--ink)':''}">${preview.length > 120 ? preview.slice(0,120)+'…' : preview}</div>`}
+          ? `<div class="inbox-body" style="white-space:pre-wrap">${preview}<div class="btnrow" style="margin-top:8px;white-space:normal">${playerLink}${teamLink}${actionBtn}</div></div>`
+          : `<div class="inbox-preview" style="${isUnread?'color:var(--ink)':''}">${rawBody.length > 120 ? esc(rawBody.slice(0,120))+'…' : preview}</div>`}
       </div>`;
     };
 
@@ -108,9 +121,10 @@ Object.assign(UI, {
   },
 
   _markRead(key){
+    key = String(key);
     const n = (G.news || []).find(x => {
-      const k = x.createdAt || (x.y+'_'+x.r+'_'+(x.title||''));
-      return k == key || String(k) === String(key);
+      const k = UI._inboxKey(x);
+      return k === key;
     });
     if(n) n.read = true;
   },
