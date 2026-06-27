@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 Object.assign(UI, {
   p_options(){
@@ -17,7 +18,7 @@ Object.assign(UI, {
       <div class="card">
         <h2 class="sec" style="margin-top:0">New career</h2>
         <p style="color:var(--muted);font-size:12px;margin-bottom:10px">Abandons the current save unless you save first.</p>
-        <button class="btn danger" onclick="if(confirm('Start a new career? Unsaved progress is lost.')){G=null;UI.wizWorld=null;UI.render();}">Start new career</button>
+        <button class="btn danger" onclick="if(confirm('Start a new career? Unsaved progress is lost.')){setG(null);UI.wizWorld=null;UI.render();}">Start new career</button>
       </div>
       <div class="card">
         <h2 class="sec" style="margin-top:0">God Mode</h2>

@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Season Leaders — top performers per stat this season */
 Object.assign(UI, {

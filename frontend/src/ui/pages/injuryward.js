@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 Object.assign(UI, {
   p_injuryward(){
@@ -16,8 +17,8 @@ Object.assign(UI, {
       const wk = p.injury.weeks;
       if(wk >= 20) return {label:'Season over', cls:'var(--red)'};
       if(wk >= 10) return {label:'Long term', cls:'var(--red)'};
-      if(wk >= 6)  return {label:'Medium term', cls:'var(--brass)'};
-      if(wk >= 3)  return {label:'Short term', cls:'var(--brass)'};
+      if(wk >= 6)  return {label:'Medium term', cls:'var(--accent)'};
+      if(wk >= 3)  return {label:'Short term', cls:'var(--accent)'};
       return {label:'Minor', cls:'var(--green)'};
     };
     const medStaffList = (G.staff||[]).filter(s=>s.role==='medical');
@@ -32,7 +33,7 @@ Object.assign(UI, {
         <td>${esc(p.injury.n)}<br><span style="font-size:11px;color:${sev.cls}">${sev.label}</span></td>
         <td class="num">${p.injury.weeks}w<br><span style="font-size:10px;color:var(--muted)">${returnRound(p)}</span></td>
         <td class="num">${Math.round(p.cond)}%</td>
-        <td>${ok?'<span style="color:var(--brass);font-size:12px">Could play through</span>':'<span style="color:var(--red);font-size:12px">Unavailable</span>'}</td>
+        <td>${ok?'<span style="color:var(--accent);font-size:12px">Could play through</span>':'<span style="color:var(--red);font-size:12px">Unavailable</span>'}</td>
         <td onclick="event.stopPropagation()">${ok?`<button class="btn sm ${p.playInjured?'primary':''}" onclick="UI.togglePlayInjured(${p.id})">${p.playInjured?'Playing hurt':'Allow'}</button>`:''}</td>
       </tr>`;
     };
@@ -51,7 +52,7 @@ Object.assign(UI, {
             <div>
               <b style="font-size:14px">${esc(s.name)}</b>
               ${expiring ? `<span style="margin-left:6px;font-size:10px;font-weight:700;color:var(--red);background:rgba(200,50,50,.12);padding:2px 5px;border-radius:8px">EXPIRING</span>` : ''}
-              <p style="margin:2px 0;font-size:11px;font-weight:700;color:var(--brass)">PHYSIO · Ability ${s.ability}</p>
+              <p style="margin:2px 0;font-size:11px;font-weight:700;color:var(--accent)">PHYSIO · Ability ${s.ability}</p>
               <p style="margin:2px 0;font-size:11px;color:var(--muted)"><b style="color:var(--green)">${chanceEach}% per week</b> extra recovery chance per injured player</p>
             </div>
             <button class="btn sm" onclick="UI.go('staff')" style="flex-shrink:0;font-size:10px">Manage</button>
@@ -61,11 +62,11 @@ Object.assign(UI, {
       }).join('')}
       </div>
       ${medStaffList.length > 1 ? `<p style="font-size:11px;color:var(--muted);margin:6px 0 0">Combined recovery bonus: <b style="color:var(--green)">${Math.round(combinedRecoveryChance*100)}% per week</b> (stacked across all physios).</p>` : ''}
-    </div>` : injured.length ? `<div class="card" style="padding:10px 14px;margin-bottom:12px"><p style="color:var(--muted);font-size:12px;margin:0">No medical staff hired. A Physio on staff gives injured players a weekly chance of accelerated recovery. <span class="click" style="color:var(--brass);cursor:pointer" onclick="UI.go('staff')">Hire one →</span></p></div>` : '';
+    </div>` : injured.length ? `<div class="card" style="padding:10px 14px;margin-bottom:12px"><p style="color:var(--muted);font-size:12px;margin:0">No medical staff hired. A Physio on staff gives injured players a weekly chance of accelerated recovery. <span class="click" style="color:var(--accent);cursor:pointer" onclick="UI.go('staff')">Hire one →</span></p></div>` : '';
     return `<h1 class="page">Injury Ward</h1>
     <p class="page-sub">Manage unavailable players. Playing through minor injuries allows selection, but increases re-injury risk and can worsen the injury.</p>
-    ${reviewDue?`<div class="card" style="border-color:var(--brass);margin-bottom:12px">
-      <div style="font-family:var(--disp);font-size:22px;font-weight:700;color:var(--brass)">Recovery and judiciary review due</div>
+    ${reviewDue?`<div class="card" style="border-color:var(--accent);margin-bottom:12px">
+      <div style="font-family:var(--disp);font-size:22px;font-weight:700;color:var(--accent)">Recovery and judiciary review due</div>
       <p class="page-sub">Review injuries, suspensions, and any play-hurt decisions before moving into next week.</p>
       <div class="btnrow"><button class="btn primary" onclick="UI.markMedicalReviewed()">Mark review complete</button><button class="btn" onclick="UI.go('calendar')">Calendar</button></div>
     </div>`:''}

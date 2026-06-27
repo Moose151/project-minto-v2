@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Staff — assistant coaches, fitness & kicking coaches */
 Object.assign(UI, {
@@ -13,7 +14,7 @@ Object.assign(UI, {
 
     const roleInfo = key => STAFF_ROLES.find(r => r.key === key) || {label: key, desc: '', trainingKeys: []};
     const abilityBar = ability => {
-      const cls = ability >= 75 ? 'var(--green)' : ability >= 55 ? 'var(--brass)' : 'var(--red)';
+      const cls = ability >= 75 ? 'var(--green)' : ability >= 55 ? 'var(--accent)' : 'var(--red)';
       return `<div style="display:flex;align-items:center;gap:6px">
         <div style="flex:1;height:6px;background:var(--card2);border-radius:3px;overflow:hidden">
           <div style="width:${ability}%;height:100%;background:${cls}"></div>
@@ -41,7 +42,7 @@ Object.assign(UI, {
       `<span style="font-size:10px;font-weight:800;letter-spacing:.06em;color:${color};background:${color}22;padding:2px 7px;border-radius:10px;border:1px solid ${color}55">${label}</span>`;
     const coachBadge  = () => typeBadge('COACH', '#4A9EFF');
     const medBadge    = () => typeBadge('MEDICAL', 'var(--green)');
-    const scoutBadge  = () => typeBadge('SCOUT', 'var(--brass)');
+    const scoutBadge  = () => typeBadge('SCOUT', 'var(--accent)');
 
     // Shared card renderer for coaches and medical
     const staffCard = (s, badgeFn) => {
@@ -59,7 +60,7 @@ Object.assign(UI, {
               ${expiring ? `<span style="font-size:10px;font-weight:700;color:var(--red);background:rgba(200,50,50,.12);padding:2px 6px;border-radius:8px">CONTRACT EXPIRING</span>` : ''}
             </div>
             <b style="font-size:15px">${esc(s.name)}</b>
-            <p style="margin:2px 0;color:var(--brass);font-size:12px;font-weight:600">${esc(info.label)}${specLbl?` <span style="color:#4A9EFF;font-weight:500">· ${esc(specLbl)}</span>`:''}</p>
+            <p style="margin:2px 0;color:var(--accent);font-size:12px;font-weight:600">${esc(info.label)}${specLbl?` <span style="color:#4A9EFF;font-weight:500">· ${esc(specLbl)}</span>`:''}</p>
             <p style="margin:2px 0;color:var(--muted);font-size:11px">${esc(info.desc)}</p>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
@@ -85,13 +86,13 @@ Object.assign(UI, {
       const statusLine = mission
         ? (() => { const r = SCOUT_REGIONS.find(x => x.key === mission.region); return `On mission — ${esc(r ? r.label : mission.region)} · ${mission.weeksLeft}w left`; })()
         : 'Available';
-      const statusColor = mission ? 'var(--brass)' : 'var(--green)';
+      const statusColor = mission ? 'var(--accent)' : 'var(--green)';
       return `<div class="card">
         <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:8px">
           <div style="min-width:0;flex:1">
             <div style="margin-bottom:3px">${scoutBadge()}${expiring?` <span style="font-size:10px;font-weight:700;color:var(--red);background:rgba(200,50,50,.12);padding:2px 6px;border-radius:8px;margin-left:4px">CONTRACT EXPIRING</span>`:''}</div>
             <b style="font-size:15px">${esc(s.name)}</b>
-            <p style="margin:2px 0;color:var(--brass);font-size:12px;font-weight:600">Scout</p>
+            <p style="margin:2px 0;color:var(--accent);font-size:12px;font-weight:600">Scout</p>
             <p style="margin:2px 0;color:var(--muted);font-size:11px">Finds young talent in regional scouting areas</p>
           </div>
           <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
@@ -153,7 +154,7 @@ Object.assign(UI, {
       const isNew = s.addedRound === UI._staffMarket.refreshRound && curRound > 0;
       return `<tr>
         <td style="white-space:nowrap">${marketBadgeFor(s)}${isNew?` <span class="pos-tag" style="background:rgba(95,170,110,.18);color:var(--green)">NEW</span>`:''}</td>
-        <td><b>${esc(s.name)}</b><br><span style="font-size:11px;color:var(--brass)">${esc(info.label)}${specLbl?` · ${esc(specLbl)}`:''}</span></td>
+        <td><b>${esc(s.name)}</b><br><span style="font-size:11px;color:var(--accent)">${esc(info.label)}${specLbl?` · ${esc(specLbl)}`:''}</span></td>
         <td style="min-width:100px">${abilityBar(s.ability)}</td>
         <td class="num" style="white-space:nowrap">${money(s.salary)}</td>
         <td class="num" style="white-space:nowrap">${s.yearsLeft}yr</td>
@@ -177,7 +178,7 @@ Object.assign(UI, {
 
     const scoutSection = showScout ? `
       <h2 class="sec">Scouts (${filtScout.length}${filtScout.length!==scouts.length?` of ${scouts.length}`:''})</h2>
-      <p style="font-size:12px;color:var(--muted);margin:-6px 0 10px">Contracts and releases managed here. Dispatch scouts on the <span class="click" onclick="UI.go('scouting')" style="color:var(--brass);cursor:pointer">Scouting page</span>.</p>
+      <p style="font-size:12px;color:var(--muted);margin:-6px 0 10px">Contracts and releases managed here. Dispatch scouts on the <span class="click" onclick="UI.go('scouting')" style="color:var(--accent);cursor:pointer">Scouting page</span>.</p>
       <div class="grid3" style="margin-bottom:16px">${filtScout.length ? filtScout.map(scoutCard).join('') : `<div class="card"><p style="color:var(--muted)">${srch?'No scouts match your search.':'No scouts on payroll.'}</p></div>`}</div>` : '';
 
     const marketSection = (filt !== 'scouts') ? `

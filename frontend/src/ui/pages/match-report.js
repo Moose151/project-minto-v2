@@ -1,9 +1,8 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Full match analysis page — navigated to from the post-match "Full Analysis →" button */
 Object.assign(UI, {
-  get ['p_match-report']() { return UI.p_matchReport; },
-
   p_matchReport(){
     const myM = G._lastPlayedMatch;
     if(!myM) return `<h1 class="page">Match Report</h1><p class="page-sub">No recent match to display. Play a match first.</p>`;
@@ -18,7 +17,7 @@ Object.assign(UI, {
     const myDet = mineIsH ? myM.det.h : myM.det.a;
     const oppDet = mineIsH ? myM.det.a : myM.det.h;
 
-    const resultClr = coachInMatch ? (won ? 'var(--green)' : drew ? 'var(--muted)' : 'var(--red)') : 'var(--brass)';
+    const resultClr = coachInMatch ? (won ? 'var(--green)' : drew ? 'var(--muted)' : 'var(--red)') : 'var(--accent)';
     const resultTxt = coachInMatch ? (won ? 'WIN' : drew ? 'DRAW' : 'LOSS') : 'FINAL';
     const myScore   = mineIsH ? myM.hs : myM.as;
     const oppScore  = mineIsH ? myM.as : myM.hs;
@@ -71,12 +70,12 @@ Object.assign(UI, {
         const ev=item.ev, team=ev.side==='h'?th:ta;
         const scorer=G.players[ev.scorerId], assist=ev.assistId?G.players[ev.assistId]:null;
         if(ev.side==='h') sH+=4+(ev.converted?2:0); else sA+=4+(ev.converted?2:0);
-        const isMine=(ev.side==='h')===mineIsH, col=coachInMatch ? (isMine?'var(--green)':'var(--red)') : (ev.side==='h'?'var(--green)':'var(--brass)');
+        const isMine=(ev.side==='h')===mineIsH, col=coachInMatch ? (isMine?'var(--green)':'var(--red)') : (ev.side==='h'?'var(--green)':'var(--accent)');
         return `<div style="display:flex;gap:8px;align-items:baseline;padding:5px 8px;border-left:3px solid ${col};margin:3px 0;font-size:13px">
           <span style="color:var(--dim);font-size:11px;width:28px;flex-shrink:0">${ev.min}'</span>
           <span style="color:${col};font-weight:700;width:32px;flex-shrink:0;font-size:11px">TRY</span>
           <span style="flex:1">${esc(scorer?scorer.name:'?')}${assist?` <span style="color:var(--muted)">(${esc(assist.name)})</span>`:''}${ev.converted?' ✓':' ✗'} <span style="color:var(--muted);font-size:11px">${esc(team.nick)}</span></span>
-          <span style="font-family:var(--disp);font-weight:700;font-size:14px;color:var(--brass)">${sH}–${sA}</span>
+          <span style="font-family:var(--disp);font-weight:700;font-size:14px;color:var(--accent)">${sH}–${sA}</span>
         </div>`;
       }
       if(item.type==='pen'){
@@ -86,7 +85,7 @@ Object.assign(UI, {
           <span style="color:var(--dim);font-size:11px;width:28px;flex-shrink:0">${ev.min}'</span>
           <span style="color:var(--muted);width:32px;flex-shrink:0;font-size:11px">PEN</span>
           <span style="flex:1">${kicker?esc(kicker.name):'?'} <span style="color:var(--muted);font-size:11px">${esc(team.nick)}</span></span>
-          <span style="font-family:var(--disp);font-weight:700;font-size:14px;color:var(--brass)">${sH}–${sA}</span>
+          <span style="font-family:var(--disp);font-weight:700;font-size:14px;color:var(--accent)">${sH}–${sA}</span>
         </div>`;
       }
       if(item.type==='fg'){
@@ -96,7 +95,7 @@ Object.assign(UI, {
           <span style="color:var(--dim);font-size:11px;width:28px;flex-shrink:0">${ev.min}'</span>
           <span style="color:var(--muted);width:32px;flex-shrink:0;font-size:11px">FG</span>
           <span style="flex:1">${team?esc(team.nick):'?'}</span>
-          <span style="font-family:var(--disp);font-weight:700;font-size:14px;color:var(--brass)">${sH}–${sA}</span>
+          <span style="font-family:var(--disp);font-weight:700;font-size:14px;color:var(--accent)">${sH}–${sA}</span>
         </div>`;
       }
       return '';
@@ -134,7 +133,7 @@ Object.assign(UI, {
               <td class="num" style="padding:2px 3px">${l.runs||'—'}</td>
               <td class="num" style="padding:2px 3px">${l.tk||'—'}</td>
               <td class="num" style="padding:2px 3px;color:${(l.mt||0)>2?'var(--red)':'inherit'}">${l.mt||'—'}</td>
-              <td class="num" style="padding:2px 3px;color:${(l.err||0)?'var(--brass)':'inherit'}">${l.err||'—'}</td>
+              <td class="num" style="padding:2px 3px;color:${(l.err||0)?'var(--accent)':'inherit'}">${l.err||'—'}</td>
               <td class="num" style="padding:2px 3px;color:${(l.inf||0)?'var(--red)':'inherit'}">${l.inf||'—'}</td>
               <td class="num" style="padding:2px 3px;font-weight:700;color:${(l.r||0)>=8?'var(--green)':(l.r||0)<5?'var(--red)':'inherit'}">${l.r ? l.r.toFixed(1) : '—'}</td>
             </tr>`).join('')}
@@ -187,6 +186,7 @@ Object.assign(UI, {
           ${statCmp('1st Half', htMine, htOpp)}
           ${statCmp('2nd Half', myScore-htMine, oppScore-htOpp)}
           ${myM.det.possH!=null ? statCmp('Possession %', mineIsH?myM.det.possH:myM.det.possA, mineIsH?myM.det.possA:myM.det.possH, `${mineIsH?myM.det.possH:myM.det.possA}%`, `${mineIsH?myM.det.possA:myM.det.possH}%`) : ''}
+          ${myM.det.terrH!=null ? statCmp('Territory %', mineIsH?myM.det.terrH:myM.det.terrA, mineIsH?myM.det.terrA:myM.det.terrH, `${mineIsH?myM.det.terrH:myM.det.terrA}%`, `${mineIsH?myM.det.terrA:myM.det.terrH}%`) : ''}
           ${myM.det.complH!=null ? statCmp('Completion %', mineIsH?myM.det.complH:myM.det.complA, mineIsH?myM.det.complA:myM.det.complH, `${mineIsH?myM.det.complH:myM.det.complA}%`, `${mineIsH?myM.det.complA:myM.det.complH}%`) : ''}
           ${statCmp('Tries', mySt.t, oppSt.t)}
           ${statCmp('Goals', mySt.gl, oppSt.gl, `${mySt.gl}/${mySt.ga}`, `${oppSt.gl}/${oppSt.ga}`)}
@@ -219,3 +219,5 @@ Object.assign(UI, {
     </div>`;
   },
 });
+
+UI['p_match-report'] = UI.p_matchReport;

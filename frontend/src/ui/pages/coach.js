@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Coach profile — reputation, badge, record, attrs, history */
 Object.assign(UI, {
@@ -35,7 +36,7 @@ Object.assign(UI, {
     const seasonRecord = myRow.p > 0 ? `${myRow.w}W ${myRow.l}L${myRow.d?' '+myRow.d+'D':''}` : 'Season not started';
     return `<h1 class="page">Coach Profile</h1><p class="page-sub">${esc(c.name)} · ${esc(teamName(myTeam()))}</p>
     <div class="grid3">
-      <div class="card"><div class="navsep" style="margin:0">Reputation</div><div style="font-family:var(--disp);font-size:42px;font-weight:700;color:var(--brass)">${Math.round(c.rep)}</div><div class="bar"><i style="width:${c.rep}%"></i></div><p style="color:var(--muted);font-size:12px;margin-top:8px">${esc(badge)}</p></div>
+      <div class="card"><div class="navsep" style="margin:0">Reputation</div><div style="font-family:var(--disp);font-size:42px;font-weight:700;color:var(--accent)">${Math.round(c.rep)}</div><div class="bar"><i style="width:${c.rep}%"></i></div><p style="color:var(--muted);font-size:12px;margin-top:8px">${esc(badge)}</p></div>
       <div class="card"><div class="navsep" style="margin:0">Career record</div><div style="display:flex;align-items:baseline;gap:10px"><div style="font-family:var(--disp);font-size:38px;font-weight:700">${c.careerW||0}–${c.careerL||0}</div><div style="font-size:20px;font-weight:700;color:${winRateColour}">${winRate}%</div></div><p style="color:var(--muted);font-size:12px;margin-top:4px">${c.prems||0} prem${(c.prems||0)===1?'':'s'} · ${seasonRecord} this season</p></div>
       <div class="card"><div class="navsep" style="margin:0">Board confidence</div><div style="font-family:var(--disp);font-size:42px;font-weight:700;color:${c.conf<30?'var(--red)':c.conf>70?'var(--green)':'var(--ink)'}">${Math.round(c.conf)}%</div><p style="color:var(--muted);font-size:12px;margin-top:8px">Expectation: ${esc(c.expect.label)}</p></div>
       <div class="card"><div class="navsep" style="margin:0">Contract</div><div style="font-family:var(--disp);font-size:32px;font-weight:700">${money(c.salary||0)}</div><p style="color:var(--muted);font-size:12px;margin-top:8px">${c.contractYears||0} year${(c.contractYears||0)===1?'':'s'} remaining · cash ${money(c.cash||0)}</p>${(c.contractYears||0)<=1?`<button class="btn sm primary" style="margin-top:8px" onclick="UI.coachContractExtension()">Negotiate Extension</button>`:''}</div>

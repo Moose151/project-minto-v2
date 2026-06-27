@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Recruitment — shortlist + browse all players not on my team */
 Object.assign(UI, {
@@ -64,7 +65,7 @@ Object.assign(UI, {
       const contractTag = p.years<=0
         ? `<span style="color:var(--red);font-size:11px">Off-contract</span>`
         : p.years===1
-          ? `<span style="color:var(--brass);font-size:11px">Final year</span>`
+          ? `<span style="color:var(--accent);font-size:11px">Final year</span>`
           : `<span style="color:var(--muted);font-size:11px">${p.years}yr</span>`;
       const canApproach = G.phase==='regular' && p.years<=1 && !approached && approachesLeft > 0;
       const approachExhausted = G.phase==='regular' && p.years<=1 && !approached && approachesLeft <= 0;
@@ -104,7 +105,7 @@ Object.assign(UI, {
     const select = (prop, opts) => `<select style="max-width:170px" onchange="UI.${prop}=this.value;UI.render()">${opts.map(([v,l])=>`<option value="${v}" ${UI[prop]===v?'selected':''}>${l}</option>`).join('')}</select>`;
 
     const approachStatus = `<div style="display:flex;align-items:center;gap:8px;margin:4px 0 0;flex-wrap:wrap">
-      <span style="font-size:12px;color:var(--muted)">Pre-contract approaches: <b style="color:${approachesLeft===0?'var(--red)':approachesLeft===1?'var(--brass)':'var(--green)'}">${activeApproaches}/${MAX_APPROACHES} used</b> this season.</span>
+      <span style="font-size:12px;color:var(--muted)">Pre-contract approaches: <b style="color:${approachesLeft===0?'var(--red)':approachesLeft===1?'var(--accent)':'var(--green)'}">${activeApproaches}/${MAX_APPROACHES} used</b> this season.</span>
       ${approachesLeft>0?`<span style="font-size:12px;color:var(--muted)">${approachesLeft} remaining. Approaches give a +15% signing bonus in the off-season.</span>`:`<span style="font-size:12px;color:var(--red)">Approach limit reached for this season.</span>`}
     </div>`;
 
@@ -123,7 +124,7 @@ Object.assign(UI, {
         ${select('_recOvr', [['all','Any OVR'],['60','OVR 60+'],['70','OVR 70+'],['80','OVR 80+'],['under60','Under 60']])}
         ${select('_recPot', [['all','Any potential'],['60','POT 60+'],['70','POT 70+'],['80','POT 80+'],['under60','POT under 60']])}
         ${select('_recSort', [['ovr','Sort: OVR'],['pot','Sort: potential'],['age','Sort: youngest'],['ageOld','Sort: oldest'],['salary','Sort: salary'],['form','Sort: form'],['runs','Sort: runs'],['tries','Sort: tries'],['tackles','Sort: tackles'],['fantasy','Sort: fantasy'],['goal','Sort: goal kicking'],['kicking','Sort: general kicking'],['speed','Sort: speed'],['playmaking','Sort: playmaking'],['defence','Sort: defence']])}
-        <label style="display:flex;gap:6px;align-items:center;color:var(--brass);font-size:12px;white-space:nowrap"><input type="checkbox" ${UI._recFinalYear?'checked':''} onchange="UI._recFinalYear=this.checked;UI.render()"> Final year only</label>
+        <label style="display:flex;gap:6px;align-items:center;color:var(--accent);font-size:12px;white-space:nowrap"><input type="checkbox" ${UI._recFinalYear?'checked':''} onchange="UI._recFinalYear=this.checked;UI.render()"> Final year only</label>
       </div>
       <div class="card" style="padding:6px;overflow-x:auto;max-height:520px">
         <table>${tableHead}<tbody>${browseFinal.slice(0,60).map(row).join('')}</tbody></table>
@@ -229,7 +230,7 @@ Object.assign(UI, {
     UI.modal(`<h3>Train & Trial Contract</h3>
       <p class="page-sub">${esc(p.name)} · ${p.pos} · Age ${p.age} · OVR ${p.ovr}</p>
       <div class="card" style="padding:10px 14px;margin-bottom:12px">
-        <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:var(--brass)">T&T Terms (non-negotiable)</p>
+        <p style="margin:0 0 6px;font-size:13px;font-weight:700;color:var(--accent)">T&T Terms (non-negotiable)</p>
         <div style="display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--muted)">
           <span>Salary: <b style="color:var(--ink)">${money(trialSalary)}/yr</b> (market: ${money(demand)})</span>
           <span>Length: <b style="color:var(--ink)">1 year</b></span>
@@ -299,7 +300,7 @@ Object.assign(UI, {
         <label style="display:flex;gap:8px;align-items:center;margin-top:8px;color:var(--muted);font-size:13px"><input type="checkbox" ${o.promises.captain?'checked':''} onchange="UI._contractOffer.promises.captain=this.checked;UI.renderFreeAgentOffer()"> Promise captaincy</label>
       </div>
       <div class="sign-meter"><i style="width:${pct}%"></i></div>
-      <p style="color:var(--muted);font-size:12px">Estimated signing chance: <b style="color:${pct>=70?'var(--green)':pct<40?'var(--red)':'var(--brass)'}">${pct}%</b> · first-year cap hit ${money(firstYear)} · cap after deal: ${money(afterCap)}</p>
+      <p style="color:var(--muted);font-size:12px">Estimated signing chance: <b style="color:${pct>=70?'var(--green)':pct<40?'var(--red)':'var(--accent)'}">${pct}%</b> · first-year cap hit ${money(firstYear)} · cap after deal: ${money(afterCap)}</p>
       <div class="btnrow"><button class="btn primary" onclick="UI.submitFreeAgentOffer()">Submit offer</button><button class="btn" onclick="UI.closeModal()">Cancel</button></div>`);
   },
 

@@ -1,13 +1,13 @@
-'use strict';
+
 
 // Vendor revenue per attendee by level [unused, L1, L2, L3, L4, L5]
-const VENDOR_FB_REV    = [0, 3, 5, 7, 10, 14];
-const VENDOR_MERCH_REV = [0, 1.5, 2.5, 4, 6, 8];
+export const VENDOR_FB_REV    = [0, 3, 5, 7, 10, 14];
+export const VENDOR_MERCH_REV = [0, 1.5, 2.5, 4, 6, 8];
 // Upgrade cost FROM each level (index = current level)
-const VENDOR_FB_COSTS    = [0, 100000, 200000, 350000, 600000];
-const VENDOR_MERCH_COSTS = [0, 60000, 120000, 200000, 350000];
+export const VENDOR_FB_COSTS    = [0, 100000, 200000, 350000, 600000];
+export const VENDOR_MERCH_COSTS = [0, 60000, 120000, 200000, 350000];
 
-function generateOriginSchedule(totalRounds){
+export function generateOriginSchedule(totalRounds){
   const g1 = Math.max(8,  Math.round(totalRounds * 0.38));
   const g2 = Math.max(g1+3, Math.round(totalRounds * 0.52));
   const g3 = Math.max(g2+3, Math.round(totalRounds * 0.66));
@@ -20,7 +20,7 @@ function generateOriginSchedule(totalRounds){
     ]
   };
 }
-function simOriginIfDue(roundIdx){
+export function simOriginIfDue(roundIdx){
   if(!G.origin || !G.origin.games) return;
   const game = G.origin.games.find(g => g.round === roundIdx && !g.played);
   if(!game) return;
@@ -78,14 +78,14 @@ function simOriginIfDue(roundIdx){
   }
 }
 /* ---------- post-season international window (Pacific Championship) ---------- */
-function intlNationSquad(repTeam, pool){
+export function intlNationSquad(repTeam, pool){
   return pool.filter(p => p.repTeam === repTeam).sort((a,b)=>b.ovr-a.ovr).slice(0,17);
 }
-function intlNationStrength(squad){
+export function intlNationStrength(squad){
   if(!squad.length) return 0;
   return squad.reduce((s,p)=>s+p.ovr,0) / squad.length;
 }
-function simIntlMatch(a, b){
+export function simIntlMatch(a, b){
   const diff = (a.str - b.str) * 0.18;
   const aTries = Math.max(0, Math.round(gauss(3.6 + diff, 1.7)));
   const bTries = Math.max(0, Math.round(gauss(3.6 - diff, 1.7)));
@@ -97,7 +97,7 @@ function simIntlMatch(a, b){
   const winner = as > bs ? a : b;
   return { a, b, as, bs, winner, label: `${a.repTeam} ${as}–${bs} ${b.repTeam}` };
 }
-function simInternationalWindow(){
+export function simInternationalWindow(){
   const pool = Object.values(G.players).filter(p => p && !p.injury);
   const fielded = [];
   for(const n of NATIONALITY_POOL){
@@ -157,13 +157,13 @@ function simInternationalWindow(){
   return intl;
 }
 
-function vendorRevenuePerHead(){
+export function vendorRevenuePerHead(){
   const v = (G.club && G.club.vendors) || {fb:1, merch:1};
   return (VENDOR_FB_REV[v.fb || 1] || 3) + (VENDOR_MERCH_REV[v.merch || 1] || 1.5);
 }
 
 /* ---------- weekly progression ---------- */
-function completeRound(roundIdx){
+export function completeRound(roundIdx){
   if(G.phase !== 'regular') return null;
   roundIdx = roundIdx == null ? G.round : roundIdx;
   const round = G.fixtures && G.fixtures[roundIdx];
@@ -202,14 +202,14 @@ function completeRound(roundIdx){
   if(G.round >= G.fixtures.length){ startFinals(); }
   return {type:'round', round, roundIdx, myM, onBye};
 }
-function completeRoundIfReady(roundIdx){
+export function completeRoundIfReady(roundIdx){
   if(G.phase !== 'regular') return null;
   roundIdx = roundIdx == null ? G.round : roundIdx;
   const round = G.fixtures && G.fixtures[roundIdx];
   if(!round || !round.length || !round.every(m=>m.played)) return null;
   return completeRound(roundIdx);
 }
-function advanceRound(){
+export function advanceRound(){
   if(G.phase==='regular'){
     const roundIdx = G.round;
     const round = G.fixtures[roundIdx];
@@ -219,10 +219,10 @@ function advanceRound(){
   if(G.phase==='finals'){ return advanceFinals(); }
   return null;
 }
-function achievementUnlocked(key){
+export function achievementUnlocked(key){
   return (G.achievements || []).some(a=>a.key===key);
 }
-function unlockAchievement(key){
+export function unlockAchievement(key){
   if(!G || G.godMode || G.achievementsLocked) return false;
   if(achievementUnlocked(key)) return false;
   const def = ACHIEVEMENTS.find(a=>a.key===key);
@@ -233,7 +233,7 @@ function unlockAchievement(key){
   if(typeof UI !== 'undefined' && UI.toast) UI.toast(`Achievement unlocked: ${def.name}`);
   return true;
 }
-function checkAchievements(type, ctx){
+export function checkAchievements(type, ctx){
   if(!G || G.godMode || G.achievementsLocked) return;
   const mt = myTeam && myTeam();
   if(!mt) return;
@@ -283,7 +283,7 @@ function checkAchievements(type, ctx){
     if(G.season >= 10) unlockAchievement('10_seasons');
   }
 }
-function premiershipStreak(){
+export function premiershipStreak(){
   let streak = (G.finals && G.finals.premier === G.coach.teamId) ? 1 : 0;
   for(const h of G.history || []){
     if(h.premier === G.coach.teamId) streak++;
@@ -291,7 +291,7 @@ function premiershipStreak(){
   }
   return streak;
 }
-function coachBadgeList(c){
+export function coachBadgeList(c){
   c = c || G.coach;
   const out = [];
   const add = (key, label, desc, tier) => out.push({key, label, desc, tier:tier||'bronze'});
@@ -316,9 +316,9 @@ function coachBadgeList(c){
   return out;
 }
 // Weeks of construction per facility type
-const FACILITY_BUILD_WEEKS = {stadium:8, training:5, gym:3, medical:3, academy:5};
+export const FACILITY_BUILD_WEEKS = {stadium:8, training:5, gym:3, medical:3, academy:5};
 
-function ensureClubFacilities(){
+export function ensureClubFacilities(){
   if(!G.club) G.club = { funds: 1500000, seasonRevenue: 0, seasonWages: 0 };
   G.club.facilities = Object.assign({stadium:2, training:1, gym:1, medical:1, academy:1}, G.club.facilities || {});
   if(!G.club.construction) G.club.construction = {};
@@ -329,37 +329,37 @@ function ensureClubFacilities(){
   if(!G.club.currency) G.club.currency = 'AUD';
   return G.club.facilities;
 }
-function facilityLevel(key){
+export function facilityLevel(key){
   const f = ensureClubFacilities();
   return clamp(Math.round(f[key] || 1), 1, FACILITY_MAX);
 }
-function ensureTeamFacilities(t){
+export function ensureTeamFacilities(t){
   if(!t) return {};
   t.facilities = Object.assign({stadium:2, training:2, gym:2, medical:2, academy:2}, t.facilities || {});
   for(const key of Object.keys(FACILITY_DEFS)) t.facilities[key] = clamp(Math.round(t.facilities[key] || 2), 1, FACILITY_MAX);
   return t.facilities;
 }
-function teamFacilityLevel(t, key){
+export function teamFacilityLevel(t, key){
   if(!t) return 1;
   if(G && G.coach && t.id === G.coach.teamId) return facilityLevel(key);
   const f = ensureTeamFacilities(t);
   return clamp(Math.round(f[key] || 2), 1, FACILITY_MAX);
 }
-function teamFacilityAverage(t){
+export function teamFacilityAverage(t){
   const keys = Object.keys(FACILITY_DEFS);
   return keys.reduce((s,k)=>s+teamFacilityLevel(t,k),0) / keys.length;
 }
-function facilityUnderConstruction(key){
+export function facilityUnderConstruction(key){
   ensureClubFacilities();
   return !!(G.club.construction && G.club.construction[key]);
 }
-function stadiumCapacity(){
+export function stadiumCapacity(){
   const lvl = facilityLevel('stadium');
   // During stadium construction, capacity drops by one tier (one grandstand closed)
   if(facilityUnderConstruction('stadium')) return STADIUM_CAPACITY_BY_LEVEL[Math.max(0, lvl - 2)] || STADIUM_CAPACITY_BY_LEVEL[0];
   return STADIUM_CAPACITY_BY_LEVEL[lvl - 1] || STADIUM_CAPACITY_BY_LEVEL[0];
 }
-function tickConstruction(){
+export function tickConstruction(){
   ensureClubFacilities();
   if(!G.club.construction) return;
   for(const key of Object.keys(G.club.construction)){
@@ -373,13 +373,13 @@ function tickConstruction(){
     }
   }
 }
-function facilityUpgradeCost(key){
+export function facilityUpgradeCost(key){
   const def = FACILITY_DEFS[key]; if(!def) return 0;
   const lvl = facilityLevel(key);
   if(lvl >= FACILITY_MAX) return 0;
   return Math.round(def.baseCost * Math.pow(1.72, lvl - 1) / 50000) * 50000;
 }
-function facilityPrestige(){
+export function facilityPrestige(){
   const f = ensureClubFacilities();
   const avg = Object.keys(FACILITY_DEFS).reduce((s,k)=>s+facilityLevel(k),0) / Object.keys(FACILITY_DEFS).length;
   if(avg >= 4.5) return {label:'World Class', cls:'good'};
@@ -388,7 +388,7 @@ function facilityPrestige(){
   if(avg >= 1.5) return {label:'Developing', cls:'warn'};
   return {label:'Basic', cls:'bad'};
 }
-function clubPrestigeScore(t){
+export function clubPrestigeScore(t){
   if(!t) return 45;
   const strength = typeof squadStrength === 'function' ? squadStrength(t) : (t.rep || 55);
   const coachRep = t.headCoach ? (t.headCoach.rep || 35) : 35;
@@ -399,7 +399,7 @@ function clubPrestigeScore(t){
   const facilityBonus = (Object.keys(FACILITY_DEFS).reduce((s,k)=>s+teamFacilityLevel(t,k),0) - 5) * 1.4;
   return Math.round(clamp(strength*.42 + coachRep*.18 + ladderScore*.22 + 18 + historyBonus + facilityBonus, 20, 99));
 }
-function clubPrestigeTier(t){
+export function clubPrestigeTier(t){
   const score = clubPrestigeScore(t);
   if(score >= 82) return {key:'dynasty', label:'Dynasty Club', icon:'C', score};
   if(score >= 72) return {key:'elite', label:'Elite Club', icon:'S', score};
@@ -408,9 +408,9 @@ function clubPrestigeTier(t){
   if(score >= 38) return {key:'developing', label:'Developing Club', icon:'D', score};
   return {key:'rebuild', label:'Rebuild Club', icon:'R', score};
 }
-function aiTicketPrice(t){ return Math.round(clamp(14 + squadStrength(t) * 0.24, 15, 46)); }
-function aiMembershipPrice(t){ return Math.round(clamp(95 + squadStrength(t) * 1.25, 100, 340)); }
-function leagueTicketInfo(){
+export function aiTicketPrice(t){ return Math.round(clamp(14 + squadStrength(t) * 0.24, 15, 46)); }
+export function aiMembershipPrice(t){ return Math.round(clamp(95 + squadStrength(t) * 1.25, 100, 340)); }
+export function leagueTicketInfo(){
   const myPrice = G.club ? (G.club.ticketPrice || 28) : 28;
   const teamPrices = G.teams.map(t => t.id === G.coach.teamId ? myPrice : aiTicketPrice(t)).sort((a,b) => a - b);
   const avg = Math.round(teamPrices.reduce((s,p) => s+p, 0) / teamPrices.length);
@@ -419,7 +419,7 @@ function leagueTicketInfo(){
   return { avg, myPrice, rankFromCheapest: cheaperCount+1, rankFromMostExpensive: moreExpensiveCount+1, totalTeams: G.teams.length };
 }
 // Avg/min/max/rank for both home ticket and season membership prices across the league.
-function leagueClubPrices(){
+export function leagueClubPrices(){
   const myTicket = G.club ? (G.club.ticketPrice || 28) : 28;
   const myMember = G.club ? (G.club.membershipPrice == null ? 160 : G.club.membershipPrice) : 160;
   const tickets = [], members = [];
@@ -436,7 +436,7 @@ function leagueClubPrices(){
   };
   return { ticket: stat(tickets, myTicket), membership: stat(members, myMember) };
 }
-function recentWinStreak(teamId){
+export function recentWinStreak(teamId){
   const played = [];
   (G.fixtures || []).forEach((round, rIdx) => {
     if(!round) return;
@@ -453,7 +453,7 @@ function recentWinStreak(teamId){
   }
   return streak;
 }
-function matchCrowd(homeTeam, isFinal){
+export function matchCrowd(homeTeam, isFinal){
   if(isFinal) return ri(52000, 82000);
   const isMine = homeTeam && homeTeam.id === G.coach.teamId;
   const cap = isMine ? stadiumCapacity() : (STADIUM_CAPACITY_BY_LEVEL[teamFacilityLevel(homeTeam, 'stadium') - 1] || ri(22000, 52000));
@@ -477,7 +477,7 @@ function matchCrowd(homeTeam, isFinal){
   const demand = Math.round(8500 + rep * 360 + formBoost - priceDrag + streakBoost + rf(-3500, 4500));
   return clamp(demand, Math.min(9000, cap), cap);
 }
-function weeklyRecoveryAndDev(){
+export function weeklyRecoveryAndDev(){
   for(const t of G.teams){
     const isMine = t.id === G.coach.teamId;
     const fitnessBonus = (isMine && G.coach.attrs) ? G.coach.attrs.fitness / 300 : 0;
@@ -503,7 +503,7 @@ function weeklyRecoveryAndDev(){
     if(!isMine) autoPick(t);
   }
 }
-function staffMultiplier(attrKey, playerPos){
+export function staffMultiplier(attrKey, playerPos){
   if(!G.staff) return 1;
   let mult = 1;
   for(const s of G.staff){
@@ -521,25 +521,25 @@ function staffMultiplier(attrKey, playerPos){
   }
   return mult;
 }
-function positionalCoachMultiplier(pos){
+export function positionalCoachMultiplier(pos){
   if(!G.staff || !pos) return 1;
   const coach = G.staff
     .filter(s => s.posSpecialty === pos)
     .sort((a,b) => b.ability - a.ability)[0];
   return coach ? 1 + coach.ability / 170 : 1;
 }
-const PHYSICAL_ATTRS = ['speed','acceleration','agility','stamina','strength','ballRunning'];
-const TECHNICAL_ATTRS = ['ballRunning','finishing','shortPass','longPass','tackling','defRead','bigHit','lastDitch','markerDef','catching','ballSecurity'];
-const MENTAL_ATTRS = ['composure','leadership','vision','decisionMaking','discipline','professionalism','workRate'];
+export const PHYSICAL_ATTRS = ['speed','acceleration','agility','stamina','strength','ballRunning'];
+export const TECHNICAL_ATTRS = ['ballRunning','finishing','shortPass','longPass','tackling','defRead','bigHit','lastDitch','markerDef','catching','ballSecurity'];
+export const MENTAL_ATTRS = ['composure','leadership','vision','decisionMaking','discipline','professionalism','workRate'];
 
 // Returns attributes that most affect OVR for a position (weight >= 0.07 in POS_PROFILE)
-function positionKeyAttrs(pos){
+export function positionKeyAttrs(pos){
   const profile = POS_PROFILE[pos];
   if(!profile) return ATTRS;
   return Object.keys(profile).filter(k => profile[k][1] >= 0.07);
 }
 
-function developPlayer(p, t){
+export function developPlayer(p, t){
   const isMine = t.id===G.coach.teamId;
   handleIndividualTraining(p, t);
   const teamFocusBoost = {
@@ -584,6 +584,7 @@ function developPlayer(p, t){
   if(t.focus==='youth' && p.age<=21 && isMine) growExpected *= 1.5;
 
   const keyAttrs = positionKeyAttrs(p.pos);
+  const ovrBefore = p.ovr;
   const growGains = Math.min(poisson(growExpected), 3);
   for(let _g = 0; _g < growGains && p.ovr < p.pot; _g++){
     // 72% chance to target position key attributes (high OVR weight), else use focus/random pool
@@ -615,6 +616,17 @@ function developPlayer(p, t){
         playerId: p.id,
         tag: 'Development',
       });
+    }
+  }
+
+  // OVR milestone notifications for coached-team main-squad players
+  if(isMine && p.ovr > ovrBefore && (p.squad === 'top' || !p.squad)){
+    for(const ms of [65, 70, 75, 80, 85]){
+      if(ovrBefore < ms && p.ovr >= ms){
+        const labels = {65:'a reliable starter', 70:'a quality first-grader', 75:'an elite performer', 80:'a superstar', 85:'one of the best in the competition'};
+        addNews(`${p.name} (${p.pos}, ${p.age}yo) has reached OVR ${ms} — ${labels[ms]}.`,
+          {title:`OVR ${ms} Milestone`, type:'development', tone:'good', playerId:p.id, teamId:t.id, tag:'Development', r:G.round+1, y:G.year});
+      }
     }
   }
 
@@ -656,7 +668,7 @@ function developPlayer(p, t){
     p.ovr = calcOvr(p);
   }
 }
-function handleIndividualTraining(p, t){
+export function handleIndividualTraining(p, t){
   if(t.id !== G.coach.teamId || !p.training) return;
   const devMod = G.coach.attrs ? (0.6 + G.coach.attrs.development/130) : 1;
   if(p.training === 'position' && p.retrainPos && p.retrainPos !== p.pos && p.retrainPos !== p.pos2){
@@ -677,14 +689,14 @@ function handleIndividualTraining(p, t){
     }
   }
 }
-function payCoachWeekly(){
+export function payCoachWeekly(){
   if(!G.coach) return;
   const weeks = Math.max(1, (G.fixtures ? G.fixtures.length : 24) + 3);
   const pay = Math.round((G.coach.salary || 120000) / weeks);
   G.coach.cash = Math.round((G.coach.cash || 0) + pay);
   G.coach.weeklyPayEarned = (G.coach.weeklyPayEarned || 0) + pay;
 }
-function payClubWeekly(round){
+export function payClubWeekly(round){
   ensureClubFacilities();
   tickConstruction();
   const t = myTeam();
@@ -720,7 +732,7 @@ function payClubWeekly(round){
   G.club.broadcastRevenue = (G.club.broadcastRevenue || 0) + broadcastRevenue;
   G.club.seasonWages = (G.club.seasonWages || 0) + totalWages;
 }
-function aiUseFreeAgents(){
+export function aiUseFreeAgents(){
   if(!G.freeAgents || !G.freeAgents.length) return;
   const market = () => (G.freeAgents || []).map(id=>G.players[id]).filter(p=>p && !G.teams.some(t=>t.players.includes(p.id)));
   for(const t of G.teams){
@@ -743,7 +755,7 @@ function aiUseFreeAgents(){
     addNews(`${p.name} has signed with the ${t.nick} as a mid-season free agent to cover ${needPos} depth.`, {title:'Free Agent Move', type:'recruitment', tone:'neutral', playerId:p.id, teamId:t.id, tag:'Market'});
   }
 }
-function auditContractPromises(){
+export function auditContractPromises(){
   const t = myTeam();
   if(!t || G.phase !== 'regular') return;
   const active = new Set(t.lineup.slice(0,17).filter(id=>id!=null));
@@ -781,7 +793,7 @@ function auditContractPromises(){
     }
   }
 }
-function coachWeekly(myM){
+export function coachWeekly(myM){
   if(!myM) return;
   const won = (myM.h===G.coach.teamId) ? myM.hs>myM.as : myM.as>myM.hs;
   const drew = myM.hs===myM.as;
@@ -807,7 +819,7 @@ function coachWeekly(myM){
     tag: 'Board',
   });
 }
-function generateWeeklyMedia(round, myM){
+export function generateWeeklyMedia(round, myM){
   if(!myM) return;
   const mineHome = myM.h === G.coach.teamId;
   const mt = myTeam();
@@ -889,6 +901,63 @@ function generateWeeklyMedia(round, myM){
       teamId: club ? club.id : null,
       tag: 'Fantasy',
     });
+  }
+
+  // Team of the Week selections from your squad
+  {
+    const mt = myTeam();
+    const towPlayers = mt.players.map(id=>G.players[id]).filter(p=>p && (p.awards||[]).some(a=>
+      a.award==='Team of the Week' && a.year===G.year && (a.detail||'').includes(`Round ${G.round+1}`)
+    ));
+    if(towPlayers.length){
+      const names = towPlayers.slice(0,4).map(p=>p.name).join(', ');
+      const suffix = towPlayers.length > 4 ? ` and ${towPlayers.length-4} more` : '';
+      addNews(
+        `${names}${suffix} named in the Round ${G.round+1} Team of the Week.`,
+        {title:`Team of the Week — Rd ${G.round+1}`, type:'league', tone:'good',
+         tag:'Awards', teamId:mt.id, r:G.round+1, y:G.year,
+         playerId: towPlayers[0].id}
+      );
+    }
+  }
+
+  // League-wide round summary
+  {
+    const lad = typeof ladder === 'function' ? ladder() : [];
+    const leader = lad[0] ? G.teams[lad[0].id] : null;
+    const leaderRec = lad[0];
+    // Biggest margin this round
+    const playedRound = round.filter(m => m.played);
+    let biggestM = null, biggestMargin = 0;
+    for(const m of playedRound){
+      const margin = Math.abs((m.hs||0)-(m.as||0));
+      if(margin > biggestMargin){ biggestMargin = margin; biggestM = m; }
+    }
+    // Top try scorer of the round across all teams
+    let roundTopScorer = null, roundTopTries = 0;
+    for(const m of playedRound){
+      if(!m.det) continue;
+      for(const side of [m.det.h, m.det.a]){
+        for(const [id, line] of Object.entries(side)){
+          if(line && (line.t||0) > roundTopTries){ roundTopTries = line.t; roundTopScorer = G.players[+id]; }
+        }
+      }
+    }
+    const leaderLine = leader && leaderRec
+      ? `${leader.nick} lead the competition (${leaderRec.w}W-${leaderRec.l}L, ${leaderRec.pts}pts).`
+      : '';
+    const bigWinLine = biggestM
+      ? ` Biggest win: ${G.teams[biggestM.h].nick} ${biggestM.hs}–${biggestM.as} ${G.teams[biggestM.a].nick} (${biggestMargin} pts).`
+      : '';
+    const scorerLine = roundTopScorer && roundTopTries >= 2
+      ? ` Round's top try scorer: ${roundTopScorer.name} (${roundTopTries}T).`
+      : '';
+    if(leaderLine || bigWinLine){
+      addNews(
+        `Round ${G.round+1} complete. ${leaderLine}${bigWinLine}${scorerLine}`,
+        {title:`Round ${G.round+1} Wrap`, type:'league', tone:'neutral', tag:'League', r:G.round+1, y:G.year}
+      );
+    }
   }
 
   if((G.coach.shortlist || []).length && G.phase === 'regular' && (G.round+1) % 4 === 0){
@@ -1002,7 +1071,7 @@ function generateWeeklyMedia(round, myM){
     }
   }
 }
-function generateStaffRecommendations(){
+export function generateStaffRecommendations(){
   if(!G.staff || !G.staff.length || !myTeam()) return;
   const mt = myTeam();
   const topPlayers = mt.players.map(id=>G.players[id]).filter(p=>p && (p.squad==='top'||!p.squad));
@@ -1071,7 +1140,7 @@ function generateStaffRecommendations(){
     }
   }
 }
-function generatePlayerMessages(){
+export function generatePlayerMessages(){
   const mt = myTeam();
   if(!mt || G.phase !== 'regular') return;
   const round = G.round + 1;
@@ -1103,7 +1172,7 @@ function generatePlayerMessages(){
   p._lastPlayerMessageRound = round;
   addNews(body, {title, type:'player', tone, playerId:p.id, teamId:mt.id, tag:'Player Message', r:round, y:G.year});
 }
-function advanceScouting(){
+export function advanceScouting(){
   if(!G.scouting || !G.scouting.missions) return;
   const done = [];
   for(const mission of G.scouting.missions){
@@ -1152,3 +1221,19 @@ function advanceScouting(){
   }
   G.scouting.missions = G.scouting.missions.filter(m=>!done.includes(m));
 }
+
+if (typeof window !== 'undefined') Object.assign(window, {
+  VENDOR_FB_REV, VENDOR_MERCH_REV, VENDOR_FB_COSTS, VENDOR_MERCH_COSTS,
+  generateOriginSchedule, simOriginIfDue, simInternationalWindow, vendorRevenuePerHead,
+  completeRound, completeRoundIfReady, advanceRound, achievementUnlocked, unlockAchievement,
+  checkAchievements, premiershipStreak, coachBadgeList,
+  FACILITY_BUILD_WEEKS, ensureClubFacilities, facilityLevel, ensureTeamFacilities,
+  teamFacilityLevel, teamFacilityAverage, facilityUnderConstruction, stadiumCapacity,
+  tickConstruction, facilityUpgradeCost, facilityPrestige, clubPrestigeScore, clubPrestigeTier,
+  aiTicketPrice, aiMembershipPrice, leagueTicketInfo, leagueClubPrices,
+  recentWinStreak, matchCrowd, weeklyRecoveryAndDev, staffMultiplier, positionalCoachMultiplier,
+  PHYSICAL_ATTRS, TECHNICAL_ATTRS, MENTAL_ATTRS, positionKeyAttrs, developPlayer,
+  handleIndividualTraining, payCoachWeekly, payClubWeekly, aiUseFreeAgents,
+  auditContractPromises, coachWeekly, generateWeeklyMedia, generateStaffRecommendations,
+  generatePlayerMessages, advanceScouting,
+});

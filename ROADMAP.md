@@ -1,6 +1,6 @@
 # Project Minto V2 — Roadmap
 
-_Last updated: 2026-06-26_
+_Last updated: 2026-06-27_
 
 Two tracks run in parallel: a **technical track** (the Tauri/Rust migration)
 and a **feature track** (deepening the game). The agreed priority is to lay the
@@ -71,6 +71,10 @@ Target: **full FM-level tactical depth**.
 - Field position / territory tracking.
 - Ruck speed as a factor in fatigue, line speed, and completion rate.
 - Play-by-play event model (runs, line breaks, offloads, kicks, errors).
+- Attacking channels and try sources: middle, left edge, right edge, kicks,
+  offloads, repeat sets, and key-player involvement.
+- Defensive vulnerability model: metres conceded by channel, edge breaks,
+  missed tackles, ruck speed allowed, kick pressure, and fatigue late in halves.
 - Engine-tracked interchanges/substitutions (not just UI), with fatigue making
   bench rotation a real lever.
 - Late-game decision logic: chasing vs protecting a lead, field-goal seeking,
@@ -83,13 +87,38 @@ Target: **full FM-level tactical depth**.
 - Mid-game pause to make substitutions/tactical changes during the second half
   (V1 already does half-time decisions; extend to live).
 - Richer in-game tactical responses to momentum, score, weather, fatigue.
+- Live tactical switches: middle/left/right attacking focus, tempo, offload
+  risk, field-position kicking, expansive own-half play, defensive aggression,
+  rush pressure on a key playmaker, and targeted big-hit pressure.
+- Late-game intent presets: protect lead, manage territory, chase points,
+  field-goal setup, or controlled possession.
+- First tactical switch is live: attacking focus can be set pre-match from the
+  Tactics page or Match Day, and it influences expected tries, run distribution,
+  metres, line-break chance, kicking volume, and error risk.
 
-### C. Representative & international depth
+### C. Tactical intelligence and pre-match analysis
+- Wednesday staff report for the upcoming opponent, generated from coaching and
+  scouting staff ratings plus available data.
+- Report accuracy depends on staff quality: weak staff can miss key players,
+  misread attacking tendencies, or overstate vulnerabilities.
+- Report includes expected lineup, key players, attacking channels, scoring
+  methods, vulnerable defensive channels, kick/repeat-set threat, fatigue
+  patterns, and suggested matchup issues.
+- Analysis becomes actionable: swap a defender onto a strike centre, target a
+  halfback/five-eighth in defence to tire them, rush a playmaker, focus attack
+  at a weak edge, dominate the middle, or use kicks to pin a weak backfield.
+- Reports and tactical choices feed directly into the match engine, where player
+  attributes, suitability, fatigue, weather, staff accuracy, and opposition
+  counters determine whether the plan works.
+- First slice implemented: Wednesday report stores `G.matchIntel`, appears in
+  inbox, links to Tactics, and quick-applies attacking focus.
+
+### D. Representative & international depth
 - In-season Test fixtures/windows (V1 has State of Origin + a post-season
   international window already).
 - Coach representative-job offers and dual-role management.
 
-### D. Management breadth
+### E. Management breadth
 - **Lower leagues & expansion:** second-tier competition, promotion/relegation,
   club merger/dissolution, loan system.
 - Deeper **youth academy** pathway and youth-grade competition.
@@ -98,12 +127,12 @@ Target: **full FM-level tactical depth**.
 - Better **bye/draw** handling: forced even-team byes, Origin-round blocks,
   multi-bye distribution.
 
-### E. Game feel & UX
+### F. Game feel & UX
 - Smoother navigation, transitions, and match-view presentation.
 - Reworked/simplified player avatars (current SVG is heavy at small sizes).
 - Onboarding for new managers; clearer surfacing of how decisions affect results.
 
-### F. World simulation realism
+### G. World simulation realism
 - AI clubs making smarter squad/tactical/transfer decisions.
 - Richer media, narrative, and reputation systems.
 - Long-term league evolution (records, dynasties, rule changes).
@@ -116,7 +145,11 @@ Target: **full FM-level tactical depth**.
 2. **Phase 3 step 1** (RNG + player gen in Rust) — learn Rust on a safe slice.
 3. **Phase 3 step 3 + Feature A** (match engine port *with* added depth) — the
    payoff: a deeper, faster, Rust-powered match engine where decisions matter.
-4. Iterate outward through the feature track, with SQLite (Phase 4) once state
+4. **Feature C foundation** — staff-generated Wednesday opponent reports,
+   backed by real match tendencies and imperfect staff accuracy.
+5. **Feature B tactical controls** — make the report actionable before and
+   during matches with visible trade-offs.
+6. Iterate outward through the feature track, with SQLite (Phase 4) once state
    ownership has moved to Rust.
 
 > This roadmap is a living document — re-prioritise per session in HANDOVER.md.

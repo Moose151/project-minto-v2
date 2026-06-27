@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Contracts — players coming off contract this season */
 Object.assign(UI, {
@@ -154,7 +155,7 @@ Object.assign(UI, {
         </div>
       </div>
       <div class="sign-meter"><i style="width:${pct}%"></i></div>
-      <p style="color:var(--muted);font-size:12px">Estimated signing chance: <b style="color:${pct>=70?'var(--green)':pct<40?'var(--red)':'var(--brass)'}">${pct}%</b> · first-year cap hit ${money(firstYear)} · cap after deal: ${money(afterCap)}</p>
+      <p style="color:var(--muted);font-size:12px">Estimated signing chance: <b style="color:${pct>=70?'var(--green)':pct<40?'var(--red)':'var(--accent)'}">${pct}%</b> · first-year cap hit ${money(firstYear)} · cap after deal: ${money(afterCap)}</p>
       <div class="btnrow"><button class="btn primary" onclick="UI.submitContractOffer()">Submit offer</button><button class="btn" onclick="UI.closeModal()">Cancel</button></div>`);
   },
   submitContractOffer(){
@@ -260,7 +261,7 @@ Object.assign(UI, {
         ${p.personality ? `<div style="grid-column:1/-1"><span style="color:var(--muted)">Personality</span> <b>${{'money':'Money-Driven','winner':'Win-Hungry','loyal':'Club Loyalist','ambitious':'Prestige-Seeker','homesick':'Homesick','balanced':'Balanced'}[p.personality]||p.personality}</b></div>` : ''}
       </div>
       ${intent.reason ? `<p style="font-size:11px;color:var(--dim);margin:4px 0 8px;font-style:italic">"${esc(intent.reason)}"</p>` : ''}
-      ${promiseSummary(p) !== 'No promises' ? `<p style="font-size:11px;color:var(--brass);margin:0 0 8px">Promises: ${esc(promiseSummary(p))}</p>` : ''}
+      ${promiseSummary(p) !== 'No promises' ? `<p style="font-size:11px;color:var(--accent);margin:0 0 8px">Promises: ${esc(promiseSummary(p))}</p>` : ''}
 
       ${payoutSection}
 

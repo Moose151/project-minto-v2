@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* History — season-by-season honour roll with expandable year detail */
 Object.assign(UI, {
@@ -80,7 +81,7 @@ Object.assign(UI, {
       const ladRows = (h.ladder || []).map((r, i) => {
         const lt = G.teams[r.id];
         const isMyTeam = lt && lt.id === G.coach.teamId;
-        return lt ? `<tr style="${isMyTeam?'background:rgba(210,165,62,.08)':''}">
+        return lt ? `<tr style="${isMyTeam?'background:var(--accent-muted)':''}">
           <td class="lpos">${i+1}</td>
           <td><span class="team-spine" style="background:${lt.c1}"></span>${esc(lt.nick)}</td>
           <td class="num">${r.pts}pt</td>
@@ -90,21 +91,21 @@ Object.assign(UI, {
       const detailRow = `<tr><td colspan="7" style="padding:0">
         <div style="background:var(--card2);border-radius:6px;margin:2px 0 8px;padding:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px">
           <div>
-            <div style="font-size:11px;color:var(--brass);font-weight:700;text-transform:uppercase;margin-bottom:6px">Awards</div>
+            <div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;margin-bottom:6px">Awards</div>
             <div style="font-size:12px;margin:3px 0"><span style="color:var(--muted)">POTY:</span> ${h.poty ? `${playerLink(h.poty)}${h.poty.votes?' ('+h.poty.votes+' votes)':''}` : '—'}</div>
             <div style="font-size:12px;margin:3px 0"><span style="color:var(--muted)">Rookie:</span> ${playerLink(h.rookie)}</div>
             <div style="font-size:12px;margin:3px 0"><span style="color:var(--muted)">Top try scorer:</span> ${h.topTry ? `${playerLink(h.topTry)}${h.topTry.tries?' ('+h.topTry.tries+' tries)':''}` : '—'}</div>
             <div style="font-size:12px;margin:3px 0"><span style="color:var(--muted)">Coach of year:</span> ${coachYearName ? esc(coachYearName) : '—'}</div>
           </div>
           <div>
-            <div style="font-size:11px;color:var(--brass);font-weight:700;text-transform:uppercase;margin-bottom:6px">Grand Final</div>
+            <div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;margin-bottom:6px">Grand Final</div>
             <div style="font-size:13px;font-weight:600">${gfLine}</div>
             ${pt ? `<div style="font-size:12px;color:var(--muted);margin-top:4px">Premiers: <span onclick="UI.teamModal(${h.premier})" style="cursor:pointer;text-decoration:underline">${esc(teamName(pt))}</span></div>` : ''}
             ${mt ? `<div style="font-size:12px;color:var(--muted)">Minor premiers: <span onclick="UI.teamModal(${h.minor})" style="cursor:pointer;text-decoration:underline">${esc(mt.nick)}</span></div>` : ''}
             ${isMine ? `<div style="font-size:12px;margin-top:8px;color:${h.myPos<=4?'var(--green)':h.myPos>G.teams.length*.7?'var(--red)':'var(--ink)'}">${esc(G.coach.name)}: finished ${ord(h.myPos)}</div>` : ''}
           </div>
           <div>
-            <div style="font-size:11px;color:var(--brass);font-weight:700;text-transform:uppercase;margin-bottom:6px">Ladder</div>
+            <div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;margin-bottom:6px">Ladder</div>
             <table style="width:100%"><tbody>${ladRows || '<tr><td colspan="3" style="color:var(--muted)">—</td></tr>'}</tbody></table>
           </div>
         </div>

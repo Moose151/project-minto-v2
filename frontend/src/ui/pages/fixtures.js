@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Fixtures & Results — one round at a time with pagination */
 Object.assign(UI, {
@@ -34,8 +35,8 @@ Object.assign(UI, {
       const reportBtn = m.played && m.det
         ? `<div style="text-align:center;margin:-2px 0 4px"><button class="btn sm" onclick="G._lastPlayedMatch=G.fixtures[${r}].find(mm=>mm.h===${m.h}&&mm.a===${m.a});UI.go('match-report')" style="font-size:10px;padding:2px 10px">Match report →</button></div>`
         : '';
-      return `<div style="${mine ? 'background:rgba(210,165,62,.06);border-radius:6px;margin:0 -6px;padding:2px 6px;' : ''}">
-        <div style="font-size:9px;color:var(--brass);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">${esc(slotLabel)}${slotWeather}</div>
+      return `<div style="${mine ? 'background:var(--accent-a06);border-radius:6px;margin:0 -6px;padding:2px 6px;' : ''}">
+        <div style="font-size:9px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">${esc(slotLabel)}${slotWeather}</div>
         <div class="score-line">
           ${teamLogo(th,24)}
           <span class="t ${m.played && m.hs > m.as ? 'winner' : ''}">${esc(th.nick)}</span>
@@ -51,7 +52,7 @@ Object.assign(UI, {
     };
 
     const byeCard = byeTeamIds.length ? `<div style="text-align:center;padding:10px 0 6px;border-top:1px solid var(--line);margin-top:8px">
-      <span style="color:var(--brass);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase">BYE — </span>
+      <span style="color:var(--accent);font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase">BYE — </span>
       ${byeTeamIds.map(id=>{ const bt=G.teams[id]; return bt?`<span style="font-size:12px">${teamLogo(bt,16)} ${esc(bt.nick)}</span>`:''; }).join(' ')}
     </div>` : '';
 
@@ -69,9 +70,9 @@ Object.assign(UI, {
       ${G.phase==='regular' ? `<button class="btn sm" onclick="UI._fixtRound=${G.round};UI.render()">Now</button>` : ''}
     </div>`;
 
-    const byeAlert = myBye ? `<div style="background:rgba(210,165,62,.1);border:1px solid var(--brass);border-radius:6px;padding:8px 12px;margin-bottom:10px;color:var(--brass);font-weight:700;text-align:center">YOUR TEAM HAS A BYE THIS ROUND · Players are resting and recovering</div>` : '';
-    const magicRoundBanner = isMagicRound ? `<div style="background:linear-gradient(135deg,rgba(210,165,62,.18),rgba(210,165,62,.06));border:1px solid rgba(210,165,62,.5);border-radius:6px;padding:8px 12px;margin-bottom:10px;text-align:center">
-      <div style="color:var(--brass);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase">★ Magic Round</div>
+    const byeAlert = myBye ? `<div style="background:var(--accent-a12);border:1px solid var(--accent);border-radius:6px;padding:8px 12px;margin-bottom:10px;color:var(--accent);font-weight:700;text-align:center">YOUR TEAM HAS A BYE THIS ROUND · Players are resting and recovering</div>` : '';
+    const magicRoundBanner = isMagicRound ? `<div style="background:linear-gradient(135deg,var(--accent-a18),var(--accent-a06));border:1px solid var(--accent-a50);border-radius:6px;padding:8px 12px;margin-bottom:10px;text-align:center">
+      <div style="color:var(--accent);font-weight:700;font-size:13px;letter-spacing:.08em;text-transform:uppercase">★ Magic Round</div>
       <div style="font-size:11px;color:var(--muted);margin-top:2px">All matches at ${magicHostTeam ? esc(magicHostTeam.stadium||magicHostTeam.city+' Stadium') : ''} · ${esc(G.magicRound.venue)}</div>
     </div>` : '';
     const roundCard = `<div class="card" style="padding:12px">
@@ -92,8 +93,8 @@ Object.assign(UI, {
         const mine = m.h === G.coach.teamId || m.a === G.coach.teamId;
         const venue = m.played && m.det ? m.det.venue : 'Grand Final Stadium';
         const crowd = m.played && m.det ? `${m.det.crowd.toLocaleString()} att.` : '';
-        return `<div style="${mine ? 'background:rgba(210,165,62,.06);border-radius:6px;margin:0 -6px;padding:2px 6px;' : ''}">
-          <div style="font-size:10px;color:var(--brass);font-weight:700;text-transform:uppercase;margin:8px 0 3px;letter-spacing:.05em">${esc(label)}</div>
+        return `<div style="${mine ? 'background:var(--accent-a06);border-radius:6px;margin:0 -6px;padding:2px 6px;' : ''}">
+          <div style="font-size:10px;color:var(--accent);font-weight:700;text-transform:uppercase;margin:8px 0 3px;letter-spacing:.05em">${esc(label)}</div>
           <div class="score-line">
             ${teamLogo(th,24)}
             <span class="t ${m.played && m.hs > m.as ? 'winner' : ''}">${esc(th.nick)}</span>
@@ -109,7 +110,7 @@ Object.assign(UI, {
 
       const sections = [];
       const week = (title, matches, labels) => `<div>
-        <div style="font-size:11px;font-weight:700;color:var(--brass);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${title}</div>
+        <div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${title}</div>
         ${matches.map((m, i) => fg(m, labels[i])).join('')}
       </div>`;
 
@@ -127,7 +128,7 @@ Object.assign(UI, {
         }
         if(F.gf){
           const gfSection = week('Week 4 — Grand Final', [F.gf], ['Grand Final']);
-          const premBanner = F.premier ? `<div style="text-align:center;color:var(--brass);font-family:var(--disp);font-size:20px;font-weight:700;margin:10px 0 4px">${esc(G.teams[F.premier].nick)} — ${G.year} Premiers</div>` : '';
+          const premBanner = F.premier ? `<div style="text-align:center;color:var(--accent);font-family:var(--disp);font-size:20px;font-weight:700;margin:10px 0 4px">${esc(G.teams[F.premier].nick)} — ${G.year} Premiers</div>` : '';
           sections.push(gfSection + premBanner);
         }
       } else {
@@ -136,14 +137,14 @@ Object.assign(UI, {
         if(qMatches.length) sections.push(week('Semi Finals', qMatches, qMatches.map((_,i) => `Semi Final ${i+1}`)));
         if(F.gf){
           const gfSection = week('Grand Final', [F.gf], ['Grand Final']);
-          const premBanner = F.premier ? `<div style="text-align:center;color:var(--brass);font-family:var(--disp);font-size:20px;font-weight:700;margin:10px 0 4px">${esc(G.teams[F.premier].nick)} — ${G.year} Premiers</div>` : '';
+          const premBanner = F.premier ? `<div style="text-align:center;color:var(--accent);font-family:var(--disp);font-size:20px;font-weight:700;margin:10px 0 4px">${esc(G.teams[F.premier].nick)} — ${G.year} Premiers</div>` : '';
           sections.push(gfSection + premBanner);
         }
       }
 
       if(sections.length){
-        finalsHtml = `<div class="card" style="margin-bottom:16px;border-color:var(--brass);padding:12px">
-          <div class="navsep" style="margin:0 0 10px;color:var(--brass)">Finals Series — ${G.year}</div>
+        finalsHtml = `<div class="card" style="margin-bottom:16px;border-color:var(--accent);padding:12px">
+          <div class="navsep" style="margin:0 0 10px;color:var(--accent)">Finals Series — ${G.year}</div>
           ${sections.join('<hr style="border:none;border-top:1px solid var(--line);margin:10px 0">')}
         </div>`;
       }

@@ -1,9 +1,14 @@
-'use strict';
+import { UI } from "./01-core.js";
+
 
 Object.assign(UI, {
   /* ---------- advance ---------- */
   advance(){
-    if(!G || G.phase==='offseason') return;
+    if(!G) return;
+    if(G.phase === 'offseason'){
+      if(G.offseason && G.offseason.step === 'preseason') UI.completePreseason();
+      return;
+    }
     const stop = G.phase === 'regular' && typeof calendarStopForDay === 'function' ? calendarStopForDay(ensureCalendar().day) : null;
     const onBye = G.phase === 'regular' && ((G.byes && G.byes[G.round]) || []).includes(G.coach.teamId);
     if(stop && stop.key === 'training' && G.calendar.trainingReviewedDay !== G.calendar.day){
@@ -113,7 +118,7 @@ Object.assign(UI, {
             <span style="color:var(--dim);font-size:10px;width:24px;flex-shrink:0">${ev.min}'</span>
             <span style="color:${col};font-weight:700;width:28px;flex-shrink:0;font-size:10px">TRY</span>
             <span style="flex:1">${esc(scorer?scorer.name:'?')}${assist?` <span style="color:var(--muted)">(${esc(assist.name)})</span>`:''} <span style="font-size:10px;color:${ev.converted?'var(--green)':'var(--red)'}">${ev.converted?'CONV':'NO CONV'}</span> <span style="color:var(--muted);font-size:10px">${esc(team.nick)}</span></span>
-            <span style="font-family:var(--disp);font-weight:700;font-size:12px;color:var(--brass)">${sH}–${sA}</span>
+            <span style="font-family:var(--disp);font-weight:700;font-size:12px;color:var(--accent)">${sH}–${sA}</span>
           </div>`;
         }
         if(item.type==='pen'){
@@ -124,7 +129,7 @@ Object.assign(UI, {
             <span style="color:var(--dim);font-size:10px;width:24px;flex-shrink:0">${ev.min}'</span>
             <span style="color:var(--muted);width:28px;flex-shrink:0;font-size:10px">PEN</span>
             <span style="flex:1">${kicker?esc(kicker.name):'?'} <span style="color:var(--muted);font-size:10px">${esc(team.nick)}</span></span>
-            <span style="font-family:var(--disp);font-weight:700;font-size:12px;color:var(--brass)">${sH}–${sA}</span>
+            <span style="font-family:var(--disp);font-weight:700;font-size:12px;color:var(--accent)">${sH}–${sA}</span>
           </div>`;
         }
         if(item.type==='fg'){
@@ -134,7 +139,7 @@ Object.assign(UI, {
             <span style="color:var(--dim);font-size:10px;width:24px;flex-shrink:0">${ev.min}'</span>
             <span style="color:var(--muted);width:28px;flex-shrink:0;font-size:10px">FG</span>
             <span style="flex:1">${team?esc(team.nick):'?'}</span>
-            <span style="font-family:var(--disp);font-weight:700;font-size:12px;color:var(--brass)">${sH}–${sA}</span>
+            <span style="font-family:var(--disp);font-weight:700;font-size:12px;color:var(--accent)">${sH}–${sA}</span>
           </div>`;
         }
         return '';
@@ -142,7 +147,7 @@ Object.assign(UI, {
 
       const perfRow = x => `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px;border-bottom:1px solid var(--line)">
         <span style="cursor:pointer;text-decoration:underline;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onclick="UI.closeModal();UI.playerModal(${x.p.id})">${esc(x.p.name)} <span class="pos-tag" style="font-size:10px">${x.p.pos}</span></span>
-        <span style="color:var(--muted);font-size:11px;white-space:nowrap;padding-left:6px">${x.l.t?x.l.t+'T ':''}${x.l.ta?x.l.ta+'TA ':''}${x.l.gl?x.l.gl+(x.l.ga?'/'+x.l.ga:'')+'G ':''}${x.l.fg?x.l.fg+'FG ':''}${x.l.k4020?x.l.k4020+' 40/20 ':''}${x.l.fdo?x.l.fdo+' FDO ':''}<b style="color:var(--ink)">${x.l.r.toFixed(1)}</b></span>
+        <span style="color:var(--muted);font-size:11px;white-space:nowrap;padding-left:6px">${x.l.t?x.l.t+'T ':''}${x.l.ta?x.l.ta+'TA ':''}${x.l.gl?x.l.gl+(x.l.ga?'/'+x.l.ga:'')+'G ':''}${x.l.fg?x.l.fg+'FG ':''}${x.l.m?Math.round(x.l.m)+'m ':''}${x.l.lb?x.l.lb+'LB ':''}${x.l.k4020?x.l.k4020+' 40/20 ':''}${x.l.fdo?x.l.fdo+' FDO ':''}<b style="color:var(--ink)">${x.l.r.toFixed(1)}</b></span>
       </div>`;
 
       const statCmp = (label, myN, oppN, myTxt, oppTxt, lowerIsBetter) => {
@@ -160,9 +165,9 @@ Object.assign(UI, {
 
       big = `
         <div class="vs-big" style="padding:10px 0">
-          <div class="tm">${teamLogo(th,32)}<div class="nm">${esc(th.nick)}</div><div class="sc ${myM.hs>myM.as?'winner':''}" style="color:${myM.hs>=myM.as?'var(--brass)':'var(--ink)'}">${myM.hs}</div></div>
+          <div class="tm">${teamLogo(th,32)}<div class="nm">${esc(th.nick)}</div><div class="sc ${myM.hs>myM.as?'winner':''}" style="color:${myM.hs>=myM.as?'var(--accent)':'var(--ink)'}">${myM.hs}</div></div>
           <div class="dash">–</div>
-          <div class="tm">${teamLogo(ta,32)}<div class="nm">${esc(ta.nick)}</div><div class="sc ${myM.as>myM.hs?'winner':''}" style="color:${myM.as>=myM.hs?'var(--brass)':'var(--ink)'}">${myM.as}</div></div>
+          <div class="tm">${teamLogo(ta,32)}<div class="nm">${esc(ta.nick)}</div><div class="sc ${myM.as>myM.hs?'winner':''}" style="color:${myM.as>=myM.hs?'var(--accent)':'var(--ink)'}">${myM.as}</div></div>
         </div>
         <p style="text-align:center;color:${won?'var(--green)':drew?'var(--muted)':'var(--red)'};font-weight:700;font-size:15px;margin:0 0 4px">${won?'WIN':drew?'DRAW':'LOSS'}</p>
         <p style="text-align:center;font-size:11px;color:var(--muted);margin:0 0 14px">${esc(myM.det.venue||'')} · ${esc(myM.det.weather||'')} · ${(myM.det.crowd||0).toLocaleString()} crowd · HT: ${htMine}–${htOpp}</p>

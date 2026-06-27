@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Dashboard — club hub, next match, mini ladder, media feed */
 Object.assign(UI, {
@@ -60,7 +61,7 @@ Object.assign(UI, {
     let nextHtml = '<p class="page-sub">No upcoming fixture.</p>';
     if(onBye && !next){
       nextHtml = `<div style="text-align:center;padding:16px 0 8px">
-        <div style="font-size:40px;font-weight:900;font-family:var(--disp);color:var(--brass);letter-spacing:.06em">BYE</div>
+        <div style="font-size:40px;font-weight:900;font-family:var(--disp);color:var(--accent);letter-spacing:.06em">BYE</div>
         <p class="page-sub" style="margin:4px 0 10px">Round ${G.round+1} — rest week. Players get a bonus conditioning boost.</p>
         <div class="btnrow" style="justify-content:center"><button class="btn primary" onclick="UI.advance()">Next day</button><button class="btn" onclick="UI.go('calendar')">Calendar</button><button class="btn" onclick="UI.go('fixtures')">View fixtures</button></div>
       </div>`;
@@ -79,7 +80,7 @@ Object.assign(UI, {
         const color = t0==='W'?'var(--green)':t0==='L'?'var(--red)':'var(--muted)';
         return `<span style="font-size:11px;font-weight:700;color:${color};margin-left:6px">${count === form.length ? count+'✦ ' : count+'×'}${t0==='W'?'WIN STREAK':t0==='L'?'LOSS STREAK':'DRAWS'}</span>`;
       })();
-      const slotInfo = next && next.slot ? `<span style="font-size:11px;color:var(--brass);font-weight:700;margin-right:8px">${esc(next.slot.label)}</span>` : '';
+      const slotInfo = next && next.slot ? `<span style="font-size:11px;color:var(--accent);font-weight:700;margin-right:8px">${esc(next.slot.label)}</span>` : '';
       nextHtml = `<div class="vs-big" style="padding:8px 0">
         <div class="tm">${teamLogo(t,58)}<div class="nm">${esc(t.nick)}</div><div class="pmeta" style="color:var(--muted)">${ord(pos)} · ${rec?rec.w+'-'+rec.l:'–'}${streak}</div><div class="team-rating-row" style="justify-content:center">${teamRatingPill(t,'overall','OVR')}${teamRatingPill(t,'atk','ATT')}${teamRatingPill(t,'def','DEF')}</div></div>
         <div class="dash">v</div>
@@ -89,7 +90,7 @@ Object.assign(UI, {
         const mr = G.magicRound;
         if(mr && mr.round === G.round){
           const mrH = G.teams.find(x=>x.id===mr.hostTeamId);
-          return `<div style="text-align:center;margin:4px 0;padding:4px 8px;background:rgba(210,165,62,.12);border-radius:6px;font-size:11px;color:var(--brass);font-weight:600">✦ Magic Round · ${esc(mr.venue)} · Neutral venue — no home advantage</div>`;
+          return `<div style="text-align:center;margin:4px 0;padding:4px 8px;background:var(--accent-a12);border-radius:6px;font-size:11px;color:var(--accent);font-weight:600">✦ Magic Round · ${esc(mr.venue)} · Neutral venue — no home advantage</div>`;
         }
         return `<p style="text-align:center; color:var(--muted); font-size:12px">${slotInfo}${home?'Home':'Away'} · Round ${G.round+1}</p>`;
       })()}
@@ -103,7 +104,7 @@ Object.assign(UI, {
     }
     const mini = lad.slice(0,8).map((r,i)=>{
       const tm = G.teams[r.id];
-      return `<tr style="${tm.id===t.id?'background:rgba(210,165,62,.07)':''}"><td class="lpos">${i+1}</td><td>${teamLogo(tm,24)} ${esc(tm.nick)}</td><td class="num">${r.pts}</td><td>${r.form.slice(-5).map(f=>`<span class="form-dot ${f}"></span>`).join('')}</td></tr>`;
+      return `<tr style="${tm.id===t.id?'background:var(--accent-a06)':''}"><td class="lpos">${i+1}</td><td>${teamLogo(tm,24)} ${esc(tm.nick)}</td><td class="num">${r.pts}</td><td>${r.form.slice(-5).map(f=>`<span class="form-dot ${f}"></span>`).join('')}</td></tr>`;
     }).join('');
     // State of Origin widget
     const originHtml = (() => {
@@ -117,8 +118,8 @@ Object.assign(UI, {
       const lastGame = played[played.length-1];
       const lastLine = lastGame ? `Game ${lastGame.num}: QLD ${lastGame.qldScore}–${lastGame.nswScore} NSW · ` : '';
       const nextLine = next ? `Game ${next.num} · Round ${next.round+1} · ${next.venue}` : 'Series complete';
-      return `<div class="card" style="margin-top:12px;padding:10px 14px;border-color:rgba(210,165,62,.4)">
-        <div style="font-size:11px;color:var(--brass);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">State of Origin ${G.year}</div>
+      return `<div class="card" style="margin-top:12px;padding:10px 14px;border-color:var(--accent-line)">
+        <div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">State of Origin ${G.year}</div>
         <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
           <div>
             <span style="font-size:20px;font-weight:700;font-family:var(--disp)">QLD ${s.qld} – NSW ${s.nsw}</span>
@@ -139,8 +140,8 @@ Object.assign(UI, {
         const h=G.teams[m.h], a=G.teams[m.a];
         const mine = m.h===G.coach.teamId || m.a===G.coach.teamId;
         const slotLabel = m.slot ? m.slot.label : 'Sat Afternoon';
-        return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--line);${mine?'background:rgba(210,165,62,.06);margin:0 -8px;padding:4px 8px;':''}">
-          <span style="font-size:9px;color:var(--brass);min-width:68px;flex-shrink:0;font-weight:600">${esc(slotLabel)}</span>
+        return `<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:1px solid var(--line);${mine?'background:var(--accent-a06);margin:0 -8px;padding:4px 8px;':''}">
+          <span style="font-size:9px;color:var(--accent);min-width:68px;flex-shrink:0;font-weight:600">${esc(slotLabel)}</span>
           ${teamLogo(h,18)}
           <span style="font-size:12px;font-weight:${m.hs>m.as?700:400};flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis">${esc(h.nick)}</span>
           <span style="font-size:13px;font-weight:700;font-family:var(--disp);min-width:36px;text-align:center">${m.hs}–${m.as}</span>
@@ -149,7 +150,7 @@ Object.assign(UI, {
         </div>`;
       });
       const byeTeams = (G.byes && G.byes[lastCompletedRound]) || [];
-      const byeRow = byeTeams.length ? `<div style="font-size:10px;color:var(--brass);text-align:center;padding:4px 0">${byeTeams.map(id=>G.teams[id]?esc(G.teams[id].nick):'').join(', ')} — BYE</div>` : '';
+      const byeRow = byeTeams.length ? `<div style="font-size:10px;color:var(--accent);text-align:center;padding:4px 0">${byeTeams.map(id=>G.teams[id]?esc(G.teams[id].nick):'').join(', ')} — BYE</div>` : '';
       return `<div class="card" style="margin-top:16px"><h2 class="sec" style="margin-top:0">Round ${lastCompletedRound+1} Results</h2>${rows.join('')}${byeRow}
         <div class="btnrow" style="margin-top:8px"><button class="btn sm" onclick="UI._fixtRound=${lastCompletedRound};UI.go('fixtures')">Full fixtures</button></div>
       </div>`;

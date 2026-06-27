@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Training — weekly focus + developing-players table */
 Object.assign(UI, {
@@ -43,19 +44,19 @@ Object.assign(UI, {
       <option value="">Choose specialist</option>${specOpts(p).filter(s=>s!==p.spec).map(s=>`<option value="${s}" ${p.retrainSpec===s?'selected':''}>${SPECIALIST_LABEL[s]||s}</option>`).join('')}
     </select>`;
     return `<h1 class="page">Training</h1><p class="page-sub">Weekly focus shapes who develops and how fresh your squad stays.</p>
-    ${reviewDue?`<div class="card" style="border-color:var(--brass);margin-bottom:12px">
-      <div style="font-family:var(--disp);font-size:22px;font-weight:700;color:var(--brass)">Training review due</div>
+    ${reviewDue?`<div class="card" style="border-color:var(--accent);margin-bottom:12px">
+      <div style="font-family:var(--disp);font-size:22px;font-weight:700;color:var(--accent)">Training review due</div>
       <p class="page-sub">Set a team focus and check overloaded players before advancing beyond Monday.</p>
       <div class="btnrow"><button class="btn primary" onclick="UI.markTrainingReviewed()">Mark review complete</button><button class="btn" onclick="UI.go('calendar')">Calendar</button></div>
     </div>`:''}
-    <div class="grid3">${opts.map(([k,l,d])=>`<div class="card" style="cursor:pointer; ${t.focus===k?'border-color:var(--brass)':''}" onclick="myTeam().focus='${k}'; UI.render()">
-      <div style="font-family:var(--disp); font-size:18px; font-weight:700; text-transform:uppercase; color:${t.focus===k?'var(--brass)':'var(--ink)'}">${l}</div>
+    <div class="grid3">${opts.map(([k,l,d])=>`<div class="card" style="cursor:pointer; ${t.focus===k?'border-color:var(--accent)':''}" onclick="myTeam().focus='${k}'; UI.render()">
+      <div style="font-family:var(--disp); font-size:18px; font-weight:700; text-transform:uppercase; color:${t.focus===k?'var(--accent)':'var(--ink)'}">${l}</div>
       <p style="color:var(--muted); font-size:12.5px; margin-top:4px">${d}</p></div>`).join('')}</div>
     ${loadWatch.length?`<h2 class="sec">Load management</h2>
     <div class="card" style="padding:6px;overflow-x:auto"><table><thead><tr><th class="noclick">Player</th><th class="noclick">Pos</th><th class="noclick num">Cond</th><th class="noclick num">Load</th><th class="noclick num">Fatigue</th><th class="noclick">Advice</th></tr></thead><tbody>${loadWatch.map(p=>{
       const fatigue = Math.round(p.fatigue || ((100-p.cond)*0.72 + (p.load||0)*0.48));
       const bad = fatigue >= 72 || p.cond < 62 || (p.load||0) > 74;
-      return `<tr class="click" onclick="UI.playerModal(${p.id})"><td><b>${esc(p.name)}</b></td><td><span class="pos-tag">${p.pos}</span></td><td class="num" style="color:${p.cond<65?'var(--red)':p.cond<78?'var(--brass)':'var(--muted)'}">${Math.round(p.cond)}%</td><td class="num">${Math.round(p.load||0)}</td><td class="num" style="color:${bad?'var(--red)':fatigue>=55?'var(--brass)':'var(--muted)'}">${fatigue}</td><td>${bad?'<span style="color:var(--red);font-size:12px">Rest or bench risk</span>':'<span style="color:var(--brass);font-size:12px">Monitor workload</span>'}</td></tr>`;
+      return `<tr class="click" onclick="UI.playerModal(${p.id})"><td><b>${esc(p.name)}</b></td><td><span class="pos-tag">${p.pos}</span></td><td class="num" style="color:${p.cond<65?'var(--red)':p.cond<78?'var(--accent)':'var(--muted)'}">${Math.round(p.cond)}%</td><td class="num">${Math.round(p.load||0)}</td><td class="num" style="color:${bad?'var(--red)':fatigue>=55?'var(--accent)':'var(--muted)'}">${fatigue}</td><td>${bad?'<span style="color:var(--red);font-size:12px">Rest or bench risk</span>':'<span style="color:var(--accent);font-size:12px">Monitor workload</span>'}</td></tr>`;
     }).join('')}</tbody></table></div>`:''}
     <h2 class="sec">Developing players</h2>
     <div class="card" style="padding:6px"><table><thead><tr><th class="noclick">Player</th><th class="noclick num">Age</th><th class="noclick num">OVR</th><th class="noclick num">Est. Potential</th><th class="noclick num">Est. Headroom</th></tr></thead><tbody>

@@ -1,7 +1,7 @@
-'use strict';
+
 
 /* ---------- offseason ---------- */
-function startOffseason(){
+export function startOffseason(){
   G.phase = 'offseason';
   // award: player of the year
   let best=null;
@@ -143,12 +143,12 @@ function startOffseason(){
     }
   }
 }
-function addPlayerAward(p, award, year, detail){
+export function addPlayerAward(p, award, year, detail){
   if(!p) return;
   p.awards = p.awards || [];
   p.awards.unshift({award, year:year || G.year, detail:detail || ''});
 }
-function recordTeamOfWeek(round){
+export function recordTeamOfWeek(round){
   const byPos = {};
   for(const m of round){
     if(!m.det) continue;
@@ -172,13 +172,13 @@ function recordTeamOfWeek(round){
     addPlayerAward(pick.p, 'Team of the Week', G.year, `Round ${G.round+1} · ${pick.line.r.toFixed(1)} rating`);
   }
 }
-function awardSeasonHonours(best, topTry, rookie, teamOfYear){
+export function awardSeasonHonours(best, topTry, rookie, teamOfYear){
   if(best) addPlayerAward(best, 'Player of the Year', G.year, `${best.s.votes} votes`);
   if(topTry) addPlayerAward(topTry, 'Top Tryscorer', G.year, `${topTry.s.t} tries`);
   if(rookie) addPlayerAward(rookie, 'Rookie of the Year', G.year, `${rookie.s.g} games`);
   for(const item of teamOfYear || []) addPlayerAward(G.players[item.id], 'Team of the Year', G.year, `${item.slot} · ${item.avg} avg`);
 }
-function seasonTeamOfYear(){
+export function seasonTeamOfYear(){
   const out = [];
   const used = new Set();
   for(const pos of ['FB','WG','WG','CE','CE','FE','HB','PR','PR','HK','SR','SR','LK']){
@@ -189,7 +189,7 @@ function seasonTeamOfYear(){
   }
   return out;
 }
-function coachOfYear(lad){
+export function coachOfYear(lad){
   let best = null;
   for(const r of lad){
     const t = G.teams[r.id];
@@ -201,7 +201,7 @@ function coachOfYear(lad){
   }
   return best;
 }
-function assistantHeadCoachReadiness(s){
+export function assistantHeadCoachReadiness(s){
   if(!s) return 0;
   const role = STAFF_ROLES.find(r=>r.key===s.role) || {};
   const roleBonus = s.role === 'youth' ? 7
@@ -211,7 +211,7 @@ function assistantHeadCoachReadiness(s){
     : 0;
   return (s.ability || 0) + roleBonus + Math.min(6, (s.yearsLeft || 1) * 1.5);
 }
-function promoteAssistantToHeadCoach(t){
+export function promoteAssistantToHeadCoach(t){
   if(!G.staff || !G.staff.length) return null;
   const candidates = G.staff
     .map(s=>({s, readiness:assistantHeadCoachReadiness(s)}))
@@ -234,7 +234,7 @@ function promoteAssistantToHeadCoach(t){
   };
   return {name:s.name, roleLabel:role.label || s.role, rep};
 }
-function applyOffseasonDevelopment(){
+export function applyOffseasonDevelopment(){
   const OFFSEASON_WEEKS = 8;
   const improvers = [], decliners = [];
   for(const id in G.players){
@@ -327,7 +327,7 @@ function applyOffseasonDevelopment(){
     });
   }
 }
-function recordPlayerSeason(p){
+export function recordPlayerSeason(p){
   if(!p || !p.s) return;
   ensurePlayerCareerStats(p);
   p.history = p.history || [];
@@ -364,7 +364,7 @@ function recordPlayerSeason(p){
   });
   if(p.history.length > 30) p.history.pop();
 }
-function hallOfFameScore(p){
+export function hallOfFameScore(p){
   if(!p || !p.career) return 0;
   const awards = p.awards || [];
   const awardScore = awards.reduce((s,a)=>{
@@ -385,7 +385,7 @@ function hallOfFameScore(p){
     awardScore + Math.max(0, peakOvr-72)*4.5 + Math.max(0, avgRating-6.6)*18;
   return Math.round(score);
 }
-function considerHallOfFame(p, t){
+export function considerHallOfFame(p, t){
   G.hallOfFame = G.hallOfFame || [];
   if(G.hallOfFame.some(x=>x.id===p.id)) return null;
   const score = hallOfFameScore(p);
@@ -421,7 +421,7 @@ function considerHallOfFame(p, t){
   });
   return item;
 }
-function rookieOfYear(){
+export function rookieOfYear(){
   const rookies = Object.values(G.players).filter(p=>{
     const previousGames = p.seasonStartGames == null ? Math.max(0, p.career.games - p.s.g) : p.seasonStartGames;
     return p.age <= 21 && previousGames < 10 && p.s.g >= 6;
@@ -434,7 +434,7 @@ function rookieOfYear(){
   };
   return rookies.sort((a,b)=>score(b)-score(a))[0];
 }
-function reassessPotential(){
+export function reassessPotential(){
   for(const id in G.players){
     const p = G.players[id];
     if(!p || p.age > 24) continue;
@@ -474,18 +474,18 @@ function reassessPotential(){
     p.seasonStartPot = startPot;
   }
 }
-function teamOf(pid){ const t = G.teams.find(t=>t.players.includes(+pid)); return t? t.nick : '—'; }
-function currentSalary(p){ return p ? (p.salary || 0) : 0; }
-const TOP_SQUAD_CAP = 30;
-const YOUTH_SQUAD_CAP = 12;
-const TRIAL_SQUAD_CAP = 5;
-const TRIAL_GAME_CAP = 6;
-const TRIAL_SALARY_CAP = 150000;
-function isTopSquadPlayer(p){ return !!(p && (p.squad === 'top' || !p.squad)); }
-function isYouthSquadPlayer(p){ return !!(p && p.squad === 'dev'); }
-function isTrialSquadPlayer(p){ return !!(p && p.squad === 'trial'); }
-function salaryCountsForCap(p){ return isTopSquadPlayer(p); }
-function squadCount(t, squad){
+export function teamOf(pid){ const t = G.teams.find(t=>t.players.includes(+pid)); return t? t.nick : '—'; }
+export function currentSalary(p){ return p ? (p.salary || 0) : 0; }
+export const TOP_SQUAD_CAP = 30;
+export const YOUTH_SQUAD_CAP = 12;
+export const TRIAL_SQUAD_CAP = 5;
+export const TRIAL_GAME_CAP = 6;
+export const TRIAL_SALARY_CAP = 150000;
+export function isTopSquadPlayer(p){ return !!(p && (p.squad === 'top' || !p.squad)); }
+export function isYouthSquadPlayer(p){ return !!(p && p.squad === 'dev'); }
+export function isTrialSquadPlayer(p){ return !!(p && p.squad === 'trial'); }
+export function salaryCountsForCap(p){ return isTopSquadPlayer(p); }
+export function squadCount(t, squad){
   return (t.players || []).map(id=>G.players[id]).filter(p=>{
     if(squad === 'top') return isTopSquadPlayer(p);
     if(squad === 'dev') return isYouthSquadPlayer(p);
@@ -493,15 +493,15 @@ function squadCount(t, squad){
     return false;
   }).length;
 }
-function canJoinYouthSquad(p){ return !!(p && p.age < 21 && !p.everTopSquad); }
-function trialGamesUsed(p){ return Math.max(0, p && p.trialGames || 0); }
-function canTrialPlay(p){ return isTrialSquadPlayer(p) && trialGamesUsed(p) < TRIAL_GAME_CAP; }
-function selectionSquadEligible(p){ return isTopSquadPlayer(p) || canTrialPlay(p); }
-function teamSalary(t){ return (t.players || []).reduce((s,id)=>{ const p=G.players[id]; return s + (p && salaryCountsForCap(p) ? currentSalary(p) : 0); }, 0); }
-function ord(n){ const s=['th','st','nd','rd'], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+export function canJoinYouthSquad(p){ return !!(p && p.age < 21 && !p.everTopSquad); }
+export function trialGamesUsed(p){ return Math.max(0, p && p.trialGames || 0); }
+export function canTrialPlay(p){ return isTrialSquadPlayer(p) && trialGamesUsed(p) < TRIAL_GAME_CAP; }
+export function selectionSquadEligible(p){ return isTopSquadPlayer(p) || canTrialPlay(p); }
+export function teamSalary(t){ return (t.players || []).reduce((s,id)=>{ const p=G.players[id]; return s + (p && salaryCountsForCap(p) ? currentSalary(p) : 0); }, 0); }
+export function ord(n){ const s=['th','st','nd','rd'], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
 
 /* re-sign / free agent negotiation */
-function contractScheduleFor(annual, years, type){
+export function contractScheduleFor(annual, years, type){
   years = Math.round(years || 0);
   if(years <= 0) return [];
   years = clamp(years, 1, 5);
@@ -521,26 +521,26 @@ function contractScheduleFor(annual, years, type){
   schedule[schedule.length-1] = Math.max(85000, schedule[schedule.length-1] + diff);
   return schedule;
 }
-function contractTotal(p){
+export function contractTotal(p){
   if(!p) return 0;
   if(p.contractSchedule && p.contractSchedule.length) return p.contractSchedule.reduce((s,v)=>s+(+v||0),0);
   return (p.salary || 0) * Math.max(0, p.years || 0);
 }
-function contractAvg(p){
+export function contractAvg(p){
   const yrs = Math.max(1, p && p.years || 1);
   return Math.round(contractTotal(p) / yrs / 5000) * 5000;
 }
-function contractTypeLabel(type){
+export function contractTypeLabel(type){
   return type === 'front' ? 'Front-loaded' : type === 'back' ? 'Back-loaded' : 'Flat';
 }
-function setPlayerContract(p, annual, years, type){
+export function setPlayerContract(p, annual, years, type){
   const schedule = contractScheduleFor(annual, years, type);
   p.salary = schedule[0] || Math.round((+annual || 0) / 5000) * 5000;
   p.years = schedule.length;
   p.contractType = ['front','back'].includes(type) ? type : 'flat';
   p.contractSchedule = schedule;
 }
-function advanceContractSchedule(p){
+export function advanceContractSchedule(p){
   if(!p) return;
   if(p.contractSchedule && p.contractSchedule.length){
     p.contractSchedule.shift();
@@ -551,7 +551,7 @@ function advanceContractSchedule(p){
     p.contractType = 'flat';
   }
 }
-function demandFor(p, toTeam){
+export function demandFor(p, toTeam){
   let d = salaryFor(p);
   const posPremium = {
     HB:1.45, FE:1.38, HK:1.34,
@@ -582,7 +582,7 @@ function demandFor(p, toTeam){
   }
   return Math.round(d/5000)*5000;
 }
-function contractIntent(p, toTeam){
+export function contractIntent(p, toTeam){
   if(!p) return {key:'unknown', label:'Unknown', open:false, reason:'No player record.'};
   const current = G.teams.find(t=>t.players.includes(p.id));
   const isCurrentClub = !!(toTeam && current && current.id === toTeam.id);
@@ -602,13 +602,13 @@ function contractIntent(p, toTeam){
   if(years <= 1) return {key:'test_market', label:'Wants to test market', open:false, reason:'Prefers to wait for rival offers.'};
   return {key:'not_now', label:'Not now', open:false, reason:'Happy to wait before discussing an extension.'};
 }
-function offerContract(p, salary, years, toTeam, promises, demandOverride){
+export function offerContract(p, salary, years, toTeam, promises, demandOverride){
   const chance = contractSignChance(p, salary, years, toTeam, promises, demandOverride);
   const ok = rnd() < chance.prob;
   if(ok){ setPlayerContract(p, salary, years, promises && promises.contractType); p.promises = normalisePromises(promises); p.promiseTeam = toTeam.id; p.promiseConcern = 0; }
   return {ok, demand:chance.demand, prob:chance.prob};
 }
-function contractSignChance(p, salary, years, toTeam, promises, demandOverride){
+export function contractSignChance(p, salary, years, toTeam, promises, demandOverride){
   const demand = demandOverride != null ? demandOverride : demandFor(p, toTeam);
   let prob = clamp(.5 + (salary-demand)/demand*1.6, .02, .96);
   const current = G.teams.find(t=>t.players.includes(p.id));
@@ -653,7 +653,7 @@ function contractSignChance(p, salary, years, toTeam, promises, demandOverride){
   if(pr.minutes && minuteCount >= 4) prob *= 0.88;
   return {prob:clamp(prob,.01,.98), demand};
 }
-function normalisePromises(promises){
+export function normalisePromises(promises){
   promises = promises || {};
   return {
     role:    ['none','bench','starter','superstar'].includes(promises.role) ? promises.role : 'none',
@@ -664,7 +664,7 @@ function normalisePromises(promises){
     contractType: ['flat','front','back'].includes(promises.contractType) ? promises.contractType : 'flat',
   };
 }
-function promiseSummary(p){
+export function promiseSummary(p){
   const pr = p && p.promises;
   if(!pr) return 'No promises';
   const bits = [];
@@ -675,11 +675,11 @@ function promiseSummary(p){
   if(pr.pathway)  bits.push('dev pathway');
   return bits.length ? bits.join(' + ') : 'No promises';
 }
-function releasePlayer(t, pid){
+export function releasePlayer(t, pid){
   t.players = t.players.filter(x=>x!==pid);
   if(G.offseason && !G.offseason.freeAgents.includes(pid)) G.offseason.freeAgents.push(pid);
 }
-function finishContractsPhase(){
+export function finishContractsPhase(){
   const mt = myTeam();
   // unsigned expiring players at my club walk to free agency
   for(const id of mt.players.slice()){
@@ -739,7 +739,7 @@ function finishContractsPhase(){
     }
   }
 }
-function createPreseasonPlan(){
+export function createPreseasonPlan(){
   return {
     membershipPrice: G.club && G.club.membershipPrice != null ? G.club.membershipPrice : 160,
     campFocus: 'balanced',      // backs focus
@@ -751,7 +751,7 @@ function createPreseasonPlan(){
     revenueApplied: false,
   };
 }
-function generateSponsorOffers(){
+export function generateSponsorOffers(){
   const names = ['Ironline Finance','Harbour Health','Pacific Telco','Southern Cross Energy','Coastal Airlines','Summit Motors','Red Zone Apparel','Brightside Insurance','Bluewater Foods','Civic Bank'];
   const prestige = typeof clubPrestigeScore === 'function' ? clubPrestigeScore(myTeam()) : 55;
   const major = 450000 + prestige * 12000 + ri(-60000, 90000);
@@ -784,7 +784,7 @@ function generateSponsorOffers(){
   }
   return offers;
 }
-function membershipProjection(price){
+export function membershipProjection(price){
   price = clamp(Math.round(+price || 160), 80, 500);
   const prestige = typeof clubPrestigeScore === 'function' ? clubPrestigeScore(myTeam()) : 55;
   const last = G.history && G.history[0];
@@ -793,7 +793,7 @@ function membershipProjection(price){
   const members = Math.round(demand / 100) * 100;
   return {price, members, revenue:members * price};
 }
-function acceptSponsorOffer(id){
+export function acceptSponsorOffer(id){
   const ps = G.offseason && G.offseason.preseason;
   if(!ps) return {ok:false, msg:'No preseason sponsor window is active.'};
   G.club.sponsorships = G.club.sponsorships || [];
@@ -813,7 +813,7 @@ function acceptSponsorOffer(id){
   G.club.sponsorships.push({id:offer.id, name:offer.name, category:offer.category, value:offer.value, yearsLeft:offer.yearsLeft});
   return {ok:true, msg:`${offer.name} ${offer.renewal?'renewed':'signed'} as a ${offer.category} sponsor.`};
 }
-function simPreseasonTrial(){
+export function simPreseasonTrial(){
   const ps = G.offseason && G.offseason.preseason;
   if(!ps || ps.trialsPlayed >= 3) return null;
   const opp = pick(G.teams.filter(t=>t.id!==G.coach.teamId));
@@ -836,7 +836,7 @@ function simPreseasonTrial(){
   }
   return trial;
 }
-function applyPreseasonCamp(){
+export function applyPreseasonCamp(){
   const ps = G.offseason && G.offseason.preseason;
   if(!ps) return;
   const FOCUS_ATTRS = {
@@ -861,7 +861,7 @@ function applyPreseasonCamp(){
     }
   }
 }
-function completePreseason(){
+export function completePreseason(){
   const ps = G.offseason && G.offseason.preseason;
   if(!ps) return false;
   const membership = membershipProjection(ps.membershipPrice);
@@ -879,7 +879,7 @@ function completePreseason(){
   return true;
 }
 /* job offers after review (if sacked or strong rep) */
-function generateJobOffers(){
+export function generateJobOffers(){
   const lad = ladder();
   const offers = [];
   for(const t of G.teams){
@@ -899,7 +899,7 @@ function generateJobOffers(){
   }
   return offers.slice(0, 3);
 }
-function startNewSeason(){
+export function startNewSeason(){
   G.year++; G.season++; G.round=0; G.phase='regular'; G.finals=null; G.offseason=null;
   G.calendar = {day:0, startISO:`${G.year}-03-02`, lastStop:{key:'training', label:'Training review', page:'training', tone:'neutral'}};
   ensureClubFacilities();
@@ -988,7 +988,7 @@ function startNewSeason(){
   replenishFreeAgents();
   addNews(`Season ${G.year} begins. Salary cap: ${money(G.config.cap)}. Board expectation: ${G.coach.expect.label}.`);
 }
-function updateAiClubFacilities(){
+export function updateAiClubFacilities(){
   if(!G || !G.teams || typeof ensureTeamFacilities !== 'function') return;
   const log = [];
   for(const t of G.teams){
@@ -1014,3 +1014,18 @@ function updateAiClubFacilities(){
   }
   G.aiFacilityLog = (G.aiFacilityLog || []).concat(log.map(x=>({year:G.year, text:x}))).slice(-30);
 }
+
+if (typeof window !== 'undefined') Object.assign(window, {
+  startOffseason, addPlayerAward, recordTeamOfWeek, awardSeasonHonours, seasonTeamOfYear,
+  coachOfYear, assistantHeadCoachReadiness, promoteAssistantToHeadCoach,
+  applyOffseasonDevelopment, recordPlayerSeason, hallOfFameScore, considerHallOfFame,
+  rookieOfYear, reassessPotential, teamOf, currentSalary,
+  TOP_SQUAD_CAP, YOUTH_SQUAD_CAP, TRIAL_SQUAD_CAP, TRIAL_GAME_CAP, TRIAL_SALARY_CAP,
+  isTopSquadPlayer, isYouthSquadPlayer, isTrialSquadPlayer, salaryCountsForCap, squadCount,
+  canJoinYouthSquad, trialGamesUsed, canTrialPlay, selectionSquadEligible, teamSalary, ord,
+  contractScheduleFor, contractTotal, contractAvg, contractTypeLabel, setPlayerContract,
+  advanceContractSchedule, demandFor, contractIntent, offerContract, contractSignChance,
+  normalisePromises, promiseSummary, releasePlayer, finishContractsPhase, createPreseasonPlan,
+  generateSponsorOffers, membershipProjection, acceptSponsorOffer, simPreseasonTrial,
+  applyPreseasonCamp, completePreseason, generateJobOffers, startNewSeason, updateAiClubFacilities,
+});

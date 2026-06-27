@@ -1,10 +1,10 @@
-'use strict';
+
 
 /* ---------- data pools ---------- */
-const FIRST = ['Jack','Tom','Ryan','Liam','Noah','Cooper','Mason','Tyler','Blake','Jordan','Kyle','Brodie','Lachlan','Hamish','Angus','Callum','Declan','Patrick','Sean','Connor','Dylan','Joel','Nathan','Aaron','Corey','Shane','Wade','Heath','Brett','Scott','Troy','Dean','Adam','Josh','Ben','Sam','Max','Eli','Kane','Jed','Toby','Archie','Harvey','Bailey','Reece','Darcy','Flynn','Cameron','Jesse','Luke','Zac','Beau','Sione','Tevita','Manu','Viliami','Taniela','Mosese','Semisi','Hosea','Junior','Apisai','Eroni','Suliasi','Maika','Ratu','Penioni','Nikau','Tane','Wiremu','Rangi','Manaia','Ariki','Mikaere','Hemi'];
-const LAST = ['Smith','Walker','Thompson','Mitchell','Harris','Campbell','Stewart','Murray','Reid','Boyd','Carter','Doyle','Gallagher','Lynch','Ryan','Sullivan','Brennan','McAllister','Harrington','Coleman','Drysdale','Fairweather','Holloway','Irvine','Lawson','Merrick','Norwood','Prescott','Radford','Sinclair','Tanner','Underwood','Whitfield','Ashworth','Blackwood','Cresswell','Eastman','Farrow','Goodall','Hartigan','Tupou','Latu','Fonua','Taufa','Leota','Matagi','Su\'a','Faleolo','Havili','Paasi','Vaka','Moala','Tonga','Fekitoa','Ngata','Rapana','Kahu','Waerea','Herewini','Paki','Tamati','Hura','Koro','Sefo','Aiono','Tagaloa','Penisini'];
+export const FIRST = ['Jack','Tom','Ryan','Liam','Noah','Cooper','Mason','Tyler','Blake','Jordan','Kyle','Brodie','Lachlan','Hamish','Angus','Callum','Declan','Patrick','Sean','Connor','Dylan','Joel','Nathan','Aaron','Corey','Shane','Wade','Heath','Brett','Scott','Troy','Dean','Adam','Josh','Ben','Sam','Max','Eli','Kane','Jed','Toby','Archie','Harvey','Bailey','Reece','Darcy','Flynn','Cameron','Jesse','Luke','Zac','Beau','Sione','Tevita','Manu','Viliami','Taniela','Mosese','Semisi','Hosea','Junior','Apisai','Eroni','Suliasi','Maika','Ratu','Penioni','Nikau','Tane','Wiremu','Rangi','Manaia','Ariki','Mikaere','Hemi'];
+export const LAST = ['Smith','Walker','Thompson','Mitchell','Harris','Campbell','Stewart','Murray','Reid','Boyd','Carter','Doyle','Gallagher','Lynch','Ryan','Sullivan','Brennan','McAllister','Harrington','Coleman','Drysdale','Fairweather','Holloway','Irvine','Lawson','Merrick','Norwood','Prescott','Radford','Sinclair','Tanner','Underwood','Whitfield','Ashworth','Blackwood','Cresswell','Eastman','Farrow','Goodall','Hartigan','Tupou','Latu','Fonua','Taufa','Leota','Matagi','Su\'a','Faleolo','Havili','Paasi','Vaka','Moala','Tonga','Fekitoa','Ngata','Rapana','Kahu','Waerea','Herewini','Paki','Tamati','Hura','Koro','Sefo','Aiono','Tagaloa','Penisini'];
 /* ---------- nationality-appropriate name pools ---------- */
-const NAME_POOLS = {
+export const NAME_POOLS = {
   'Australia': {
     first:['Jack','Tom','Ryan','Liam','Noah','Cooper','Mason','Tyler','Blake','Jordan','Kyle','Brodie','Lachlan','Hamish','Angus','Callum','Declan','Patrick','Sean','Connor','Dylan','Joel','Nathan','Aaron','Corey','Shane','Wade','Heath','Brett','Scott','Troy','Dean','Adam','Josh','Ben','Sam','Max','Eli','Kane','Jed','Toby','Archie','Harvey','Bailey','Reece','Darcy','Flynn','Cameron','Jesse','Luke','Zac','Beau'],
     last:['Smith','Walker','Thompson','Mitchell','Harris','Campbell','Stewart','Murray','Reid','Boyd','Carter','Doyle','Gallagher','Lynch','Ryan','Sullivan','Brennan','McAllister','Harrington','Coleman','Drysdale','Fairweather','Holloway','Irvine','Lawson','Merrick','Norwood','Prescott','Radford','Sinclair','Tanner','Underwood','Whitfield','Ashworth','Blackwood','Cresswell','Eastman','Farrow','Goodall','Hartigan']
@@ -42,26 +42,35 @@ const NAME_POOLS = {
     last:['Maroun','Abdallah','El-Masri','Trad','Lichaa','Kassis','Nohra','Saleh','Saab','Hadchiti','Tayeh','Farhat','Hanna','Rahme','Nasser','Chalhoub','Waked','Mansour','Azzi']
   }
 };
-const IDENTITIES = [
-  {city:'Sydney',       nick:'Stingrays',   abbr:'SYD', c1:'#0E7C7B', c2:'#0B2545', stadium:'Harbour Oval'},
-  {city:'Brisbane',     nick:'Colliers',     abbr:'BRI', c1:'#F2B632', c2:'#2B2B2B', stadium:'Lang Park North'},
-  {city:'Melbourne',    nick:'Marlins',      abbr:'MEL', c1:'#1B6CA8', c2:'#C0C7CE', stadium:'Marvel Rectangular'},
-  {city:'Auckland',     nick:'Bulls',        abbr:'AKL', c1:'#6E1423', c2:'#1A1A1A', stadium:'Eden Arena'},
-  {city:'Canberra',     nick:'Jackals',      abbr:'CBR', c1:'#5C6B73', c2:'#9DB4C0', stadium:'Civic Stadium'},
-  {city:'Newcastle',    nick:'Scorpions',    abbr:'NEW', c1:'#B3541E', c2:'#2D241E', stadium:'Hunter Arena'},
-  {city:'Townsville',   nick:'Breakers',     abbr:'TSV', c1:'#1F7A5C', c2:'#0B3D2E', stadium:'North Queensland Stadium'},
-  {city:'Wollongong',   nick:'Stallions',    abbr:'WOL', c1:'#5B3A8E', c2:'#D9C66B', stadium:'WIN Dome'},
-  {city:'Gold Coast',   nick:'Monarchs',     abbr:'GCT', c1:'#3E2A78', c2:'#C9A23A', stadium:'Coast Super Dome'},
-  {city:'Parramatta',   nick:'Dingoes',      abbr:'PAR', c1:'#A4471F', c2:'#E2D3B3', stadium:'CommBank West Arena'},
-  {city:'Penrith',      nick:'Hammerheads',  abbr:'PEN', c1:'#11507C', c2:'#76B0D6', stadium:'Mountains Stadium'},
-  {city:'Christchurch', nick:'Comets',       abbr:'CHR', c1:'#FCA311', c2:'#14213D', stadium:'Jade Stadium'},
-  {city:'Perth',        nick:'Barracudas',   abbr:'PER', c1:'#7A1E3C', c2:'#D8D8D8', stadium:'HBF Park West'},
-  {city:'Adelaide',     nick:'Kestrels',     abbr:'ADL', c1:'#F26419', c2:'#2F4858', stadium:'Coopers Stadium'},
-  {city:'Cairns',       nick:'Mavericks',    abbr:'CNS', c1:'#9BC53D', c2:'#1D3461', stadium:'Cazalys Arena'},
-  {city:'Darwin',       nick:'Privateers',   abbr:'DRW', c1:'#B87333', c2:'#232B2B', stadium:'TIO Traeger Park'},
+export const IDENTITIES = [
+  // --- 17 starting teams ---
+  {city:'Brisbane',      nick:'Ironbacks',   abbr:'BRI', c1:'#2D2D2D', c2:'#C85C1A', stadium:'Suncorp North',              logoFile:'brisbane_ironbacks.png'},
+  {city:'Gold Coast',    nick:'Stingrays',   abbr:'GCS', c1:'#0C7A7B', c2:'#D4A020', stadium:'Cbus Super Dome',            logoFile:'goldcoast_stingrays.png'},
+  {city:'Moreton',       nick:'Crushers',    abbr:'MOR', c1:'#696960', c2:'#6B1E2E', stadium:'Moreton Bay Arena',          logoFile:'moreton_crushers.png'},
+  {city:'Townsville',    nick:'Cyclones',    abbr:'TSV', c1:'#1B4F8A', c2:'#B0B8C1', stadium:'Queensland Country Bank Stadium', logoFile:'townsville_cyclones.png'},
+  {city:'Auckland',      nick:'Taniwha',     abbr:'AKL', c1:'#1A1A1A', c2:'#2D8C6B', stadium:'Eden Arena',                logoFile:'auckland_taniwha.png'},
+  {city:'Sydney',        nick:'Royals',      abbr:'SYD', c1:'#003087', c2:'#F5A827', stadium:'Allianz Central',            logoFile:'sydney_royals.png'},
+  {city:'North Sydney',  nick:'Falcons',     abbr:'NSY', c1:'#CC1E2E', c2:'#0B2545', stadium:'North Sydney Oval',          logoFile:'north_sydney_falcons.png'},
+  {city:'Parramatta',    nick:'Stags',       abbr:'PAR', c1:'#1B5E36', c2:'#D4A020', stadium:'CommBank Stadium West',      logoFile:'parramatta_staggs.png'},
+  {city:'Penrith',       nick:'Redbacks',    abbr:'PEN', c1:'#1A1A1A', c2:'#B71C2B', stadium:'BlueBet Arena',              logoFile:'penrith_redbacks.png'},
+  {city:'Cronulla',      nick:'Breakers',    abbr:'CRO', c1:'#1B6CA8', c2:'#3D3D3D', stadium:'PointsBet Stadium',          logoFile:'cronulla_breakers.png'},
+  {city:'Macarthur',     nick:'Mustangs',    abbr:'MAC', c1:'#1A5E2A', c2:'#8B6914', stadium:'Campbelltown Sports Stadium', logoFile:'macarthur_mustangs.png'},
+  {city:'Melbourne',     nick:'Sentinels',   abbr:'MEL', c1:'#2D1B6B', c2:'#A0A8B0', stadium:'AAMI Park South',            logoFile:'melbourne_sentinals.png'},
+  {city:'Canberra',      nick:'Griffins',    abbr:'CBR', c1:'#008B5A', c2:'#0B2545', stadium:'GIO Stadium',                logoFile:'canberra_griffins.png'},
+  {city:'Perth',         nick:'Firetails',   abbr:'PER', c1:'#CC1E2E', c2:'#1A1A1A', stadium:'HBF Park West',              logoFile:'perth_firetails.png'},
+  {city:'Wellington',    nick:'Orcas',       abbr:'WEL', c1:'#1A1A1A', c2:'#1B6CA8', stadium:'Sky Stadium Wellington',     logoFile:'wellington_orcas.png'},
+  {city:'Logan',         nick:'Vipers',      abbr:'LOG', c1:'#7DC820', c2:'#1A1A1A', stadium:'Logan Metro Sports Centre',  logoFile:'logan_vipers.png'},
+  {city:'Canterbury',    nick:'Ravens',      abbr:'CNT', c1:'#1A1A1A', c2:'#5B1E8C', stadium:'Belmore Sports Ground',      logoFile:'canteburry_ravens.png'},
+  // --- expansion pool ---
+  {city:'Cairns',        nick:'Crocs',       abbr:'CNS', c1:'#3D6B30', c2:'#D4C5A9', stadium:'Cazalys Arena',              logoFile:'cairns_crocs.png'},
+  {city:'Sunshine Coast',nick:'Makos',       abbr:'SCM', c1:'#00B4D8', c2:'#FF6B6B', stadium:'Sunshine Coast Stadium',     logoFile:'sunshinecoast_makos.png'},
+  {city:'Christchurch',  nick:'Kea',         abbr:'CHR', c1:'#1A5E2A', c2:'#E86A20', stadium:'Orangetheory Stadium',       logoFile:'christchruch_kea.png'},
+  {city:'Blacktown',     nick:'Wolves',      abbr:'BLK', c1:'#1A1A1A', c2:'#0078D4', stadium:'Blacktown International Sportspark', logoFile:'blacktown_wolves.png'},
+  {city:'Adelaide',      nick:'Copperheads', abbr:'ADL', c1:'#B87333', c2:'#0B2545', stadium:'Coopers Stadium',            logoFile:'adelaide_copperheads.png'},
+  {city:'Toowoomba',     nick:'Rangers',     abbr:'TWB', c1:'#1A4B2E', c2:'#C8A878', stadium:'Clive Berghofer Stadium',    logoFile:'toowoomba_rangers.png'},
 ];
 // NRL Standard league preset — 17 real NRL clubs
-const NRL_IDENTITIES = [
+export const NRL_IDENTITIES = [
   {city:'Brisbane',     nick:'Broncos',    abbr:'BRI', c1:'#5E1224', c2:'#F5A827', stadium:'Suncorp Stadium'},
   {city:'Sydney',       nick:'Roosters',   abbr:'SYD', c1:'#003087', c2:'#CC0000', stadium:'Allianz Stadium'},
   {city:'South Sydney', nick:'Rabbitohs',  abbr:'SOU', c1:'#007A4E', c2:'#CC0000', stadium:'Accor Stadium'},
@@ -80,36 +89,36 @@ const NRL_IDENTITIES = [
   {city:'Newcastle',    nick:'Knights',    abbr:'NEW', c1:'#003DA5', c2:'#C0272D', stadium:'McDonald Jones Stadium'},
   {city:'Redcliffe',    nick:'Dolphins',   abbr:'DOL', c1:'#E21F26', c2:'#1E3A6E', stadium:'Moreton Daily Stadium'},
 ];
-const STADIUM_NAMES = ['Central Stadium','Riverside Park','Harbour Ground','Civic Stadium','Lang Park South','Showgrounds Stadium','Coastal Arena','National Football Park'];
-const WEATHER = ['Clear','Fine','Humid','Light rain','Heavy rain','Windy'];
-const FACILITY_DEFS = {
+export const STADIUM_NAMES = ['Central Stadium','Riverside Park','Harbour Ground','Civic Stadium','Lang Park South','Showgrounds Stadium','Coastal Arena','National Football Park'];
+export const WEATHER = ['Clear','Fine','Humid','Light rain','Heavy rain','Windy'];
+export const FACILITY_DEFS = {
   stadium:{label:'Stadium Capacity', desc:'Raises the attendance cap for home matches and improves gate revenue ceiling.', baseCost:850000},
   training:{label:'Training Ground', desc:'Improves weekly player development and keeps the squad sharper.', baseCost:650000},
   gym:{label:'Performance Gym', desc:'Improves physical training outcomes and conditioning.', baseCost:520000},
   medical:{label:'Medical Centre', desc:'Improves injury recovery support alongside your physio staff.', baseCost:560000},
   academy:{label:'Youth Academy', desc:'Improves development pathways and future scouting/youth systems.', baseCost:700000},
 };
-const FACILITY_MAX = 5;
-const STADIUM_CAPACITY_BY_LEVEL = [18000, 26000, 34000, 42000, 52000];
-const POS = ['FB','WG','CE','FE','HB','PR','HK','SR','LK'];
-const POS_NAME = {FB:'Fullback', WG:'Winger', CE:'Centre', FE:'Five-Eighth', HB:'Halfback', PR:'Prop', HK:'Hooker', SR:'Second Rower', LK:'Lock'};
-const SLOTS = [
+export const FACILITY_MAX = 5;
+export const STADIUM_CAPACITY_BY_LEVEL = [18000, 26000, 34000, 42000, 52000];
+export const POS = ['FB','WG','CE','FE','HB','PR','HK','SR','LK'];
+export const POS_NAME = {FB:'Fullback', WG:'Winger', CE:'Centre', FE:'Five-Eighth', HB:'Halfback', PR:'Prop', HK:'Hooker', SR:'Second Rower', LK:'Lock'};
+export const SLOTS = [
   {n:1,pos:'FB'},{n:2,pos:'WG'},{n:3,pos:'CE'},{n:4,pos:'CE'},{n:5,pos:'WG'},
   {n:6,pos:'FE'},{n:7,pos:'HB'},{n:8,pos:'PR'},{n:9,pos:'HK'},{n:10,pos:'PR'},
   {n:11,pos:'SR'},{n:12,pos:'SR'},{n:13,pos:'LK'},
   {n:14,pos:'BE'},{n:15,pos:'BE'},{n:16,pos:'BE'},{n:17,pos:'BE'}, // active bench (4 used, 8 subs max)
   {n:18,pos:'BE'},{n:19,pos:'BE'}  // named reserves (dress, don't play)
 ];
-const DEV_SQUAD_TEMPLATE = ['FB','WG','CE','FE','HB','PR','PR','HK','SR','LK'];
-const POS_GROUP = {FB:'back', WG:'back', CE:'back', FE:'half', HB:'half', PR:'fwd', SR:'fwd', LK:'fwd', HK:'hk'};
-const ATTR_GROUPS = {
+export const DEV_SQUAD_TEMPLATE = ['FB','WG','CE','FE','HB','PR','PR','HK','SR','LK'];
+export const POS_GROUP = {FB:'back', WG:'back', CE:'back', FE:'half', HB:'half', PR:'fwd', SR:'fwd', LK:'fwd', HK:'hk'};
+export const ATTR_GROUPS = {
   offensive:['shortPass','longPass','kickAccuracy','kickPower','placeKick','fieldGoal','playmaking','ballRunning','finishing','ballSecurity'],
   defensive:['tackling','defRead','bigHit','lastDitch','markerDef'],
   physical:['speed','stamina','acceleration','catching','injury','strength','agility'],
   mental:['composure','leadership','vision','decisionMaking','workRate','discipline','professionalism']
 };
-const ATTRS = [].concat(ATTR_GROUPS.offensive, ATTR_GROUPS.defensive, ATTR_GROUPS.physical, ATTR_GROUPS.mental);
-const ATTR_LABEL = {
+export const ATTRS = [].concat(ATTR_GROUPS.offensive, ATTR_GROUPS.defensive, ATTR_GROUPS.physical, ATTR_GROUPS.mental);
+export const ATTR_LABEL = {
   shortPass:'Short Pass', longPass:'Long Pass', kickAccuracy:'Kick Accuracy', kickPower:'Kick Power',
   placeKick:'Goal Kicking', fieldGoal:'Field Goals', playmaking:'Playmaking', ballRunning:'Ball Running',
   finishing:'Finishing', ballSecurity:'Ball Security',
@@ -120,7 +129,7 @@ const ATTR_LABEL = {
   workRate:'Work Rate', discipline:'Discipline', professionalism:'Professionalism'
 };
 /* per-position attribute profile: [mean offset vs base, weight in overall] */
-const POS_PROFILE = {
+export const POS_PROFILE = {
   FB:{speed:[10,.10], acceleration:[8,.08], agility:[8,.08], catching:[10,.09], ballSecurity:[8,.08], playmaking:[6,.08], vision:[7,.08], decisionMaking:[6,.08], ballRunning:[7,.08], finishing:[4,.05], defRead:[4,.07], lastDitch:[5,.07], shortPass:[2,.05], kickPower:[2,.03], kickAccuracy:[1,.03], tackling:[-4,.05]},
   WG:{speed:[14,.14], acceleration:[12,.10], finishing:[13,.13], catching:[7,.09], ballRunning:[9,.09], agility:[7,.07], strength:[3,.06], ballSecurity:[4,.07], lastDitch:[2,.06], tackling:[-4,.05], defRead:[-2,.06], stamina:[1,.06], composure:[0,.05], kickPower:[-22,.01], kickAccuracy:[-22,.01], placeKick:[-24,0], fieldGoal:[-24,0]},
   CE:{speed:[8,.09], acceleration:[6,.07], strength:[7,.08], ballRunning:[9,.10], finishing:[8,.09], catching:[4,.06], ballSecurity:[4,.06], defRead:[6,.10], tackling:[4,.08], lastDitch:[4,.06], agility:[5,.06], shortPass:[2,.05], decisionMaking:[2,.06], vision:[0,.04], kickPower:[-18,.01], kickAccuracy:[-18,.01], placeKick:[-20,0], fieldGoal:[-20,0]},
@@ -131,8 +140,8 @@ const POS_PROFILE = {
   SR:{strength:[10,.10], ballRunning:[7,.08], tackling:[9,.11], defRead:[7,.09], bigHit:[7,.08], lastDitch:[5,.06], workRate:[8,.09], stamina:[6,.08], finishing:[4,.05], ballSecurity:[2,.05], speed:[-3,.05], agility:[-1,.04], shortPass:[0,.04]},
   LK:{tackling:[10,.11], markerDef:[7,.08], defRead:[9,.10], workRate:[12,.12], stamina:[8,.09], strength:[6,.07], shortPass:[6,.07], playmaking:[4,.06], vision:[6,.07], decisionMaking:[6,.07], ballSecurity:[4,.05], ballRunning:[3,.05], speed:[-6,.04], leadership:[3,.05], kickPower:[-10,.01], kickAccuracy:[-10,.01], placeKick:[-16,0], fieldGoal:[-12,0]}
 };
-const TEAM_ROLE_KEYS = ['captain','goalKicker','primaryKicker','secondaryKicker','primaryPlaymaker','secondaryPlaymaker'];
-const POSITION_ROLES = {
+export const TEAM_ROLE_KEYS = ['captain','goalKicker','primaryKicker','secondaryKicker','primaryPlaymaker','secondaryPlaymaker'];
+export const POSITION_ROLES = {
   FB:['balanced','attacking','defensive'],
   WG:['balanced','yardage','finisher'],
   CE:['balanced','strike','defensive'],
@@ -143,8 +152,8 @@ const POSITION_ROLES = {
   SR:['balanced','edgeRunner','workhorse'],
   LK:['balanced','ballPlaying','defensive']
 };
-const SLOT_SIDE = {1:'right',2:'right',3:'left',4:'left',10:'left',11:'right'};
-const SPECIALIST_BY_POS = {
+export const SLOT_SIDE = {1:'right',2:'right',3:'left',4:'left',10:'left',11:'right'};
+export const SPECIALIST_BY_POS = {
   FB:['support','attacking','defensive'],
   WG:['leftWing','rightWing','yardage','finisher'],
   CE:['leftCentre','rightCentre','strike','defensive'],
@@ -155,7 +164,7 @@ const SPECIALIST_BY_POS = {
   SR:['leftEdge','rightEdge','middle','workhorse'],
   LK:['ballPlaying','defensive','middle']
 };
-const SPECIALIST_LABEL = {
+export const SPECIALIST_LABEL = {
   support:'Support', attacking:'Attacking', defensive:'Defensive',
   leftWing:'Left wing', rightWing:'Right wing', yardage:'Yardage', finisher:'Finisher',
   leftCentre:'Left centre', rightCentre:'Right centre', strike:'Strike',
@@ -164,7 +173,7 @@ const SPECIALIST_LABEL = {
   leftEdge:'Left edge', rightEdge:'Right edge', middle:'Middle',
   ballPlaying:'Ball-playing'
 };
-const REALISTIC_RETRAIN = {
+export const REALISTIC_RETRAIN = {
   FB:['WG','CE','FE'],
   WG:['FB','CE'],
   CE:['WG','FB','SR'],
@@ -175,7 +184,7 @@ const REALISTIC_RETRAIN = {
   SR:['PR','LK','CE'],
   LK:['PR','SR','HK']
 };
-const INDIVIDUAL_TRAINING = {
+export const INDIVIDUAL_TRAINING = {
   balanced:'Balanced',
   mental:'Decision making',
   attack:'Attacking',
@@ -184,15 +193,15 @@ const INDIVIDUAL_TRAINING = {
   position:'Position retraining',
   specialist:'Specialist retraining'
 };
-const FIELD_ZONES = [
+export const FIELD_ZONES = [
   ['own20','Own 0-20'],
   ['own40','Own 20-40'],
   ['mid','Midfield'],
   ['opp40','Opp. 40-20'],
   ['redZone','Attacking red zone']
 ];
-const ZONE_PLANS = ['safe','balanced','expansive'];
-const STYLE_BY_POS = {
+export const ZONE_PLANS = ['safe','balanced','expansive'];
+export const STYLE_BY_POS = {
   FB:['Support fullback','Ball-playing fullback','Counter-attacking fullback'],
   WG:['Finishing winger','Power winger','Yardage winger'],
   CE:['Strike centre','Defensive centre','Ball-playing centre'],
@@ -203,16 +212,16 @@ const STYLE_BY_POS = {
   SR:['Edge backrower','Workhorse middle','Impact forward'],
   LK:['Ball-playing lock','Workhorse middle','Defensive organiser']
 };
-const INJURIES = [
+export const INJURIES = [
   {n:'Bruised ribs',w:[1,1]},{n:'Cork (thigh)',w:[1,1]},{n:'HIA / concussion',w:[1,2]},
   {n:'Ankle sprain',w:[1,3]},{n:'Hamstring strain',w:[2,4]},{n:'Shoulder (AC joint)',w:[2,5]},
   {n:'MCL sprain',w:[3,6]},{n:'Calf tear',w:[2,4]},{n:'Syndesmosis',w:[4,8]},
   {n:'Broken hand',w:[3,6]},{n:'Pectoral tear',w:[6,10]},{n:'ACL rupture',w:[20,30]}
 ];
-const BADGES = [[0,'Community Badge'],[25,'Development Badge'],[40,'Semi-Pro Badge'],[55,'Professional Badge'],[72,'Elite Badge'],[88,'International Badge']];
+export const BADGES = [[0,'Community Badge'],[25,'Development Badge'],[40,'Semi-Pro Badge'],[55,'Professional Badge'],[72,'Elite Badge'],[88,'International Badge']];
 
 /* ---------- infringements ---------- */
-const INFRINGEMENT_MINOR = [
+export const INFRINGEMENT_MINOR = [
   {key:'offside',      label:'Offside'},
   {key:'slowRuck',     label:'Slowing the ruck'},
   {key:'strip',        label:'Ball strip'},
@@ -220,7 +229,7 @@ const INFRINGEMENT_MINOR = [
   {key:'interference', label:'Obstruction/interference'},
   {key:'forward',      label:'Forward pass'},
 ];
-const INFRINGEMENT_GRADED = [
+export const INFRINGEMENT_GRADED = [
   {key:'highTackle',      label:'high tackle',             hipDropBonus:false},
   {key:'dangerousTackle', label:'dangerous tackle',        hipDropBonus:false},
   {key:'hipDrop',         label:'hip drop tackle',         hipDropBonus:true},
@@ -230,7 +239,7 @@ const INFRINGEMENT_GRADED = [
 ];
 
 /* ---------- player quality tiers ---------- */
-const QUALITY_TIERS = [
+export const QUALITY_TIERS = [
   {key:'park',          label:'Park Level',     minOvr:0,  color:'#888888'},
   {key:'colts',         label:'Colts Grade',    minOvr:45, color:'#5a9945'},
   {key:'firstGrade',    label:'First Grade',    minOvr:55, color:'#2878c0'},
@@ -240,13 +249,13 @@ const QUALITY_TIERS = [
   {key:'international', label:'International',  minOvr:81, color:'#C47830'},
   {key:'immortal',      label:'Immortal',       minOvr:92, color:'#E8C84A'},
 ];
-function playerTier(ovr){
+export function playerTier(ovr){
   for(let i=QUALITY_TIERS.length-1;i>=0;i--) if(ovr>=QUALITY_TIERS[i].minOvr) return QUALITY_TIERS[i];
   return QUALITY_TIERS[0];
 }
 
 /* ---------- birth towns by nationality / state ---------- */
-const BIRTH_TOWNS = {
+export const BIRTH_TOWNS = {
   'Australia': {
     'Queensland':        ['Brisbane','Townsville','Cairns','Rockhampton','Mackay','Toowoomba','Gold Coast','Bundaberg','Ipswich','Sunshine Coast','Mount Isa','Charters Towers','Hervey Bay','Gladstone','Emerald','Maryborough','Warwick'],
     'New South Wales':   ['Sydney','Newcastle','Wollongong','Gosford','Parramatta','Penrith','Campbelltown','Orange','Wagga Wagga','Dubbo','Tamworth','Coffs Harbour','Lismore','Bathurst','Albury','Armidale','Goulburn','Broken Hill'],
@@ -260,10 +269,10 @@ const BIRTH_TOWNS = {
   'Cook Islands':    ['Avarua','Arorangi','Matavera','Ngatangiia','Titikaveka','Arutanga'],
   'Lebanon':         ['Beirut','Tripoli','Sidon','Zahle','Baalbek','Jounieh','Byblos','Tyre'],
 };
-const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+export const MONTHS_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 /* ---------- nationalities ---------- */
-const NATIONALITY_POOL = [
+export const NATIONALITY_POOL = [
   {country:'Australia',       weight:50, repTeam:'Kangaroos',       stateReps:['Queensland','New South Wales']},
   {country:'New Zealand',     weight:20, repTeam:'Kiwis'},
   {country:'Tonga',           weight:8,  repTeam:"Mate Ma'a Tonga"},
@@ -275,7 +284,7 @@ const NATIONALITY_POOL = [
   {country:'Lebanon',         weight:1,  repTeam:'Cedars (Lebanon)'},
 ];
 
-const ACHIEVEMENTS = [
+export const ACHIEVEMENTS = [
   {key:'premiers', name:'Premiers', desc:'Win the premiership.'},
   {key:'repeat', name:'Back-to-Back', desc:'Win two consecutive premierships.'},
   {key:'dynasty', name:'Dynasty', desc:'Win three or more consecutive premierships.'},
@@ -300,14 +309,14 @@ const ACHIEVEMENTS = [
 
 /* ---------- staff / assistant coaches ---------- */
 // Roles that can have a positional specialization (medical/physio does not)
-const COACH_PHILOSOPHIES = [
+export const COACH_PHILOSOPHIES = [
   {key:'attacking',  label:'Attacking',  plan:'attacking',  desc:'Free-flowing attack, tries from anywhere — concedes points but scores plenty.'},
   {key:'defensive',  label:'Defensive',  plan:'grinding',   desc:'Field position and defence first — low scores, grind out wins.'},
   {key:'expansive',  label:'Expansive',  plan:'attacking',  desc:'Wide game, offloads and line speed — high-octane but can leak.'},
   {key:'balanced',   label:'Balanced',   plan:'balanced',   desc:'No clear weakness — pragmatic and adaptable.'},
   {key:'methodical', label:'Methodical', plan:'grinding',   desc:'Structured sets, conservative kicking game — clinical in the red zone.'},
 ];
-const COACH_PRESS_QUOTES = [
+export const COACH_PRESS_QUOTES = [
   'We\'ll work hard, play for each other, and the results will come.',
   'There\'s plenty of talent in this squad — I can\'t wait to unleash it.',
   'The culture has to change first. Results follow culture.',
@@ -319,8 +328,8 @@ const COACH_PRESS_QUOTES = [
   'I\'ve been waiting for a shot like this. This group will not let this club down.',
   'We\'re going back to basics — effort, discipline, and execution.',
 ];
-const COACHING_ROLES_WITH_SPECIALTY = ['attacking','defensive','fitness','kicking','youth'];
-const STAFF_ROLES = [
+export const COACHING_ROLES_WITH_SPECIALTY = ['attacking','defensive','fitness','kicking','youth'];
+export const STAFF_ROLES = [
   {key:'attacking',  label:'Attack Coach',       desc:'Improves ball running, playmaking, finishing, and passing. Positional specialty boosts retraining and key-skill development for that position group.', trainingKeys:['ballRunning','playmaking','finishing','shortPass','longPass','vision'], canHaveSpecialty:true},
   {key:'defensive',  label:'Defence Coach',      desc:'Improves tackling, defensive reads, marker defence, and last-ditch. Positional specialty focuses on that position group.', trainingKeys:['tackling','defRead','markerDef','lastDitch','bigHit'], canHaveSpecialty:true},
   {key:'fitness',    label:'Fitness Coach',      desc:'Improves conditioning recovery speed, stamina, and durability. Positional specialty focuses conditioning work on that position group.', trainingKeys:['stamina','workRate','speed','acceleration','injury'], canHaveSpecialty:true},
@@ -330,7 +339,7 @@ const STAFF_ROLES = [
 ];
 
 /* ---------- scouting regions ---------- */
-const SCOUT_REGIONS = [
+export const SCOUT_REGIONS = [
   {key:'seq',         label:'South-East Queensland',  nationality:'Australia',       weeks:2, posPool:['FB','WG','CE','FE','HB','PR','HK','SR','LK']},
   {key:'qld_country', label:'North Queensland',       nationality:'Australia',       weeks:3, posPool:['PR','HK','SR','LK','WG','CE']},
   {key:'nsw',         label:'NSW & ACT',              nationality:'Australia',       weeks:3, posPool:['FB','WG','CE','FE','HB','PR','HK','SR','LK']},
@@ -353,7 +362,7 @@ const SCOUT_REGIONS = [
   {key:'west_sydney', label:'Western Sydney',         nationality:'Australia',        weeks:2, posPool:['PR','HK','SR','LK','WG','CE','FE']},
   {key:'vic_country', label:'Victoria Country',       nationality:'Australia',        weeks:4, posPool:['PR','SR','LK','WG','CE','FB']},
 ];
-function genStaff(role, abilityBase, posSpecialty){
+export function genStaff(role, abilityBase, posSpecialty){
   const ability = clamp(Math.round(abilityBase + (Math.random()-0.5)*16), 25, 90);
   const name = `${pick(FIRST)} ${pick(LAST)}`;
   const salary = Math.round((40000 + Math.pow(ability/90, 2.2)*260000)/5000)*5000;
@@ -363,30 +372,30 @@ function genStaff(role, abilityBase, posSpecialty){
   if(spec) s.posSpecialty = spec;
   return s;
 }
-function genScout(abilityBase){
+export function genScout(abilityBase){
   const ability = clamp(Math.round(abilityBase + (Math.random()-0.5)*16), 20, 90);
   const name = `${pick(FIRST)} ${pick(LAST)}`;
   const salary = Math.round((20000 + Math.pow(ability/90, 2)*90000)/5000)*5000;
   return {id: ++_staffId, name, ability, salary, yearsLeft:ri(1,3), posSpecialty:pick(POS)};
 }
-function scoutTargetChance(scout, targetPos){
+export function scoutTargetChance(scout, targetPos){
   if(!targetPos) return 0;
   const ability = scout ? (scout.ability || 40) : 40;
   const specialtyBonus = scout && scout.posSpecialty === targetPos ? 0.08 : 0;
   return clamp(0.52 + ability / 220 + specialtyBonus, 0.58, 0.95);
 }
-function scoutRegionPositionWeights(region){
+export function scoutRegionPositionWeights(region){
   const pool = region && region.posPool ? region.posPool : POS;
   return pool.map((pos, i)=>({pos, w:Math.max(1, pool.length - i) + (i < 3 ? 2 : 0)}));
 }
-function pickScoutRegionPosition(region){
+export function pickScoutRegionPosition(region){
   const weights = scoutRegionPositionWeights(region);
   const total = weights.reduce((s,x)=>s+x.w,0);
   let r = rnd() * total;
   for(const x of weights){ r -= x.w; if(r <= 0) return x.pos; }
   return weights[0] ? weights[0].pos : pick(POS);
 }
-function genAIHeadCoach(repBase){
+export function genAIHeadCoach(repBase){
   const rep = repBase != null ? repBase : ri(20, 60);
   const philosophy = pick(COACH_PHILOSOPHIES);
   const name = `${pick(FIRST)} ${pick(LAST)}`;
@@ -394,3 +403,16 @@ function genAIHeadCoach(repBase){
 }
 // Mutable staff ID counter (set to large base to avoid collisions)
 let _staffId = 9000;
+
+if (typeof window !== 'undefined') Object.assign(window, {
+  FIRST, LAST, NAME_POOLS, IDENTITIES, NRL_IDENTITIES, STADIUM_NAMES, WEATHER,
+  FACILITY_DEFS, FACILITY_MAX, STADIUM_CAPACITY_BY_LEVEL, POS, POS_NAME, SLOTS,
+  DEV_SQUAD_TEMPLATE, POS_GROUP, ATTR_GROUPS, ATTRS, ATTR_LABEL, POS_PROFILE,
+  TEAM_ROLE_KEYS, POSITION_ROLES, SLOT_SIDE, SPECIALIST_BY_POS, SPECIALIST_LABEL,
+  REALISTIC_RETRAIN, INDIVIDUAL_TRAINING, FIELD_ZONES, ZONE_PLANS, STYLE_BY_POS,
+  INJURIES, BADGES, INFRINGEMENT_MINOR, INFRINGEMENT_GRADED, QUALITY_TIERS,
+  BIRTH_TOWNS, MONTHS_SHORT, NATIONALITY_POOL, ACHIEVEMENTS, COACH_PHILOSOPHIES,
+  COACH_PRESS_QUOTES, COACHING_ROLES_WITH_SPECIALTY, STAFF_ROLES, SCOUT_REGIONS,
+  playerTier, genStaff, genScout, scoutTargetChance, scoutRegionPositionWeights,
+  pickScoutRegionPosition, genAIHeadCoach,
+});

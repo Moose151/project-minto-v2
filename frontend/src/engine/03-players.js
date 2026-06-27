@@ -1,12 +1,12 @@
-'use strict';
+
 
 /* ---------- player generation ---------- */
 let _pid = 1;
-function genPlayerName(nationality){
+export function genPlayerName(nationality){
   const pool = NAME_POOLS[nationality] || NAME_POOLS['Australia'];
   return pick(pool.first) + ' ' + pick(pool.last);
 }
-function pickBirthTown(p){
+export function pickBirthTown(p){
   const nat = p.nationality || 'Australia';
   const towns = BIRTH_TOWNS[nat];
   if(!towns) return '';
@@ -16,7 +16,7 @@ function pickBirthTown(p){
   const list = towns[state] || towns['New South Wales'] || towns['Queensland'] || [];
   return list[Math.abs(id * 7919 + 42) % list.length] || '';
 }
-function genPlayer(pos, age, quality){ // quality ~ league tier centre, e.g. 60
+export function genPlayer(pos, age, quality){ // quality ~ league tier centre, e.g. 60
   // Pick nationality first so name pool can match
   let natR = rnd()*100, natTotal=0;
   let nationality = NATIONALITY_POOL[NATIONALITY_POOL.length-1].country;
@@ -79,15 +79,15 @@ function genPlayer(pos, age, quality){ // quality ~ league tier centre, e.g. 60
   resetSeasonStats(p);
   return p;
 }
-function facePick(seed, arr){
+export function facePick(seed, arr){
   return arr[Math.abs(seed) % arr.length];
 }
-function faceSeed(p, salt){
+export function faceSeed(p, salt){
   let x = ((Number(p.id || 1) + Number(p.faceSalt || 0)) * 1103515245 + salt * 12345) >>> 0;
   x ^= x << 13; x ^= x >>> 17; x ^= x << 5;
   return Math.abs(x);
 }
-function genPlayerFace(p){
+export function genPlayerFace(p){
   const skinByNat = {
     'Australia':       ['#F0C7A8','#D8A37D','#C58B65','#8F5B3E'],
     'New Zealand':     ['#D5A074','#A96F4C','#7C4B35','#E5B98D'],
@@ -125,7 +125,7 @@ function genPlayerFace(p){
     facialHair: faceSeed(p, 7) > 0.45 && (p.age || 24) >= 22,
   };
 }
-function shapeSpecialistAttributes(p){
+export function shapeSpecialistAttributes(p){
   const spine = ['HB','FE','HK','FB'].includes(p.pos);
   const half = ['HB','FE'].includes(p.pos);
   const ageExp = clamp((p.age-20)*2.1, 0, 24);
@@ -148,32 +148,32 @@ function shapeSpecialistAttributes(p){
     p.attrs.placeKick = clamp(Math.round(p.attrs.placeKick*.45 + gauss(0,3)), 20, spine ? 58 : 46);
   }
 }
-function calcOvr(p){
+export function calcOvr(p){
   const prof = POS_PROFILE[p.pos]; let s=0, w=0;
   for(const a in prof){ s += p.attrs[a]*prof[a][1]; w += prof[a][1]; }
   return Math.round(s/w);
 }
-function familiarity(p, pos){
+export function familiarity(p, pos){
   if(pos==='BE') return POS_GROUP[p.pos]==='fwd'||POS_GROUP[p.pos]==='hk' ? 1 : .97;
   if(p.pos===pos) return 1;
   if(p.pos2===pos) return .92;
   if(POS_GROUP[p.pos]===POS_GROUP[pos]) return .85;
   return .68;
 }
-function defaultSpecialist(pos){
+export function defaultSpecialist(pos){
   if(pos==='WG') return rnd()<.5 ? {spec:'leftWing', side:'left'} : {spec:'rightWing', side:'right'};
   if(pos==='CE') return rnd()<.5 ? {spec:'leftCentre', side:'left'} : {spec:'rightCentre', side:'right'};
   if(pos==='SR') return rnd()<.5 ? {spec:'leftEdge', side:'left'} : {spec:'rightEdge', side:'right'};
   return {spec:pick(SPECIALIST_BY_POS[pos] || ['balanced']), side:'either'};
 }
-function slotSide(slotIdx){
+export function slotSide(slotIdx){
   return SLOT_SIDE[slotIdx] || 'middle';
 }
-function specialistLabel(p){
+export function specialistLabel(p){
   if(!p) return '';
   return SPECIALIST_LABEL[p.spec] || p.spec || 'Balanced';
 }
-function slotSpecialistFit(p, slotIdx){
+export function slotSpecialistFit(p, slotIdx){
   if(!p || slotIdx >= 13) return 1;
   const pos = SLOTS[slotIdx].pos;
   const fit = positionFitLevel(p, slotIdx);
@@ -193,11 +193,11 @@ function slotSpecialistFit(p, slotIdx){
   if(pos==='HK' && ['running','passing','defensive'].includes(spec)) return 1.01;
   return 1;
 }
-function realisticRetrainPositions(p){
+export function realisticRetrainPositions(p){
   if(!p) return [];
   return (REALISTIC_RETRAIN[p.pos] || []).filter(pos=>pos !== p.pos && pos !== p.pos2);
 }
-function positionFitLevel(p, slotIdx){
+export function positionFitLevel(p, slotIdx){
   if(!p) return {level:'red', label:'Empty'};
   if(slotIdx >= 13 || SLOTS[slotIdx].pos === 'BE'){
     if(POS_GROUP[p.pos] === 'fwd' || POS_GROUP[p.pos] === 'hk') return {level:'green', label:'Bench forward/utility'};
@@ -217,7 +217,7 @@ function positionFitLevel(p, slotIdx){
   }
   return {level:'red', label:'Bad position fit'};
 }
-function salaryFor(p){
+export function salaryFor(p){
   const ovr = p.ovr || calcOvr(p);
   const base = 70000 + Math.pow(Math.max(0, ovr-40)/52, 2.45) * 1260000;
   const posMod = {
@@ -241,14 +241,14 @@ function salaryFor(p){
   const jitter = 0.9 + (((Number(p.id) * 31) % 100) / 455);
   return Math.round(clamp(base*posMod*expMod*ageMod*formMod*durabilityMod*awardMod*tierMod*repMod*jitter, 85000, 1600000)/5000)*5000;
 }
-function resetSeasonStats(p){ p.s = {g:0,t:0,runs:0,gl:0,ga:0,fg:0,ta:0,tk:0,m:0,err:0,votes:0,rSum:0,fpts:0,k4020:0,fdo:0,mins:0,mt:0,lb:0,lba:0,ks:0,km:0,inf:0}; }
-const CAREER_STAT_KEYS = ['ga','fg','ta','tk','m','runs','err','fpts','k4020','fdo','mins','mt','lb','lba','ks','km','inf','rSum','votes'];
-const STAT_BUCKET_KEYS = ['games','tries','goals','points','premierships'].concat(CAREER_STAT_KEYS);
-function ensureStatBucket(b){
+export function resetSeasonStats(p){ p.s = {g:0,t:0,runs:0,gl:0,ga:0,fg:0,ta:0,tk:0,m:0,err:0,votes:0,rSum:0,fpts:0,k4020:0,fdo:0,mins:0,mt:0,lb:0,lba:0,ks:0,km:0,inf:0}; }
+export const CAREER_STAT_KEYS = ['ga','fg','ta','tk','m','runs','err','fpts','k4020','fdo','mins','mt','lb','lba','ks','km','inf','rSum','votes'];
+export const STAT_BUCKET_KEYS = ['games','tries','goals','points','premierships'].concat(CAREER_STAT_KEYS);
+export function ensureStatBucket(b){
   for(const key of STAT_BUCKET_KEYS) if(b[key] === undefined) b[key] = 0;
   return b;
 }
-function ensurePlayerCareerStats(p){
+export function ensurePlayerCareerStats(p){
   p.career = p.career || {seasons:0, games:0, tries:0, goals:0, points:0, premierships:0};
   if(p.career.points === undefined) p.career.points = (p.career.tries||0)*4 + (p.career.goals||0)*2 + (p.career.fg||0);
   ensureStatBucket(p.career);
@@ -286,7 +286,7 @@ function ensurePlayerCareerStats(p){
     p.career._expandedStats = true;
   }
 }
-function ensurePlayerClubStats(p){
+export function ensurePlayerClubStats(p){
   p.clubStats = p.clubStats || {};
   for(const key of Object.keys(p.clubStats)){
     const b = ensureStatBucket(p.clubStats[key]);
@@ -323,7 +323,7 @@ function ensurePlayerClubStats(p){
     p._clubStatsBackfilled = true;
   }
 }
-function playerClubStatBucket(p, t){
+export function playerClubStatBucket(p, t){
   ensurePlayerClubStats(p);
   const key = t && t.id != null ? String(t.id) : 'unknown';
   if(t && !p.clubStats[key]){
@@ -338,7 +338,7 @@ function playerClubStatBucket(p, t){
   b.teamName = t ? t.nick : b.teamName || 'Unknown';
   return ensureStatBucket(b);
 }
-function addLineToStatBucket(b, line){
+export function addLineToStatBucket(b, line){
   b.games++;
   b.tries += line.t || 0;
   b.goals += line.gl || 0;
@@ -361,3 +361,16 @@ function addLineToStatBucket(b, line){
   b.km += line.km || 0;
   b.rSum += line.r || 0;
 }
+
+export function resetPid() { _pid = 1; }
+export function setPid(n) { _pid = n; }
+export function getPid() { return _pid; }
+
+if (typeof window !== 'undefined') Object.assign(window, {
+  genPlayerName, genPlayer, genPlayerFace, shapeSpecialistAttributes, calcOvr,
+  familiarity, defaultSpecialist, slotSide, specialistLabel, slotSpecialistFit,
+  realisticRetrainPositions, positionFitLevel, salaryFor, resetSeasonStats,
+  CAREER_STAT_KEYS, STAT_BUCKET_KEYS, ensureStatBucket, ensurePlayerCareerStats,
+  ensurePlayerClubStats, playerClubStatBucket, addLineToStatBucket,
+  resetPid, setPid, getPid,
+});

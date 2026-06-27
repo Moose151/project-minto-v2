@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Scouting — dispatch scouts to find young talent */
 Object.assign(UI, {
@@ -18,7 +19,7 @@ Object.assign(UI, {
       const pick_state = UI._scoutPick && UI._scoutPick.scoutId === s.id ? UI._scoutPick : null;
       const abilityBar = `<div style="display:flex;align-items:center;gap:6px;margin:6px 0">
         <div style="flex:1;height:6px;background:var(--card2);border-radius:3px;overflow:hidden">
-          <div style="width:${s.ability}%;height:100%;background:${s.ability>=70?'var(--green)':s.ability>=50?'var(--brass)':'var(--red)'}"></div>
+          <div style="width:${s.ability}%;height:100%;background:${s.ability>=70?'var(--green)':s.ability>=50?'var(--accent)':'var(--red)'}"></div>
         </div>
         <span style="font-size:12px;font-weight:700;min-width:24px">${s.ability}</span>
       </div>`;
@@ -27,7 +28,7 @@ Object.assign(UI, {
       if(mission){
         const mRegion = SCOUT_REGIONS.find(r=>r.key===mission.region);
         const targetLabel = mission.targetPos ? ` · Looking for ${POS_NAME[mission.targetPos]||mission.targetPos}` : '';
-        dispatchSection = `<p style="font-size:12px;color:var(--brass);margin:4px 0">On mission — ${esc(mRegion?.label||mission.region)} · ${mission.weeksLeft}w left${targetLabel}</p>`;
+        dispatchSection = `<p style="font-size:12px;color:var(--accent);margin:4px 0">On mission — ${esc(mRegion?.label||mission.region)} · ${mission.weeksLeft}w left${targetLabel}</p>`;
       } else if(pick_state){
         // Step 2: position picker for the selected region
         const region = SCOUT_REGIONS.find(r=>r.key===pick_state.regionKey);
@@ -93,7 +94,7 @@ Object.assign(UI, {
       const youthRoom = Math.max(0, YOUTH_SQUAD_CAP - squadCount(myT, 'dev'));
       const canSign = youthRoom > 0 && canJoinYouthSquad(p);
       const targetNote = pr.targetPos
-        ? `<p style="margin:2px 0;font-size:11px;color:${pr.targetHit?'var(--green)':'var(--brass)'}">Target: ${POS_NAME[pr.targetPos]||pr.targetPos} · ${pr.targetHit?'matched':'missed'}</p>`
+        ? `<p style="margin:2px 0;font-size:11px;color:${pr.targetHit?'var(--green)':'var(--accent)'}">Target: ${POS_NAME[pr.targetPos]||pr.targetPos} · ${pr.targetHit?'matched':'missed'}</p>`
         : '';
       return `<div class="card" style="display:flex;gap:12px;align-items:flex-start">
         <div style="flex:1">
@@ -120,7 +121,7 @@ Object.assign(UI, {
     const marketRows = marketScouts.map(s => {
       const abilityBar = `<div style="display:flex;align-items:center;gap:6px">
         <div style="flex:1;height:5px;background:var(--card2);border-radius:3px;overflow:hidden">
-          <div style="width:${s.ability}%;height:100%;background:${s.ability>=70?'var(--green)':s.ability>=50?'var(--brass)':'var(--red)'}"></div>
+          <div style="width:${s.ability}%;height:100%;background:${s.ability>=70?'var(--green)':s.ability>=50?'var(--accent)':'var(--red)'}"></div>
         </div><span style="font-size:11px;font-weight:700">${s.ability}</span></div>`;
       return `<tr>
         <td><b>${esc(s.name)}</b><br><span style="font-size:11px;color:var(--muted)">Specialty: ${POS_NAME[s.posSpecialty]||s.posSpecialty||'General'}</span></td>

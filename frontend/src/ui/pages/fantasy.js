@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Fantasy scoring page — Team of the Round + season leaderboard */
 Object.assign(UI, {

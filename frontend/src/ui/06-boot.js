@@ -1,4 +1,4 @@
-'use strict';
+import { UI } from './01-core.js';
 
 /* ---------- boot ---------- */
 if(typeof document !== 'undefined' && document.getElementById('main')){

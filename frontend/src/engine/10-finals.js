@@ -1,11 +1,11 @@
-'use strict';
+
 
 /* ---------- finals ---------- */
-function _newFinalMatch(h, a){ return {h, a, played:false, hs:0, as:0, det:null}; }
-function _w(m){ return m.hs >= m.as ? m.h : m.a; }
-function _l(m){ return m.hs >= m.as ? m.a : m.h; }
+export function _newFinalMatch(h, a){ return {h, a, played:false, hs:0, as:0, det:null}; }
+export function _w(m){ return m.hs >= m.as ? m.h : m.a; }
+export function _l(m){ return m.hs >= m.as ? m.a : m.h; }
 
-function startFinals(){
+export function startFinals(){
   G.phase = 'finals';
   const lad = ladder();
   const useTop8 = lad.length >= 8;
@@ -57,12 +57,12 @@ function startFinals(){
   }
 }
 
-function advanceFinals(){
+export function advanceFinals(){
   const F = G.finals;
   return F.useTop8 ? _advanceTop8(F) : _advanceTop4(F);
 }
 
-function _advanceTop8(F){
+export function _advanceTop8(F){
   if(F.week === 1){
     for(const m of F.qf) simMatch(m, true);
     weeklyRecoveryAndDev();
@@ -126,7 +126,7 @@ function _advanceTop8(F){
   }
 }
 
-function _advanceTop4(F){
+export function _advanceTop4(F){
   if(F.week === 1){
     const matches = F.qf;
     for(const m of matches) simMatch(m, true);
@@ -151,7 +151,7 @@ function _advanceTop4(F){
   }
 }
 
-function _declareChampion(F){
+export function _declareChampion(F){
   F.premier = _w(F.gf);
   const pt = G.teams[F.premier];
   for(const id of pt.players){
@@ -166,3 +166,7 @@ function _declareChampion(F){
   startOffseason();
   return {type:'finals', games:[F.gf], label:'Grand Final'};
 }
+
+if (typeof window !== 'undefined') Object.assign(window, {
+  startFinals, advanceFinals,
+});

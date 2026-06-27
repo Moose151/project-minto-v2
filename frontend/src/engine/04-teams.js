@@ -1,11 +1,11 @@
-'use strict';
+
 
 /* ---------- team & league generation ---------- */
-const SQUAD_TEMPLATE = ['FB','FB','WG','WG','WG','WG','CE','CE','CE','CE','FE','FE','HB','HB','HK','HK','PR','PR','PR','PR','PR','SR','SR','SR','SR','LK','LK','HK'];
+export const SQUAD_TEMPLATE = ['FB','FB','WG','WG','WG','WG','CE','CE','CE','CE','FE','FE','HB','HB','HK','HK','PR','PR','PR','PR','PR','SR','SR','SR','SR','LK','LK','HK'];
 // `order` = chronological position in the week (for sorting / turnaround).
 // `pri`   = fill priority — slots with the lowest pri are used first as the game
 //           count grows, producing the authentic NRL spread (8 games → 1 Thu / 2 Fri / 3 Sat / 2 Sun).
-const MATCH_SLOTS = [
+export const MATCH_SLOTS = [
   {day:'Thursday', time:'night',     label:'Thu Night',     hour:19, order:0, pri:0},
   {day:'Friday',   time:'afternoon', label:'Fri Afternoon', hour:18, order:1, pri:5},
   {day:'Friday',   time:'night',     label:'Fri Night',     hour:20, order:2, pri:1},
@@ -17,21 +17,21 @@ const MATCH_SLOTS = [
   {day:'Sunday',   time:'night',     label:'Sun Night',     hour:18, order:8, pri:8},
 ];
 
-function matchSlotOrder(m){
+export function matchSlotOrder(m){
   if(m && m.slot && m.slot.order != null) return m.slot.order;
   const key = m && m.slot ? `${m.slot.day}-${m.slot.time}` : 'Saturday-afternoon';
   const legacy = {'Thursday-night':0,'Friday-afternoon':1,'Friday-night':2,'Saturday-afternoon':3,'Saturday-twilight':4,'Saturday-night':5,'Sunday-afternoon':6,'Sunday-twilight':7,'Sunday-night':8};
   return legacy[key] == null ? 3 : legacy[key];
 }
-function sortMatchesBySlot(matches){
+export function sortMatchesBySlot(matches){
   return (matches || []).slice().sort((a,b)=>matchSlotOrder(a)-matchSlotOrder(b));
 }
-function fitCap(G, t){ // scale salaries so top squad fits under cap
+export function fitCap(G, t){ // scale salaries so top squad fits under cap
   let total = teamSalary(t);
   const target = G.config.cap * rf(.88,.99);
   if(total > target){ const f = target/total; for(const id of t.players){ const p=G.players[id]; if(!salaryCountsForCap(p)) continue; p.salary = Math.max(85000, Math.round(p.salary*f/5000)*5000); if(p.contractSchedule && p.contractSchedule.length) p.contractSchedule = p.contractSchedule.map(v=>Math.max(85000, Math.round(v*f/5000)*5000)); } }
 }
-function genFixtures(teamIds, targetRounds){
+export function genFixtures(teamIds, targetRounds){
   // double round robin, circle method; odd team count → one bye per round
   const ids = shuffle(teamIds);
   const n = ids.length;
@@ -92,3 +92,7 @@ function genFixtures(teamIds, targetRounds){
     byes: allByes,
   };
 }
+
+if (typeof window !== 'undefined') Object.assign(window, {
+  SQUAD_TEMPLATE, MATCH_SLOTS, matchSlotOrder, sortMatchesBySlot, fitCap, genFixtures,
+});

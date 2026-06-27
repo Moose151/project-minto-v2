@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Player profile page — every player click routes here */
 Object.assign(UI, {
@@ -49,10 +50,10 @@ Object.assign(UI, {
         const val = p.attrs[a];
         const dispVal = isMyTeam ? String(val) : scoutAttrHtml(p, a, val);
         const isKey = keyAttrs.has(a);
-        return `<div style="${isKey ? 'background:rgba(210,165,62,.08);border-radius:5px;padding:2px 4px;margin:-2px -4px 2px;' : ''}">
+        return `<div style="${isKey ? 'background:var(--accent-muted);border-radius:5px;padding:2px 4px;margin:-2px -4px 2px;' : ''}">
           <div class="attr">
-            <span style="${isKey ? 'color:var(--brass);font-weight:600' : ''}">${ATTR_LABEL[a]}${isKey ? ' ★' : ''}</span>
-            <b style="${isKey ? 'color:var(--brass)' : ''}">${dispVal}</b>
+            <span style="${isKey ? 'color:var(--accent);font-weight:600' : ''}">${ATTR_LABEL[a]}${isKey ? ' ★' : ''}</span>
+            <b style="${isKey ? 'color:var(--accent)' : ''}">${dispVal}</b>
           </div>
           <div class="bar"><i style="width:${val}%"></i></div>
         </div>`;
@@ -63,7 +64,7 @@ Object.assign(UI, {
     const awards = (p.awards || []).slice(0,24).map(a=>`<tr><td>${a.year}</td><td><b>${esc(a.award)}</b></td><td>${esc(a.detail||'')}</td></tr>`).join('');
     const intlHonours = (p.intlHonours || []);
     const intlTitles = intlHonours.filter(h=>h.title==='Champion').length;
-    const repHonoursRows = intlHonours.slice().reverse().slice(0,16).map(h=>`<tr><td>${h.y}</td><td><b>${esc(h.team)}</b></td><td>${h.title==='Champion'?'<span style="color:var(--brass)">🏆 Champion</span>':esc(h.title)}</td></tr>`).join('');
+    const repHonoursRows = intlHonours.slice().reverse().slice(0,16).map(h=>`<tr><td>${h.y}</td><td><b>${esc(h.team)}</b></td><td>${h.title==='Champion'?'<span style="color:var(--accent)">🏆 Champion</span>':esc(h.title)}</td></tr>`).join('');
     const injuries = (p.injuries || []).slice(0,16).map(i=>`<tr><td>${i.y}</td><td>Rd ${i.r}</td><td><span class="inj">${esc(i.n)}</span></td><td class="num">${i.weeks}w</td></tr>`).join('');
     const histQuery = (UI._playerHistSearch || '').trim().toLowerCase();
     const histVal = h => {
@@ -102,7 +103,7 @@ Object.assign(UI, {
       const pts = vals.map((v,i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
       const latestOvr = vals[vals.length - 1];
       const firstOvr = vals[0];
-      const trend = latestOvr > firstOvr ? 'var(--green)' : latestOvr < firstOvr ? 'var(--red)' : 'var(--brass)';
+      const trend = latestOvr > firstOvr ? 'var(--green)' : latestOvr < firstOvr ? 'var(--red)' : 'var(--accent)';
       const dots = vals.map((v,i) => `<circle cx="${x(i).toFixed(1)}" cy="${y(v).toFixed(1)}" r="3" fill="${i===vals.length-1?trend:'var(--dim)'}" stroke="var(--bg)" stroke-width="1.5"/>`).join('');
       const labels = [history[0], history[history.length-1]];
       const labelHtml = labels.filter((h,i,arr)=>arr.indexOf(h)===i).map((h,i)=>{
@@ -198,8 +199,8 @@ Object.assign(UI, {
             : delta < 0
               ? `<span style="color:var(--red);font-weight:700">${delta}</span>`
               : `<span style="color:var(--dim)">—</span>`;
-          return `<tr style="${isKey?'background:rgba(210,165,62,.06)':''}">
-            <td style="${isKey?'color:var(--brass);font-weight:600':'color:var(--muted)'};font-size:12px">${ATTR_LABEL[a]}${isKey?' ★':''}</td>
+          return `<tr style="${isKey?'background:var(--accent-a06)':''}">
+            <td style="${isKey?'color:var(--accent);font-weight:600':'color:var(--muted)'};font-size:12px">${ATTR_LABEL[a]}${isKey?' ★':''}</td>
             <td class="num" style="font-size:12px"><span class="ovr ${ovrCls(cur)}">${cur}</span></td>
             <td class="num" style="font-size:12px;color:var(--dim)">${prev}</td>
             <td class="num" style="font-size:12px">${deltaHtml}</td>

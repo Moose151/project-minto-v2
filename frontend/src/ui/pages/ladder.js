@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Ladder — full standings with form */
 Object.assign(UI, {
@@ -21,8 +22,8 @@ Object.assign(UI, {
       const t = G.teams[r.id];
       const diff = r.pf-r.pa;
       const onCurrentBye = currentByeTeams.includes(t.id);
-      return `<tr class="${i===finalsSpots-1?'finals-line':''}" style="${t.id===G.coach.teamId?'background:rgba(210,165,62,.07)':''}">
-        <td class="lpos">${i+1}</td><td class="click" onclick="UI.teamModal(${t.id})" style="cursor:pointer">${teamLogo(t,28)} <b>${esc(teamName(t))}</b>${onCurrentBye?` <span class="pos-tag" style="font-size:9px;color:var(--brass);border-color:var(--brass)">BYE</span>`:''}
+      return `<tr class="${i===finalsSpots-1?'finals-line':''}" style="${t.id===G.coach.teamId?'background:var(--accent-a06)':''}">
+        <td class="lpos">${i+1}</td><td class="click" onclick="UI.teamModal(${t.id})" style="cursor:pointer">${teamLogo(t,28)} <b>${esc(teamName(t))}</b>${onCurrentBye?` <span class="pos-tag" style="font-size:9px;color:var(--accent);border-color:var(--accent)">BYE</span>`:''}
         </td>
         <td class="num">${r.p}</td><td class="num">${r.w}</td><td class="num">${r.d}</td><td class="num">${r.l}</td>
         <td class="num">${r.pf}</td><td class="num">${r.pa}</td><td class="num" style="color:${diff>=0?'var(--green)':'var(--red)'}">${diff>0?'+':''}${diff}</td>

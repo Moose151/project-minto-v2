@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "./01-core.js";
+
 
 /* ---------- helpers ---------- */
 const NRL_POS_ORDER = ['FB','WG','CE','FE','HB','PR','HK','SR','LK'];
@@ -6,7 +7,7 @@ function nrlPosIdx(p){ const i = NRL_POS_ORDER.indexOf(p.pos); return i === -1 ?
 function nrlSort(a, b){ return nrlPosIdx(a) - nrlPosIdx(b) || b.ovr - a.ovr; }
 
 function ovrCls(v){ return v>=78?'elite':v>=68?'good':v>=58?'avg':'poor'; }
-function formCls(v){ return v>=72?'var(--green)':v>=56?'var(--brass)':v<40?'var(--red)':'var(--muted)'; }
+function formCls(v){ return v>=72?'var(--green)':v>=56?'var(--accent)':v<40?'var(--red)':'var(--muted)'; }
 function formText(p){ return Math.round(p && p.form != null ? p.form : 50); }
 function formHtml(p){
   const v = formText(p);
@@ -123,6 +124,10 @@ function clubPrestigeBadge(t, compact){
 function teamLogo(t, size){
   if(!t) return '';
   size = size || 42;
+  if(t.logoFile){
+    const name = esc(t.nick || '');
+    return `<img class="team-logo" src="/logos/${t.logoFile}" width="${size}" height="${size}" alt="${name} logo" style="vertical-align:middle;flex:0 0 auto;object-fit:contain">`;
+  }
   if(typeof ensureTeamLogo === 'function') ensureTeamLogo(t);
   const logo = t.logo || {};
   const c1 = t.c1 || '#58616D';
@@ -230,13 +235,13 @@ Object.assign(UI, {
     const total = opts.total == null ? (salary * Math.max(1, years)) : opts.total;
     const structure = opts.structure || contractTypeLabel(p.contractType || 'flat');
     const role = opts.role || (p.promises ? promiseSummary(p) : 'No promises');
-    const tone = opts.tone || 'var(--brass)';
+    const tone = opts.tone || 'var(--accent)';
     const sub = opts.sub || `${years} year${years===1?'':'s'} · ${money(salary)} avg/yr`;
     UI.modal(`<div style="text-align:center;padding:4px 0 2px">
       <div style="font-size:11px;color:${tone};font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">${esc(kind)}</div>
       <div style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;margin-bottom:12px">
         ${teamLogo(t,56)}
-        <div style="width:78px;height:78px;border-radius:50%;background:linear-gradient(135deg,rgba(210,165,62,.18),rgba(255,255,255,.04));display:flex;align-items:center;justify-content:center;border:1px solid rgba(210,165,62,.45)">${playerAvatar(p,62)}</div>
+        <div style="width:78px;height:78px;border-radius:50%;background:linear-gradient(135deg,var(--accent-a18),rgba(255,255,255,.04));display:flex;align-items:center;justify-content:center;border:1px solid var(--accent-line)">${playerAvatar(p,62)}</div>
       </div>
       <h3 style="margin:0 0 4px;font-size:24px">${esc(p.name)}</h3>
       <p class="page-sub" style="margin:0 0 14px">${esc(t.nick)} · ${p.pos}${p.pos2?'/'+p.pos2:''} · Age ${p.age} · OVR ${p.ovr}</p>
@@ -357,3 +362,11 @@ function playerAvatar(p, size){
     ${facialHair}
   </svg>`;
 }
+
+if (typeof window !== 'undefined') Object.assign(window, {
+  nrlPosIdx, nrlSort, ovrCls, formCls, formText, formHtml, scoutConfCls, contrastText,
+  scoutingAbility, scoutedPotential, potText, potHtml, scoutedOvr, ovrText, ovrHtml,
+  scoutAttrHtml, teamRatings, scoutedTeamRating, teamRatingPill, clubPrestigeBadge,
+  teamLogo, playerTierBadge, nationalityFlag, repChip, stateRepChip, nationalityChip,
+  playerRepLine, playerAvatar,
+});

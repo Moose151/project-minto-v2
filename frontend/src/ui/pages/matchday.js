@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Match Day — pre-match info, lineups, coaching preferences and match feed */
 Object.assign(UI, {
@@ -21,7 +22,7 @@ Object.assign(UI, {
       return `<h1 class="page">Match Day</h1>
         ${onBye
           ? `<div style="text-align:center;padding:40px 0">
-              <div style="font-size:56px;font-weight:900;font-family:var(--disp);color:var(--brass);letter-spacing:.08em">BYE</div>
+              <div style="font-size:56px;font-weight:900;font-family:var(--disp);color:var(--accent);letter-spacing:.08em">BYE</div>
               <p class="page-sub" style="margin:6px 0 14px">Round ${G.round+1} — your team has no match this week. Players rest and recover.</p>
               <div class="btnrow" style="justify-content:center">
                 <button class="btn primary" onclick="UI.advance()">Next day</button>
@@ -48,6 +49,28 @@ Object.assign(UI, {
       return `<tr><td>#${SLOTS[i].n}</td><td>${SLOTS[i].pos}</td><td>${p?`<b>${esc(p.name)}</b>`:'-'}</td><td class="num">${p?p.ovr:'-'}</td><td class="num">${p?Math.round(p.cond):'-'}%</td><td class="num">${p?`${p.s.g}g ${p.s.t}T ${p.s.runs||0}R`:''}</td></tr>`;
     };
     const prefs = t.matchPrefs || (t.matchPrefs={autoSubs:true, penalty:'auto', fieldGoal:true});
+    const focus = prefs.attackFocus || 'balanced';
+    const focusOpts = [
+      ['balanced','Balanced'],
+      ['middle','Middle'],
+      ['left','Left edge'],
+      ['right','Right edge'],
+      ['territory','Territory'],
+    ];
+    const intelKey = `${G.year}-R${(G.round || 0) + 1}`;
+    const intel = G.matchIntel && G.matchIntel[intelKey];
+    const focusCard = `<div class="card" style="margin-bottom:10px;padding:12px 14px">
+      <div style="display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap">
+        <div style="flex:1;min-width:220px">
+          <div style="font-weight:700;font-size:13px;color:var(--accent)">Attacking focus</div>
+          <p style="font-size:12px;color:var(--muted);margin:3px 0 0">${intel ? esc(intel.recommendation || 'Staff report available.') : 'Choose where the attack is pointed before kick-off.'}</p>
+        </div>
+        <div class="btnrow" style="margin:0;gap:6px;flex-shrink:0;max-width:520px">
+          ${focusOpts.map(([k,l])=>`<button class="btn sm${focus===k?' primary':''}" onclick="myTeam().matchPrefs.attackFocus='${k}';UI.render()">${esc(l)}</button>`).join('')}
+          ${intel ? `<button class="btn sm" onclick="UI.go('tactics')">Staff report</button>` : ''}
+        </div>
+      </div>
+    </div>`;
     const watchControls = UI._matchMode==='watch' ? `<div class="card" style="margin-top:16px"><h2 class="sec" style="margin-top:0">Watch controls</h2>
       <div class="grid3">
         <div class="field"><label>Penalty preference</label><select onchange="myTeam().matchPrefs.penalty=this.value;UI.render()">
@@ -72,7 +95,7 @@ Object.assign(UI, {
       else if(li.rankFromCheapest <= 3) rankLabel = `${ordinal(li.rankFromCheapest)} cheapest in the league`;
       else if(ticketPrice >= li.avg) rankLabel = `Above average — ${ordinal(li.rankFromMostExpensive)} most expensive`;
       else rankLabel = `Below average — ${ordinal(li.rankFromCheapest)} cheapest`;
-      const rankColor = ticketPrice > li.avg ? 'var(--brass)' : ticketPrice < li.avg ? 'var(--green)' : 'var(--muted)';
+      const rankColor = ticketPrice > li.avg ? 'var(--accent)' : ticketPrice < li.avg ? 'var(--green)' : 'var(--muted)';
       const presNote = myPrestige >= 72 ? 'Premium club: fans tolerate higher prices'
         : myPrestige >= 50 ? 'Moderate price sensitivity'
         : 'Fans are price-sensitive at this prestige level';
@@ -93,10 +116,10 @@ Object.assign(UI, {
     }
     const badWeather = m.projWeather === 'Heavy rain' || m.projWeather === 'Windy';
     const weatherTacticsPref = (prefs.weatherTactics || 'normal');
-    const weatherTacticsCard = badWeather ? `<div class="card" style="border-color:var(--brass);margin-bottom:10px;padding:12px 14px">
+    const weatherTacticsCard = badWeather ? `<div class="card" style="border-color:var(--accent);margin-bottom:10px;padding:12px 14px">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <div style="flex:1;min-width:160px">
-          <div style="font-weight:700;font-size:13px;color:var(--brass)">Conditions: ${esc(m.projWeather)}</div>
+          <div style="font-weight:700;font-size:13px;color:var(--accent)">Conditions: ${esc(m.projWeather)}</div>
           <p style="font-size:12px;color:var(--muted);margin:3px 0 0">Adjust your game plan to suit the weather — fewer risky passes but better kicking accuracy and discipline.</p>
         </div>
         <div class="btnrow" style="margin:0;gap:6px;flex-shrink:0">
@@ -109,9 +132,9 @@ Object.assign(UI, {
     const favTeam = o.favoured==='h' ? h : a;
     const oddsBar = `<div style="display:flex;gap:12px;align-items:center;margin:8px 0 4px;flex-wrap:wrap">
       <span style="color:var(--muted);font-size:12px">Bookie odds:</span>
-      <span style="font-weight:700;color:${o.favoured==='h'?'var(--brass)':'var(--muted)'}">${esc(h.nick)} ${UI._oddsStr(o.oddsH)}</span>
+      <span style="font-weight:700;color:${o.favoured==='h'?'var(--accent)':'var(--muted)'}">${esc(h.nick)} ${UI._oddsStr(o.oddsH)}</span>
       <span style="color:var(--dim)">·</span>
-      <span style="font-weight:700;color:${o.favoured==='a'?'var(--brass)':'var(--muted)'}">${esc(a.nick)} ${UI._oddsStr(o.oddsA)}</span>
+      <span style="font-weight:700;color:${o.favoured==='a'?'var(--accent)':'var(--muted)'}">${esc(a.nick)} ${UI._oddsStr(o.oddsA)}</span>
       <span style="color:var(--dim);font-size:11px">(${esc(favTeam.nick)} favoured · ${Math.round((o.favoured==='h'?o.pH:o.pA)*100)}% implied)</span>
       <button class="btn sm" onclick="UI.go('predictions')" style="margin-left:auto">Full predictions →</button>
     </div>`;
@@ -119,15 +142,45 @@ Object.assign(UI, {
     const oppTeam = t.id===h.id ? a : h;
     const oppCoach = oppTeam.headCoach ? oppTeam.headCoach.name : 'Unknown coach';
     const coachLine = `<p style="font-size:12px;color:var(--muted);margin:2px 0 8px"><b>${esc(myCoach)}</b> vs <b>${esc(oppCoach)}</b>${oppTeam.headCoach?` (rep ${oppTeam.headCoach.rep})`:''}  · ${esc(venue)}</p>`;
-    const slotBadge = m.slot ? `<span style="font-size:11px;color:var(--brass);font-weight:700;background:rgba(210,165,62,.12);padding:2px 9px;border-radius:10px;letter-spacing:.04em;white-space:nowrap">${esc(m.slot.label)}</span>` : '';
+    const slotBadge = m.slot ? `<span style="font-size:11px;color:var(--accent);font-weight:700;background:var(--accent-a12);padding:2px 9px;border-radius:10px;letter-spacing:.04em;white-space:nowrap">${esc(m.slot.label)}</span>` : '';
+    // Head-to-head record this season
+    const lad = ladder();
+    const myLadRow = lad.find(r=>r.id===t.id)||{w:0,l:0,d:0,form:[]};
+    const oppLadRow = lad.find(r=>r.id===oppTeam.id)||{w:0,l:0,d:0,form:[]};
+    const myPos = lad.findIndex(r=>r.id===t.id)+1;
+    const oppPos = lad.findIndex(r=>r.id===oppTeam.id)+1;
+    const formDots = row => (row.form||[]).slice(-5).map(f=>`<span class="form-dot ${f}"></span>`).join('');
+    const h2hMatches = G.fixtures.slice(0, G.round).flat().filter(fx=>
+      fx.played && ((fx.h===t.id&&fx.a===oppTeam.id)||(fx.h===oppTeam.id&&fx.a===t.id))
+    );
+    const h2hHtml = h2hMatches.length ? (() => {
+      let myW=0, myL=0, myD=0;
+      h2hMatches.forEach(fx=>{
+        const iH = fx.h===t.id;
+        const ms = iH?fx.hs:fx.as, os = iH?fx.as:fx.hs;
+        if(ms>os) myW++; else if(ms<os) myL++; else myD++;
+      });
+      const lastFx = h2hMatches[h2hMatches.length-1];
+      const lastIH = lastFx.h===t.id;
+      const lS = `${lastIH?lastFx.hs:lastFx.as}–${lastIH?lastFx.as:lastFx.hs}`;
+      return `<span style="font-size:11px;color:var(--muted)">H2H this season: <b>${myW}W ${myL}L${myD?' '+myD+'D':''}</b> · Last: ${lS}</span>`;
+    })() : '';
+    const standingStrip = `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:4px 0 8px;font-size:12px">
+      <span>${teamLogo(t,20)} <b>${esc(t.nick)}</b> <span style="color:var(--muted)">${ord(myPos)} · ${myLadRow.w}–${myLadRow.l}</span> ${formDots(myLadRow)}</span>
+      <span style="color:var(--dim)">vs</span>
+      <span>${teamLogo(oppTeam,20)} <b>${esc(oppTeam.nick)}</b> <span style="color:var(--muted)">${ord(oppPos)} · ${oppLadRow.w}–${oppLadRow.l}</span> ${formDots(oppLadRow)}</span>
+      ${h2hHtml}
+    </div>`;
     return `<h1 class="page">Match Day</h1>
     <p class="page-sub" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Round ${G.round+1} · ${slotBadge} ${teamLogo(h,28)} ${esc(teamName(h))} v ${teamLogo(a,28)} ${esc(teamName(a))}</p>
-    ${isMagicRound ? `<div style="background:linear-gradient(135deg,rgba(210,165,62,.15),rgba(210,165,62,.05));border:1px solid rgba(210,165,62,.5);border-radius:8px;padding:10px 14px;margin:6px 0;display:flex;align-items:center;gap:10px">
+    ${isMagicRound ? `<div style="background:linear-gradient(135deg,var(--accent-a18),var(--accent-a05));border:1px solid var(--accent-a50);border-radius:8px;padding:10px 14px;margin:6px 0;display:flex;align-items:center;gap:10px">
       <div style="font-size:20px">✦</div>
-      <div><div style="font-weight:700;color:var(--brass);font-size:14px">Magic Round ${G.year}</div>
+      <div><div style="font-weight:700;color:var(--accent);font-size:14px">Magic Round ${G.year}</div>
       <div style="font-size:11px;color:var(--muted)">All fixtures at ${esc(G.magicRound.venue)} · Neutral ground — no home advantage for either side${mrHost&&mrHost.id===G.coach.teamId?' · Your club earns a $1.5M hosting fee':''}</div></div>
     </div>` : ''}
     ${coachLine}
+    ${standingStrip}
+    ${focusCard}
     ${weatherTacticsCard}
     ${oddsBar}
     <div class="btnrow"><button class="btn ${UI._matchMode==='result'?'primary':''}" onclick="UI._matchMode='result';UI.render()">Sim result</button><button class="btn ${UI._matchMode==='watch'?'primary':''}" onclick="UI._matchMode='watch';UI.render()">Watch game</button><button class="btn" onclick="UI.go('teamsheet')">Adjust team sheet</button></div>
@@ -171,6 +224,7 @@ Object.assign(UI, {
       UI._watchH1Events = h1Events;
       UI._watchMyM = myM;
       UI._watchEarlyMatches = prepRes.earlyMatches || [];
+      UI._60minDone = false;
       UI.go('watchgame');
       return;
     }
@@ -207,7 +261,7 @@ Object.assign(UI, {
           <span class="ovr ${ovrCls(p.ovr)}" style="font-size:11px">${p.ovr}</span>
         </div>`;
       }).join('');
-      return `<div style="min-width:160px"><div style="font-size:11px;font-weight:700;color:var(--brass);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">${esc(team.nick)}</div>${rows}</div>`;
+      return `<div style="min-width:160px"><div style="font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">${esc(team.nick)}</div>${rows}</div>`;
     };
 
     // Start feed after render — use pre-built first-half events if available (split-match flow)
@@ -272,12 +326,22 @@ Object.assign(UI, {
   _revealFeedPageList(events, i, myM){
     if(UI.page !== 'watchgame') return;
     const box = document.getElementById('wg-feedBox');
+    // 60-minute pause: offer final instructions once per match
+    if(box && !UI._60minDone && i < events.length && events[i].min >= 60){
+      UI._60minDone = true;
+      UI._60minResumeEvents = events;
+      UI._60minResumeIdx = i;
+      UI._60minResumeMatch = myM;
+      const postMatch = document.getElementById('wg-postMatch');
+      if(postMatch){ postMatch.style.display = ''; postMatch.innerHTML = UI._build60MinPanel(); }
+      return;
+    }
     if(!box || i>=events.length){
       // List exhausted — add FULL TIME if not yet appended
       if(myM && myM.played && box){
         const h = G.teams[myM.h], a = G.teams[myM.a];
         const ftTxt = `FULL TIME — ${h.nick} ${myM.hs}–${myM.as} ${a.nick}`;
-        box.innerHTML += `<div style="padding:5px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:baseline"><span style="color:var(--dim);font-size:11px;min-width:28px;flex-shrink:0">80'</span><span style="color:var(--brass)">${ftTxt}</span></div>`;
+        box.innerHTML += `<div style="padding:5px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:baseline"><span style="color:var(--dim);font-size:11px;min-width:28px;flex-shrink:0">80'</span><span style="color:var(--accent)">${ftTxt}</span></div>`;
         box.scrollTop = box.scrollHeight;
         UI._handleFullTime(myM);
       }
@@ -287,9 +351,10 @@ Object.assign(UI, {
     const isScore = e.txt && (e.txt.startsWith('TRY') || e.txt.includes('slots a penalty goal'));
     const isSinBin = e.txt && (e.txt.includes('SIN BINNED') || e.txt.includes('SENT OFF'));
     const isSub = e.txt && e.txt.startsWith('↕ SUB');
-    const color = isScore ? 'color:var(--brass)' : isSinBin ? 'color:var(--red)' : isSub ? 'color:var(--muted)' : '';
+    const color = isScore ? 'color:var(--accent)' : isSinBin ? 'color:var(--red)' : isSub ? 'color:var(--muted)' : '';
     box.innerHTML += `<div style="padding:5px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:baseline"><span style="color:var(--dim);font-size:11px;min-width:28px;flex-shrink:0">${e.min}'</span><span style="${color}">${esc(e.txt)}</span></div>`;
     box.scrollTop = box.scrollHeight;
+    if(isScore){ const sc=UI._extractLiveScore(e.txt); if(sc){ const sh=document.getElementById('wg-scoreH'),sa=document.getElementById('wg-scoreA'); if(sh)sh.textContent=sc.h; if(sa)sa.textContent=sc.a; } }
     setTimeout(()=>UI._revealFeedPageList(events, i+1, myM), Math.max(80, 800/(UI._watchSpeed||2)));
   },
 
@@ -339,15 +404,21 @@ Object.assign(UI, {
     const e = events[i];
     const isScore = e.txt && (e.txt.startsWith('TRY') || e.txt.includes('HALF TIME') || e.txt.startsWith('FULL TIME') || e.txt.includes('slots a penalty goal'));
     const isSinBin = e.txt && (e.txt.includes('SIN BINNED') || e.txt.includes('SENT OFF'));
-    const color = isScore ? 'color:var(--brass)' : isSinBin ? 'color:var(--red)' : '';
+    const color = isScore ? 'color:var(--accent)' : isSinBin ? 'color:var(--red)' : '';
     box.innerHTML += `<div style="padding:5px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:baseline">
       <span style="color:var(--dim);font-size:11px;min-width:28px;flex-shrink:0">${e.min}'</span>
       <span style="${color}">${esc(e.txt)}</span>
     </div>`;
     box.scrollTop = box.scrollHeight;
+    if(isScore && e.txt && !e.txt.startsWith('FULL TIME') && !e.txt.includes('HALF TIME')){
+      const sc = UI._extractLiveScore(e.txt);
+      if(sc){ const sh=document.getElementById('wg-scoreH'),sa=document.getElementById('wg-scoreA'); if(sh)sh.textContent=sc.h; if(sa)sa.textContent=sc.a; }
+    }
     if(e.txt && e.txt.includes('HALF TIME')){
       const banner = document.getElementById('wg-banner');
       if(banner) banner.textContent = '⏸ Half time';
+      const htSc = UI._extractLiveScore(e.txt) || (myM.det.htScore ? {h:myM.det.htScore.h,a:myM.det.htScore.a} : null);
+      if(htSc){ const sh=document.getElementById('wg-scoreH'),sa=document.getElementById('wg-scoreA'); if(sh)sh.textContent=htSc.h; if(sa)sa.textContent=htSc.a; }
       UI._htEvents = events; UI._htNextIdx = i + 1; UI._htMatch = myM;
       const postMatch = document.getElementById('wg-postMatch');
       if(postMatch){ postMatch.style.display = ''; postMatch.innerHTML = UI._buildTeamTalkHtml(myM); }
@@ -383,6 +454,11 @@ Object.assign(UI, {
     setTimeout(()=>UI._revealFeedPage(events, i+1, myM), Math.max(80, 800/(UI._watchSpeed||2)));
   },
 
+  _extractLiveScore(txt){
+    const m = txt && txt.match(/\((\d+)[–\-](\d+)\)/);
+    return m ? {h:+m[1], a:+m[2]} : null;
+  },
+
   _showFullTimeSiren(header, won, drew){
     if(!header) return;
     let siren = document.getElementById('wg-siren');
@@ -401,7 +477,8 @@ Object.assign(UI, {
     let el = document.getElementById('wg-confetti');
     if(!el){ el = document.createElement('div'); el.id='wg-confetti'; document.body.appendChild(el); }
     el.innerHTML = '';
-    const COLORS = ['#d2a53e','#4caf7d','#5b9bd5','#e05c5c','#9c6dd8','#f0a430','#61c9a8'];
+    const teamAccent = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#d2a53e';
+    const COLORS = [teamAccent,'#4caf7d','#5b9bd5','#e05c5c','#9c6dd8','#f0a430','#61c9a8'];
     for(let i=0;i<55;i++){
       const s = document.createElement('span');
       s.style.left = (Math.random()*100)+'%';
@@ -431,12 +508,18 @@ Object.assign(UI, {
       return s;
     };
     const mySt = sumDet(myDet), oppSt = sumDet(oppDet);
+    const myPoss  = mineIsH ? (myM.det.possH||50) : (myM.det.possA||50);
+    const oppPoss = mineIsH ? (myM.det.possA||50) : (myM.det.possH||50);
+    const myTerr  = mineIsH ? (myM.det.terrH||50) : (myM.det.terrA||50);
+    const oppTerr = mineIsH ? (myM.det.terrA||50) : (myM.det.terrH||50);
+    const myCompl  = mineIsH ? (myM.det.complH||0) : (myM.det.complA||0);
+    const oppCompl = mineIsH ? (myM.det.complA||0) : (myM.det.complH||0);
     const topPlayers = det => Object.entries(det).map(([id,l])=>({p:G.players[+id],l})).filter(x=>x.p&&x.l&&x.l.r).sort((a,b)=>b.l.r-a.l.r);
     const myTop = topPlayers(myDet).slice(0,5);
     const oppTop = topPlayers(oppDet).slice(0,3);
     const perfRow = x => `<div style="display:flex;justify-content:space-between;align-items:center;padding:3px 0;font-size:12px;border-bottom:1px solid var(--line)">
       <span style="cursor:pointer;text-decoration:underline;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis" onclick="UI.playerModal(${x.p.id})">${esc(x.p.name)} <span class="pos-tag" style="font-size:10px">${x.p.pos}</span></span>
-      <span style="color:var(--muted);font-size:11px;white-space:nowrap;padding-left:6px">${x.l.t?x.l.t+'T ':''}${x.l.ta?x.l.ta+'TA ':''}${x.l.gl?x.l.gl+(x.l.ga?'/'+x.l.ga:'')+'G ':''}${x.l.fg?x.l.fg+'FG ':''}<b style="color:var(--ink)">${x.l.r.toFixed(1)}</b></span>
+      <span style="color:var(--muted);font-size:11px;white-space:nowrap;padding-left:6px">${x.l.t?x.l.t+'T ':''}${x.l.ta?x.l.ta+'TA ':''}${x.l.gl?x.l.gl+(x.l.ga?'/'+x.l.ga:'')+'G ':''}${x.l.fg?x.l.fg+'FG ':''}${x.l.m?Math.round(x.l.m)+'m ':''}${x.l.lb?x.l.lb+'LB ':''}<b style="color:var(--ink)">${x.l.r.toFixed(1)}</b></span>
     </div>`;
     const statCmp = (label,myN,oppN,myTxt,oppTxt,lowerIsBetter) => {
       const myB=lowerIsBetter?myN<oppN:myN>oppN, oppB=lowerIsBetter?oppN<myN:oppN>myN;
@@ -450,9 +533,9 @@ Object.assign(UI, {
     let sH=0,sA=0;
     const scoreEvs=[...tryEvs.map(ev=>({min:ev.min,type:'try',ev})),...penEvs.map(ev=>({min:ev.min,type:'pen',ev})),...fgEvs.map(ev=>({min:ev.min,type:'fg',ev}))].sort((a,b)=>a.min-b.min);
     const scoringTimeline=scoreEvs.map(item=>{
-      if(item.type==='try'){const ev=item.ev,team=ev.side==='h'?th:ta,scorer=G.players[ev.scorerId],assist=ev.assistId?G.players[ev.assistId]:null;if(ev.side==='h') sH+=4+(ev.converted?2:0);else sA+=4+(ev.converted?2:0);const isMine=(ev.side==='h')===mineIsH,col=isMine?'var(--green)':'var(--red)';return `<div style="display:flex;gap:6px;align-items:baseline;padding:4px 6px;border-left:3px solid ${col};margin:2px 0;font-size:12px"><span style="color:var(--dim);font-size:10px;width:24px;flex-shrink:0">${ev.min}'</span><span style="color:${col};font-weight:700;width:28px;flex-shrink:0;font-size:10px">TRY</span><span style="flex:1">${esc(scorer?scorer.name:'?')}${assist?` <span style="color:var(--muted)">(${esc(assist.name)})</span>`:''} <span style="font-size:10px;color:${ev.converted?'var(--green)':'var(--red)'}">${ev.converted?'CONV':'NO CONV'}</span> <span style="color:var(--muted);font-size:10px">${esc(team.nick)}</span></span><span style="font-family:var(--disp);font-weight:700;font-size:12px;color:var(--brass)">${sH}–${sA}</span></div>`;}
-      if(item.type==='pen'){const ev=item.ev,team=ev.side==='h'?th:ta,kicker=ev.kickerId?G.players[ev.kickerId]:null;if(ev.side==='h') sH+=2;else sA+=2;return `<div style="display:flex;gap:6px;align-items:baseline;padding:3px 6px;border-left:3px solid var(--muted);margin:2px 0;font-size:12px"><span style="color:var(--dim);font-size:10px;width:24px;flex-shrink:0">${ev.min}'</span><span style="color:var(--muted);width:28px;flex-shrink:0;font-size:10px">PEN</span><span style="flex:1">${kicker?esc(kicker.name):'?'} <span style="color:var(--muted);font-size:10px">${esc(team.nick)}</span></span><span style="font-family:var(--disp);font-weight:700;font-size:12px;color:var(--brass)">${sH}–${sA}</span></div>`;}
-      if(item.type==='fg'){const ev=item.ev,team=G.teams[ev.team];if(ev.team===myM.h) sH+=1;else sA+=1;return `<div style="display:flex;gap:6px;align-items:baseline;padding:3px 6px;border-left:3px solid var(--muted);margin:2px 0;font-size:12px"><span style="color:var(--dim);font-size:10px;width:24px;flex-shrink:0">${ev.min}'</span><span style="color:var(--muted);width:28px;flex-shrink:0;font-size:10px">FG</span><span style="flex:1">${team?esc(team.nick):'?'}</span><span style="font-family:var(--disp);font-weight:700;font-size:12px;color:var(--brass)">${sH}–${sA}</span></div>`;}
+      if(item.type==='try'){const ev=item.ev,team=ev.side==='h'?th:ta,scorer=G.players[ev.scorerId],assist=ev.assistId?G.players[ev.assistId]:null;if(ev.side==='h') sH+=4+(ev.converted?2:0);else sA+=4+(ev.converted?2:0);const isMine=(ev.side==='h')===mineIsH,col=isMine?'var(--green)':'var(--red)';return `<div style="display:flex;gap:6px;align-items:baseline;padding:4px 6px;border-left:3px solid ${col};margin:2px 0;font-size:12px"><span style="color:var(--dim);font-size:10px;width:24px;flex-shrink:0">${ev.min}'</span><span style="color:${col};font-weight:700;width:28px;flex-shrink:0;font-size:10px">TRY</span><span style="flex:1">${esc(scorer?scorer.name:'?')}${assist?` <span style="color:var(--muted)">(${esc(assist.name)})</span>`:''} <span style="font-size:10px;color:${ev.converted?'var(--green)':'var(--red)'}">${ev.converted?'CONV':'NO CONV'}</span> <span style="color:var(--muted);font-size:10px">${esc(team.nick)}</span></span><span style="font-family:var(--disp);font-weight:700;font-size:12px;color:var(--accent)">${sH}–${sA}</span></div>`;}
+      if(item.type==='pen'){const ev=item.ev,team=ev.side==='h'?th:ta,kicker=ev.kickerId?G.players[ev.kickerId]:null;if(ev.side==='h') sH+=2;else sA+=2;return `<div style="display:flex;gap:6px;align-items:baseline;padding:3px 6px;border-left:3px solid var(--muted);margin:2px 0;font-size:12px"><span style="color:var(--dim);font-size:10px;width:24px;flex-shrink:0">${ev.min}'</span><span style="color:var(--muted);width:28px;flex-shrink:0;font-size:10px">PEN</span><span style="flex:1">${kicker?esc(kicker.name):'?'} <span style="color:var(--muted);font-size:10px">${esc(team.nick)}</span></span><span style="font-family:var(--disp);font-weight:700;font-size:12px;color:var(--accent)">${sH}–${sA}</span></div>`;}
+      if(item.type==='fg'){const ev=item.ev,team=G.teams[ev.team];if(ev.team===myM.h) sH+=1;else sA+=1;return `<div style="display:flex;gap:6px;align-items:baseline;padding:3px 6px;border-left:3px solid var(--muted);margin:2px 0;font-size:12px"><span style="color:var(--dim);font-size:10px;width:24px;flex-shrink:0">${ev.min}'</span><span style="color:var(--muted);width:28px;flex-shrink:0;font-size:10px">FG</span><span style="flex:1">${team?esc(team.nick):'?'}</span><span style="font-family:var(--disp);font-weight:700;font-size:12px;color:var(--accent)">${sH}–${sA}</span></div>`;}
       return '';
     }).join('');
     const myInjs=Object.entries(myDet).filter(([,l])=>l&&l.inj).map(([id,l])=>{const p=G.players[+id];if(!p)return null;return `${esc(p.name)} — ${esc(l.inj)}${p.injury?` (${p.injury.weeks}wk)`:''}`}).filter(Boolean);
@@ -468,6 +551,9 @@ Object.assign(UI, {
       <th class="noclick" style="text-align:center;width:90px"></th>
       <th class="noclick" style="color:var(--muted);font-size:10px;font-weight:400;padding:2px 6px">${oppNick}</th>
     </tr></thead><tbody>
+      ${statCmp('Possession',myPoss,oppPoss,myPoss+'%',oppPoss+'%')}
+      ${statCmp('Territory',myTerr,oppTerr,myTerr+'%',oppTerr+'%')}
+      ${statCmp('Completion',myCompl,oppCompl,myCompl+'%',oppCompl+'%')}
       ${statCmp('Tries',mySt.t,oppSt.t)}
       ${statCmp('Goals',mySt.gl,oppSt.gl,`${mySt.gl}/${mySt.ga}`,`${oppSt.gl}/${oppSt.ga}`)}
       ${mySt.fg||oppSt.fg?statCmp('Field goals',mySt.fg,oppSt.fg):''}
@@ -506,12 +592,16 @@ Object.assign(UI, {
     const e = events[i];
     const isScore = e.txt && (e.txt.startsWith('TRY') || e.txt.includes('HALF TIME') || e.txt.startsWith('FULL TIME') || e.txt.includes('slots a penalty goal'));
     const isSinBin = e.txt && (e.txt.includes('SIN BINNED') || e.txt.includes('SENT OFF'));
-    const color = isScore ? 'color:var(--brass)' : isSinBin ? 'color:var(--red)' : '';
+    const color = isScore ? 'color:var(--accent)' : isSinBin ? 'color:var(--red)' : '';
     box.innerHTML += `<div style="padding:5px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:baseline">
       <span style="color:var(--dim);font-size:11px;min-width:28px;flex-shrink:0">${e.min}'</span>
       <span style="${color}">${esc(e.txt)}</span>
     </div>`;
     box.scrollTop = box.scrollHeight;
+    if(isScore && e.txt && !e.txt.startsWith('FULL TIME') && !e.txt.includes('HALF TIME')){
+      const sc = UI._extractLiveScore(e.txt);
+      if(sc){ const sh=document.getElementById('liveScoreH'),sa=document.getElementById('liveScoreA'); if(sh)sh.textContent=sc.h; if(sa)sa.textContent=sc.a; }
+    }
     if(myM && e.txt && e.txt.startsWith('FULL TIME')){
       const won = myM.h===G.coach.teamId ? myM.hs>myM.as : myM.as>myM.hs;
       const drew = myM.hs===myM.as;
@@ -568,10 +658,10 @@ Object.assign(UI, {
     const subsHtml = subRows ? `<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--line)">
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Substitutions <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></div>
       ${subRows}
-      ${subCount>0?`<p style="font-size:11px;color:var(--brass);margin:5px 0 0">${subCount} sub${subCount>1?'s':''} planned — will take effect at start of second half</p>`:''}
+      ${subCount>0?`<p style="font-size:11px;color:var(--accent);margin:5px 0 0">${subCount} sub${subCount>1?'s':''} planned — will take effect at start of second half</p>`:''}
     </div>` : '';
-    return `<div class="card" style="border-color:var(--brass);padding:14px">
-      <h2 class="sec" style="margin-top:0;color:var(--brass)">Half-Time</h2>
+    return `<div class="card" style="border-color:var(--accent);padding:14px">
+      <h2 class="sec" style="margin-top:0;color:var(--accent)">Half-Time</h2>
       <p style="font-size:12px;color:var(--muted);margin:0 0 12px">HT: <b>${myHT}–${oppHT}</b> · ${situationText}</p>
       ${subsHtml}
       <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Team Talk</div>
@@ -663,7 +753,7 @@ Object.assign(UI, {
       const msg = pick(MSGS[choice] || MSGS.encourage);
       box.innerHTML += `<div style="padding:5px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:baseline">
         <span style="color:var(--dim);font-size:11px;min-width:28px;flex-shrink:0">HT</span>
-        <span style="color:var(--brass);font-style:italic">${esc(msg)}</span>
+        <span style="color:var(--accent);font-style:italic">${esc(msg)}</span>
       </div>`;
       box.scrollTop = box.scrollHeight;
     }
@@ -689,6 +779,42 @@ Object.assign(UI, {
     // Fallback: pre-simulated feed
     const events = UI._htEvents, nextIdx = UI._htNextIdx;
     setTimeout(()=>UI._revealFeedPage(events, nextIdx, myM), 350);
+  },
+
+  _build60MinPanel(){
+    const sh = document.getElementById('wg-scoreH');
+    const sa = document.getElementById('wg-scoreA');
+    const scoreNote = (sh && sa && sh.textContent !== '–') ? ` Score: ${sh.textContent}–${sa.textContent}.` : '';
+    const OPTS = [
+      {key:'push',    label:'Push for the win',   txt:'The coach signals for more. The forwards target the line as the game enters its final phase.'},
+      {key:'hold',    label:'Sit on the result',  txt:'Keep it tight. Discipline in defence, no loose carries — protect the scoreboard.'},
+      {key:'grind',   label:'Grind it out',        txt:'Physical, structured rugby. Control the ruck speed and make them earn every metre.'},
+      {key:'attack',  label:'Attack wide',         txt:'Spread it wide and use the edges. The coach wants ball-in-hand through the backline.'},
+    ];
+    return `<div style="background:var(--card);border:1px solid var(--accent-a50);border-radius:10px;padding:14px 16px;margin-top:16px">
+      <div style="font-weight:700;font-size:14px;color:var(--accent);margin-bottom:2px">60' — Final Instructions</div>
+      <p style="font-size:12px;color:var(--muted);margin:0 0 10px">Set the tone for the final 20 minutes.${scoreNote}</p>
+      <div class="btnrow" style="flex-wrap:wrap;gap:8px">
+        ${OPTS.map(o=>`<button class="btn" onclick="UI._resume60Min('${o.key}','${o.txt.replace(/'/g,'\\\'')}')">${esc(o.label)}</button>`).join('')}
+        <button class="btn" style="color:var(--muted)" onclick="UI._resume60Min('pass','')">Continue watching</button>
+      </div>
+    </div>`;
+  },
+
+  _resume60Min(key, txt){
+    const events = UI._60minResumeEvents;
+    const i = UI._60minResumeIdx;
+    const myM = UI._60minResumeMatch;
+    const postMatch = document.getElementById('wg-postMatch');
+    if(postMatch){ postMatch.style.display = 'none'; postMatch.innerHTML = ''; }
+    if(txt){
+      const box = document.getElementById('wg-feedBox');
+      if(box){
+        box.innerHTML += `<div style="padding:5px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:baseline"><span style="color:var(--dim);font-size:11px;min-width:28px;flex-shrink:0">60'</span><span style="color:var(--accent);font-style:italic">${esc(txt)}</span></div>`;
+        box.scrollTop = box.scrollHeight;
+      }
+    }
+    UI._revealFeedPageList(events, i, myM);
   },
 
   _buildFeed(m){
@@ -779,6 +905,45 @@ Object.assign(UI, {
         if(l.k4020) for(let i=0;i<l.k4020;i++) all.push({min:ri(8, maxKickMin), txt:`${p.name} (${team.nick}) finds touch with a pinpoint 40/20 kick!`});
         if(l.fdo) for(let i=0;i<l.fdo;i++) all.push({min:ri(8, maxKickMin), txt:`${p.name} (${team.nick}) pins the opposition in-goal and forces a drop-out.`});
       }
+    }
+
+    // Narrative commentary derived from aggregate player stats
+    const LINEBREAK_PHRASES = [
+      'breaks the line and charges downfield!',
+      'beats two defenders and surges forward!',
+      'finds a gap and makes massive metres!',
+      'shows great footwork to burst through the line!',
+      'beats the first defender and gets into open space!',
+    ];
+    const TACKLE_PHRASES = [
+      'makes another crunching tackle.',
+      'puts in a big defensive hit.',
+      'wraps up perfectly — another strong tackle.',
+      'working relentlessly in the defensive line.',
+    ];
+    const ERROR_PHRASES = [
+      'loses the ball in contact — costly knock-on.',
+      'knocks on under pressure — referee signals repeat set.',
+      'fails to secure the ball — handling error.',
+    ];
+    for(const [side, team] of [[m.det.h,h],[m.det.a,a]]){
+      let topBreaker = null, topLb = 0, topDefender = null, topTk = 0;
+      const errPlayers = [];
+      for(const [id, l] of Object.entries(side)){
+        if(!l || typeof l !== 'object' || Array.isArray(l)) continue;
+        const p = G.players[+id]; if(!p) continue;
+        if((l.lb||0) > topLb){ topLb = l.lb||0; topBreaker = p; }
+        if((l.tk||0) > topTk){ topTk = l.tk||0; topDefender = p; }
+        if((l.err||0) >= 2) errPlayers.push(p);
+      }
+      if(topBreaker && topLb >= 2)
+        all.push({min: ri(10, 37), txt: `${topBreaker.name} (${team.nick}) ${pick(LINEBREAK_PHRASES)}`});
+      if(topBreaker && topLb >= 4)
+        all.push({min: ri(48, 74), txt: `${topBreaker.name} again — he's been the best ball-runner on the park.`});
+      if(topDefender && topTk >= 12)
+        all.push({min: ri(15, 70), txt: `${topDefender.name} (${team.nick}) ${pick(TACKLE_PHRASES)}`});
+      if(errPlayers.length)
+        all.push({min: ri(20, 62), txt: `${errPlayers[0].name} (${team.nick}) ${pick(ERROR_PHRASES)}`});
     }
 
     all.sort((x,y)=>x.min-y.min);

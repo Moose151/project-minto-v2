@@ -1,7 +1,7 @@
-'use strict';
+
 
 /* ---------- ladder ---------- */
-function ladder(){
+export function ladder(){
   const rows = G.teams.map(t=>({id:t.id, p:0, w:0, l:0, d:0, pf:0, pa:0, pts:0, form:[], byeRounds:[]}));
   const rowById = id => rows[id];
   for(let r=0; r<G.fixtures.length; r++) for(const m of G.fixtures[r]){
@@ -30,3 +30,5 @@ function ladder(){
   rows.sort((x,y)=> y.pts-x.pts || (y.pf-y.pa)-(x.pf-x.pa) || y.pf-x.pf);
   return rows;
 }
+
+if (typeof window !== 'undefined') Object.assign(window, { ladder });

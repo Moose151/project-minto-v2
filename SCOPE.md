@@ -1,6 +1,6 @@
 # Project Minto V2 — Scope
 
-_Last updated: 2026-06-26_
+_Last updated: 2026-06-27_
 
 ## Vision
 
@@ -71,6 +71,65 @@ final call goes.
 
 This is the destination, reached incrementally. Today's abstract Poisson-based
 result model is the starting point we evolve from.
+
+### Tactical intelligence and coach agency
+
+The player should feel like their coaching decisions directly change matches,
+not just squad strength. The sim should support a loop where staff analysis
+identifies tactical opportunities, the coach chooses a plan, and the match
+engine rewards or punishes that plan based on player attributes, opposition
+quality, fatigue, weather, form, and execution.
+
+**Pre-match analysis:** Each Wednesday, coaching and scouting staff provide a
+report on the upcoming opponent. The report's accuracy depends on staff ratings
+and scouting coverage, so weak staff may miss threats, misread tendencies, or
+overstate vulnerabilities. Strong staff should surface useful details such as:
+
+- expected opponent lineup and late injury/selection risks
+- key players and primary attacking channels
+- where the opponent scores points: through the middle, left/right edge,
+  kicks, offloads, repeat sets, or through a specific playmaker/strike player
+- where the opponent concedes: metres through the middle, edge breaks, kicks,
+  ruck speed, fatigue late in halves, or repeat defensive errors
+- tactical matchups, such as a strike left centre facing the coach's right
+  centre, or a halfback who can be tired by forcing defensive involvements
+
+**Tactical decisions from analysis:** The coach can respond by changing lineup,
+roles, and match instructions before kick-off. Examples include:
+
+- selecting a more defensively sound centre to mark a dangerous strike centre
+- focusing attack through the middle if the opposition concedes middle metres
+- shifting attack to the left/right edge when the opponent defends that side
+  poorly
+- instructing back-rowers to hit gaps, halves to play short sides, or middles
+  to chase fast play-the-balls
+- targeting a halfback/five-eighth in defence to fatigue them
+- rushing a key playmaker to reduce decision time, with the trade-off that a
+  mistimed rush can create an overlap
+
+**In-match tactical control:** During matches, the coach can adapt when the
+original plan is failing or the game state changes. Tactical levers should
+include tempo, risk, territory, and targeting:
+
+- shift focus from middle to left/right edge, or vice versa
+- play calm and patient, waiting for opportunities, or play erratically/high
+  risk when chasing points
+- protect a narrow lead by kicking for field position, finding corners, and
+  pinning the opponent inside their own 20
+- chase the game by increasing offloads, expansive shapes, short-side raids,
+  and broken-play creation
+- attempt more or fewer offloads
+- try to force errors with bigger defensive contact, accepting a higher
+  penalty/missed-tackle risk
+- be more expansive in the team's own half with two or three passes from the
+  ruck, accepting turnover risk
+- react to an opponent having a huge game by assigning pressure, big-hit, or
+  reduced-time instructions
+
+The implementation target is not that every instruction is always correct. The
+target is that the match engine resolves these trade-offs credibly: good plans
+with suitable players should improve the odds; poor plans, unsuitable players,
+bad scouting, fatigue, or elite opposition should expose the coach.
 
 ## Architecture (intent)
 

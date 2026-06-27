@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Hall of Fame — retired legends */
 Object.assign(UI, {
@@ -43,10 +44,10 @@ Object.assign(UI, {
 
       // Rep honour badges
       const repBadges = [
-        h.repTeam === 'Kangaroos' ? `<span class="pos-tag" style="background:rgba(210,165,62,.18);color:var(--brass);border-color:var(--brass)">🌏 ${esc(h.repTeam)}</span>` : '',
-        h.repTeam && h.repTeam !== 'Kangaroos' ? `<span class="pos-tag" style="color:var(--brass)">🌐 ${esc(h.repTeam)}</span>` : '',
+        h.repTeam === 'Kangaroos' ? `<span class="pos-tag" style="background:var(--accent-a18);color:var(--accent);border-color:var(--accent)">🌏 ${esc(h.repTeam)}</span>` : '',
+        h.repTeam && h.repTeam !== 'Kangaroos' ? `<span class="pos-tag" style="color:var(--accent)">🌐 ${esc(h.repTeam)}</span>` : '',
         h.stateRep ? `<span class="pos-tag" style="color:var(--ink)">🏟 State Rep</span>` : '',
-        (c.premierships || 0) >= 3 ? `<span class="pos-tag" style="background:rgba(210,165,62,.18);color:var(--brass)">🏆 Dynasty (${c.premierships}×)</span>` : (c.premierships || 0) >= 1 ? `<span class="pos-tag">🏆 ${c.premierships}× Prem</span>` : '',
+        (c.premierships || 0) >= 3 ? `<span class="pos-tag" style="background:var(--accent-a18);color:var(--accent)">🏆 Dynasty (${c.premierships}×)</span>` : (c.premierships || 0) >= 1 ? `<span class="pos-tag">🏆 ${c.premierships}× Prem</span>` : '',
         isMyClub ? `<span class="pos-tag" style="background:rgba(76,175,125,.12);color:var(--green);border-color:var(--green)">Club Legend</span>` : '',
       ].filter(Boolean).join(' ');
 
@@ -62,7 +63,7 @@ Object.assign(UI, {
           <div style="flex:1;min-width:0">
             <div style="font-family:var(--disp);font-size:20px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${nationalityFlag(h.nationality)} ${esc(h.name)}</div>
             <p style="margin:3px 0;color:var(--muted);font-size:12px">${esc(h.pos || '')}${h.pos2?`/${esc(h.pos2)}`:''} · ${esc(h.nationality || 'Unknown')}</p>
-            <p style="margin:3px 0;color:var(--brass);font-size:12px">Inducted ${h.inductionYear} · ${esc(h.quality || 'Legend')} · legacy ${h.score}</p>
+            <p style="margin:3px 0;color:var(--accent);font-size:12px">Inducted ${h.inductionYear} · ${esc(h.quality || 'Legend')} · legacy ${h.score}</p>
             ${repBadges ? `<div style="margin:6px 0;display:flex;flex-wrap:wrap;gap:4px">${repBadges}</div>` : ''}
           </div>
           <div style="text-align:right;flex-shrink:0">
@@ -110,15 +111,15 @@ Object.assign(UI, {
     const awards = (h.awards || []).slice(0,6).map(a=>`<span class="pos-tag">${esc(a.year || '')} ${esc(a.award || '')}</span>`).join(' ');
     const repLine = [h.repTeam, h.stateRep ? 'State Representative' : '', (c.premierships||0) ? `${c.premierships}x premiership winner` : ''].filter(Boolean).join(' · ');
     UI.modal(`<div style="text-align:center;padding:4px 0 2px">
-      <div style="font-size:11px;color:var(--brass);font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Hall of Fame Induction</div>
+      <div style="font-size:11px;color:var(--accent);font-weight:800;letter-spacing:.12em;text-transform:uppercase;margin-bottom:8px">Hall of Fame Induction</div>
       <div style="display:flex;align-items:center;justify-content:center;gap:18px;flex-wrap:wrap;margin-bottom:12px">
         ${team ? teamLogo(team,58) : ''}
-        <div style="width:82px;height:82px;border-radius:50%;background:linear-gradient(135deg,rgba(210,165,62,.22),rgba(255,255,255,.04));border:1px solid rgba(210,165,62,.5);display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-size:34px;font-weight:900">${esc(String(h.name||'?').slice(0,1))}</div>
+        <div style="width:82px;height:82px;border-radius:50%;background:linear-gradient(135deg,var(--accent-a22),rgba(255,255,255,.04));border:1px solid var(--accent-a50);display:flex;align-items:center;justify-content:center;font-family:var(--disp);font-size:34px;font-weight:900">${esc(String(h.name||'?').slice(0,1))}</div>
       </div>
       <h3 style="font-size:26px;margin:0 0 4px">${nationalityFlag(h.nationality)} ${esc(h.name)}</h3>
       <p class="page-sub" style="margin:0 0 12px">${esc(h.pos || '')}${h.pos2?`/${esc(h.pos2)}`:''} · ${esc(h.team || 'Free Agent')} · Inducted ${h.inductionYear}</p>
       <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;text-align:left;margin-bottom:12px">
-        <div class="card" style="padding:10px"><div style="font-size:10px;color:var(--muted)">Legacy</div><div style="font-family:var(--disp);font-size:24px;font-weight:800;color:var(--brass)">${h.score || 0}</div></div>
+        <div class="card" style="padding:10px"><div style="font-size:10px;color:var(--muted)">Legacy</div><div style="font-family:var(--disp);font-size:24px;font-weight:800;color:var(--accent)">${h.score || 0}</div></div>
         <div class="card" style="padding:10px"><div style="font-size:10px;color:var(--muted)">Peak OVR</div><div class="ovr ${ovrCls(h.peakOvr||0)}" style="font-size:22px">${h.peakOvr || '-'}</div></div>
         <div class="card" style="padding:10px"><div style="font-size:10px;color:var(--muted)">Games</div><div style="font-family:var(--disp);font-size:24px;font-weight:800">${c.games || 0}</div></div>
         <div class="card" style="padding:10px"><div style="font-size:10px;color:var(--muted)">Points</div><div style="font-family:var(--disp);font-size:24px;font-weight:800">${c.points || 0}</div></div>

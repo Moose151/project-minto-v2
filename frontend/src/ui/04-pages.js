@@ -22,7 +22,7 @@ Object.assign(UI, {
     if(G.phase==='finals') nextHtml = `<p>Finals football. Hit <b>${G.finals.week===1?'Play Semis':'Play Grand Final'}</b> up top.</p>`;
     const mini = lad.slice(0,8).map((r,i)=>{
       const tm = G.teams[r.id];
-      return `<tr class="${tm.id===t.id?'':''}" style="${tm.id===t.id?'background:rgba(210,165,62,.07)':''}"><td class="lpos">${i+1}</td><td><span class="team-spine" style="background:${tm.c1}"></span>${esc(tm.nick)}</td><td class="num">${r.pts}</td></tr>`;
+      return `<tr class="${tm.id===t.id?'':''}" style="${tm.id===t.id?'background:var(--accent-a06)':''}"><td class="lpos">${i+1}</td><td><span class="team-spine" style="background:${tm.c1}"></span>${esc(tm.nick)}</td><td class="num">${r.pts}</td></tr>`;
     }).join('');
     return `<h1 class="page">Dashboard</h1><p class="page-sub">${esc(teamName(t))} · ${G.year} · Board expectation: ${esc(G.coach.expect.label)}</p>
     <div class="grid2">
@@ -143,8 +143,8 @@ Object.assign(UI, {
       ['recovery','Recovery focus','Squad recovers more condition each week — fewer soft-tissue injuries.']
     ];
     return `<h1 class="page">Training</h1><p class="page-sub">Weekly focus shapes who develops and how fresh your squad stays.</p>
-    <div class="grid3">${opts.map(([k,l,d])=>`<div class="card" style="cursor:pointer; ${t.focus===k?'border-color:var(--brass)':''}" onclick="myTeam().focus='${k}'; UI.render()">
-      <div style="font-family:var(--disp); font-size:18px; font-weight:700; text-transform:uppercase; color:${t.focus===k?'var(--brass)':'var(--ink)'}">${l}</div>
+    <div class="grid3">${opts.map(([k,l,d])=>`<div class="card" style="cursor:pointer; ${t.focus===k?'border-color:var(--accent)':''}" onclick="myTeam().focus='${k}'; UI.render()">
+      <div style="font-family:var(--disp); font-size:18px; font-weight:700; text-transform:uppercase; color:${t.focus===k?'var(--accent)':'var(--ink)'}">${l}</div>
       <p style="color:var(--muted); font-size:12.5px; margin-top:4px">${d}</p></div>`).join('')}</div>
     <h2 class="sec">Developing players</h2>
     <div class="card" style="padding:6px"><table><thead><tr><th class="noclick">Player</th><th class="noclick num">Age</th><th class="noclick num">OVR</th><th class="noclick num">Potential</th><th class="noclick num">Headroom</th></tr></thead><tbody>
@@ -158,7 +158,7 @@ Object.assign(UI, {
       const games = round.map(m=>{
         const th=G.teams[m.h], ta=G.teams[m.a];
         const mine = m.h===G.coach.teamId || m.a===G.coach.teamId;
-        return `<div class="score-line" style="${mine?'background:rgba(210,165,62,.06); border-radius:6px':''}">
+        return `<div class="score-line" style="${mine?'background:var(--accent-a06); border-radius:6px':''}">
           <span class="team-spine" style="background:${th.c1}"></span><span class="t ${m.played&&m.hs>m.as?'winner':''}">${esc(th.nick)}</span>
           <span class="s">${m.played?m.hs:''}</span><span style="color:var(--dim)">${m.played?'–':'v'}</span><span class="s">${m.played?m.as:''}</span>
           <span class="t ${m.played&&m.as>m.hs?'winner':''}" style="text-align:right">${esc(ta.nick)}</span><span class="team-spine" style="background:${ta.c1}"></span></div>`;
@@ -169,7 +169,7 @@ Object.assign(UI, {
     if(G.finals){
       const fg = m=>{ const th=G.teams[m.h], ta=G.teams[m.a];
         return `<div class="score-line"><span class="team-spine" style="background:${th.c1}"></span><span class="t ${m.played&&m.hs>m.as?'winner':''}">${esc(th.nick)}</span><span class="s">${m.played?m.hs:''}</span><span style="color:var(--dim)">${m.played?'–':'v'}</span><span class="s">${m.played?m.as:''}</span><span class="t ${m.played&&m.as>m.hs?'winner':''}" style="text-align:right">${esc(ta.nick)}</span><span class="team-spine" style="background:${ta.c1}"></span></div>`; };
-      finalsHtml = `<div class="card" style="margin-bottom:12px; border-color:var(--brass)"><div class="navsep" style="margin:0 0 6px; color:var(--brass)">Finals</div>${G.finals.sf.map(fg).join('')}${G.finals.gf?fg(G.finals.gf):''}</div>`;
+      finalsHtml = `<div class="card" style="margin-bottom:12px; border-color:var(--accent)"><div class="navsep" style="margin:0 0 6px; color:var(--accent)">Finals</div>${G.finals.sf.map(fg).join('')}${G.finals.gf?fg(G.finals.gf):''}</div>`;
     }
     return `<h1 class="page">Fixtures & Results</h1><p class="page-sub">Your matches are highlighted.</p>${finalsHtml}${blocks.join('')}`;
   },
@@ -182,7 +182,7 @@ Object.assign(UI, {
     <tbody>${lad.map((r,i)=>{
       const t = G.teams[r.id];
       const diff = r.pf-r.pa;
-      return `<tr class="${i===3?'finals-line':''}" style="${t.id===G.coach.teamId?'background:rgba(210,165,62,.07)':''}">
+      return `<tr class="${i===3?'finals-line':''}" style="${t.id===G.coach.teamId?'background:var(--accent-a06)':''}">
         <td class="lpos">${i+1}</td><td><span class="team-spine" style="background:${t.c1}"></span><b>${esc(teamName(t))}</b></td>
         <td class="num">${r.p}</td><td class="num">${r.w}</td><td class="num">${r.d}</td><td class="num">${r.l}</td>
         <td class="num">${r.pf}</td><td class="num">${r.pa}</td><td class="num" style="color:${diff>=0?'var(--green)':'var(--red)'}">${diff>0?'+':''}${diff}</td>
@@ -233,7 +233,7 @@ Object.assign(UI, {
     const badge = BADGES.slice().reverse().find(b=>c.rep>=b[0])[1];
     return `<h1 class="page">Coach Profile</h1><p class="page-sub">${esc(c.name)} · ${esc(teamName(myTeam()))}</p>
     <div class="grid3">
-      <div class="card"><div class="navsep" style="margin:0">Reputation</div><div style="font-family:var(--disp); font-size:42px; font-weight:700; color:var(--brass)">${Math.round(c.rep)}</div><div class="bar"><i style="width:${c.rep}%"></i></div><p style="color:var(--muted); font-size:12px; margin-top:8px">${esc(badge)}</p></div>
+      <div class="card"><div class="navsep" style="margin:0">Reputation</div><div style="font-family:var(--disp); font-size:42px; font-weight:700; color:var(--accent)">${Math.round(c.rep)}</div><div class="bar"><i style="width:${c.rep}%"></i></div><p style="color:var(--muted); font-size:12px; margin-top:8px">${esc(badge)}</p></div>
       <div class="card"><div class="navsep" style="margin:0">Career record</div><div style="font-family:var(--disp); font-size:42px; font-weight:700">${c.careerW||0}–${c.careerL||0}</div><p style="color:var(--muted); font-size:12px; margin-top:8px">${c.prems||0} premiership${(c.prems||0)===1?'':'s'} · season ${G.season}</p></div>
       <div class="card"><div class="navsep" style="margin:0">Board confidence</div><div style="font-family:var(--disp); font-size:42px; font-weight:700; color:${c.conf<30?'var(--red)':c.conf>70?'var(--green)':'var(--ink)'}">${Math.round(c.conf)}%</div><p style="color:var(--muted); font-size:12px; margin-top:8px">Expectation: ${esc(c.expect.label)}</p></div>
     </div>
@@ -262,7 +262,7 @@ Object.assign(UI, {
         <p style="color:var(--muted); font-size:12px">Exports a .json you can re-import any time.</p></div>
       <div class="card"><h2 class="sec" style="margin-top:0">New career</h2>
         <p style="color:var(--muted); font-size:12px; margin-bottom:10px">Abandons the current save unless you export it first.</p>
-        <button class="btn danger" onclick="if(confirm('Start a new career? Unsaved progress is lost.')){G=null; UI.wizWorld=null; UI.render();}">Start new career</button></div>
+        <button class="btn danger" onclick="if(confirm('Start a new career? Unsaved progress is lost.')){setG(null); UI.wizWorld=null; UI.render();}">Start new career</button></div>
     </div>`;
   },
 

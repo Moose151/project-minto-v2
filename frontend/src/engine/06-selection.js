@@ -1,22 +1,22 @@
-'use strict';
+
 
 /* ---------- selection ---------- */
-function availablePlayers(t){
+export function availablePlayers(t){
   return t.players
     .map(id=>G.players[id])
     .filter(p=>p && !isPlayerUnavailable(p) && selectionSquadEligible(p));
 }
-function isPlayerUnavailable(p){
+export function isPlayerUnavailable(p){
   if(!p) return true;
   if(p.suspended && p.suspended.weeks > 0) return true;
   if(p.repDuty) return true;
   if(p.injury && !p.playInjured) return true;
   return false;
 }
-function selectionFormMod(p){
+export function selectionFormMod(p){
   return 0.94 + 0.12*((p && p.form != null ? p.form : 50)/100);
 }
-function autoPick(t){
+export function autoPick(t){
   const avail = availablePlayers(t).sort((a,b)=>b.ovr*selectionFormMod(b)-a.ovr*selectionFormMod(a));
   const used = new Set();
   const lineup = Array(19).fill(null);
@@ -42,7 +42,7 @@ function autoPick(t){
   assignDefaultTeamRoles(t);
   return lineup;
 }
-function roleScore(p, role){
+export function roleScore(p, role){
   if(!p) return 0;
   if(role==='captain') return p.attrs.leadership*.42 + p.attrs.composure*.20 + p.attrs.decisionMaking*.18 + p.attrs.professionalism*.12 + Math.min(p.career.games,180)*.08;
   if(role==='goalKicker') return p.attrs.placeKick*.60 + p.attrs.kickAccuracy*.18 + p.attrs.composure*.16 + p.attrs.fieldGoal*.06;
@@ -50,7 +50,7 @@ function roleScore(p, role){
   if(role==='playmaker') return p.attrs.playmaking*.32 + p.attrs.shortPass*.18 + p.attrs.longPass*.12 + p.attrs.vision*.18 + p.attrs.decisionMaking*.14 + p.attrs.composure*.06;
   return p.ovr;
 }
-function assignDefaultTeamRoles(t){
+export function assignDefaultTeamRoles(t){
   t.roles = t.roles || {};
   t.positionRoles = t.positionRoles || {};
   t.zoneTactics = t.zoneTactics || {own20:'safe', own40:'balanced', mid:'balanced', opp40:'expansive', redZone:'balanced'};
@@ -78,10 +78,10 @@ function assignDefaultTeamRoles(t){
     if(!t.positionRoles[key]) t.positionRoles[key] = (POSITION_ROLES[pos] || ['balanced'])[0];
   }
 }
-function validateLineup(t){
+export function validateLineup(t){
   return lineupIssues(t).length === 0;
 }
-function lineupIssues(t){
+export function lineupIssues(t){
   const issues = [];
   if(!t.lineup || t.lineup.length < 17) return ['Team sheet is missing active match-day slots.'];
   const seen = new Set();
@@ -117,3 +117,8 @@ function lineupIssues(t){
   }
   return issues;
 }
+
+if (typeof window !== 'undefined') Object.assign(window, {
+  availablePlayers, isPlayerUnavailable, selectionFormMod, autoPick,
+  roleScore, assignDefaultTeamRoles, validateLineup, lineupIssues,
+});

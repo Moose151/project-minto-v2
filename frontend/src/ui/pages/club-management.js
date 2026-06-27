@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Club Management — finances, board, and club overview */
 Object.assign(UI, {
@@ -55,10 +56,10 @@ Object.assign(UI, {
     const projectedNet = projectedRevenue - projectedWages;
 
     // Cap bar colour
-    const capCls = capUsed > 0.95 ? 'var(--red)' : capUsed > 0.8 ? 'var(--brass)' : 'var(--green)';
+    const capCls = capUsed > 0.95 ? 'var(--red)' : capUsed > 0.8 ? 'var(--accent)' : 'var(--green)';
 
     // Funds tone
-    const fundsTone = club.funds < 0 ? 'var(--red)' : club.funds > 3000000 ? 'var(--green)' : club.funds > 1000000 ? 'var(--brass)' : 'var(--ink)';
+    const fundsTone = club.funds < 0 ? 'var(--red)' : club.funds > 3000000 ? 'var(--green)' : club.funds > 1000000 ? 'var(--accent)' : 'var(--ink)';
 
     // Revenue breakdown rows
     const totalGate = club.gateRevenue === undefined ? Math.round(club.seasonRevenue * 0.27) : club.gateRevenue;
@@ -73,7 +74,7 @@ Object.assign(UI, {
     const priceCompare = (info) => {
       if(!info) return '';
       const diff = info.mine - info.avg;
-      const tone = diff > 0 ? 'var(--brass)' : diff < 0 ? 'var(--green)' : 'var(--muted)';
+      const tone = diff > 0 ? 'var(--accent)' : diff < 0 ? 'var(--green)' : 'var(--muted)';
       const dearest = info.total - info.rankFromCheapest + 1; // 1 = most expensive
       const verdict = diff === 0 ? 'at league average'
         : `${money(Math.abs(diff))} ${diff > 0 ? 'above' : 'below'} avg`;
@@ -116,8 +117,8 @@ Object.assign(UI, {
     const mrIsHost = G.magicRound && G.magicRound.hostTeamId === G.coach.teamId;
     const magicRoundInfo = G.magicRound
       ? (mrIsHost
-          ? `<div style="margin-top:10px;padding:8px 12px;background:rgba(210,165,62,.12);border:1px solid rgba(210,165,62,.4);border-radius:6px;font-size:12px">
-              <b style="color:var(--brass)">Magic Round Host</b> — ${esc(G.magicRound.venue)} · Round ${G.magicRound.round+1} · Hosting windfall: <b>${money(1500000)}</b>
+          ? `<div style="margin-top:10px;padding:8px 12px;background:var(--accent-a12);border:1px solid var(--accent-line);border-radius:6px;font-size:12px">
+              <b style="color:var(--accent)">Magic Round Host</b> — ${esc(G.magicRound.venue)} · Round ${G.magicRound.round+1} · Hosting windfall: <b>${money(1500000)}</b>
              </div>`
           : `<div style="margin-top:10px;padding:8px 12px;background:var(--card2);border-radius:6px;font-size:12px;color:var(--muted)">
               Magic Round — hosted by <b>${esc(mrHostTeam?mrHostTeam.nick:'?')}</b> in Round ${G.magicRound.round+1} · ${esc(G.magicRound.venue)}
@@ -128,7 +129,7 @@ Object.assign(UI, {
       <div style="width:${Math.min(100, Math.round(pct*100))}%;height:100%;background:${capCls}"></div></div>`;
 
     const fundBar = `<div style="height:8px;background:var(--card2);border-radius:4px;overflow:hidden;margin:6px 0">
-      <div style="width:${Math.min(100,Math.max(0,Math.round(club.funds/5000000*100)))}%;height:100%;background:var(--brass)"></div></div>`;
+      <div style="width:${Math.min(100,Math.max(0,Math.round(club.funds/5000000*100)))}%;height:100%;background:var(--accent)"></div></div>`;
     const commercialControls = `<div class="card" style="margin-bottom:16px">
       <div style="display:flex;justify-content:space-between;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:10px">
         <div>
@@ -187,10 +188,10 @@ Object.assign(UI, {
         ? ` · capacity ${stadiumCapacity().toLocaleString()}${underConst?' (reduced during works)':''}`
         : '';
       const constBadge = underConst
-        ? `<span class="pos-tag" style="background:rgba(210,165,62,.18);color:var(--brass)">🔨 Building Lv${constInfo.targetLevel} — ${weeksLeft}w left</span>`
+        ? `<span class="pos-tag" style="background:var(--accent-a18);color:var(--accent)">🔨 Building Lv${constInfo.targetLevel} — ${weeksLeft}w left</span>`
         : '';
       const progressBar = underConst
-        ? `<div style="height:4px;background:var(--line);border-radius:2px;margin:4px 0;overflow:hidden"><div style="width:${pct}%;height:100%;background:var(--brass);border-radius:2px;transition:width .3s"></div></div>`
+        ? `<div style="height:4px;background:var(--line);border-radius:2px;margin:4px 0;overflow:hidden"><div style="width:${pct}%;height:100%;background:var(--accent);border-radius:2px;transition:width .3s"></div></div>`
         : `<div class="facility-bar">${Array.from({length:FACILITY_MAX}, (_,i)=>`<i class="${i<lvl?'on':''}"></i>`).join('')}</div>`;
       return `<div class="facility-row">
         <div style="min-width:0;flex:1">
@@ -223,7 +224,7 @@ Object.assign(UI, {
           <div style="font-size:24px;font-weight:700;font-family:var(--disp);color:${boardStatus.cls==='good'?'var(--green)':boardStatus.cls==='bad'?'var(--red)':'var(--ink)'}">${boardStatus.label}</div>
           <div style="font-size:12px;color:var(--muted);margin-top:4px">Confidence: <b>${Math.round(conf)}%</b></div>
           <div style="height:6px;background:var(--card2);border-radius:3px;overflow:hidden;margin:6px 0;max-width:200px">
-            <div style="width:${Math.round(conf)}%;height:100%;background:${conf>=70?'var(--green)':conf>=40?'var(--brass)':'var(--red)'}"></div>
+            <div style="width:${Math.round(conf)}%;height:100%;background:${conf>=70?'var(--green)':conf>=40?'var(--accent)':'var(--red)'}"></div>
           </div>
         </div>
         <div style="flex:1;min-width:200px">
@@ -267,7 +268,7 @@ Object.assign(UI, {
       <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
         <div>
           <div style="font-size:11px;color:var(--muted)">Facility standard</div>
-          <div style="font-family:var(--disp);font-size:24px;font-weight:700;color:${prest.cls==='good'?'var(--green)':prest.cls==='bad'?'var(--red)':'var(--brass)'}">${prest.label}</div>
+          <div style="font-family:var(--disp);font-size:24px;font-weight:700;color:${prest.cls==='good'?'var(--green)':prest.cls==='bad'?'var(--red)':'var(--accent)'}">${prest.label}</div>
         </div>
         <p style="color:var(--muted);font-size:12px;margin:0;max-width:480px">Upgrades are paid from club funds. Stadium capacity now caps home crowds and therefore the ceiling for gate receipts.</p>
       </div>
@@ -286,18 +287,18 @@ Object.assign(UI, {
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
       <div class="card">
-        <div style="font-size:11px;color:var(--brass);font-weight:700;text-transform:uppercase;margin-bottom:8px">Revenue This Season</div>
+        <div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;margin-bottom:8px">Revenue This Season</div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin:5px 0"><span style="color:var(--muted)">Memberships</span><b>${money(totalMembers)}</b></div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin:5px 0"><span style="color:var(--muted)">Sponsorship</span><b>${money(totalSponsors)}</b></div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin:5px 0"><span style="color:var(--muted)">Gate receipts</span><b>${money(totalGate)}</b></div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin:5px 0"><span style="color:var(--muted)">Vendor revenue</span><b>${money(totalVendors)}</b></div>
-        ${totalMagic ? `<div style="display:flex;justify-content:space-between;font-size:13px;margin:5px 0"><span style="color:var(--brass)">Magic Round windfall</span><b style="color:var(--brass)">${money(totalMagic)}</b></div>` : ''}
+        ${totalMagic ? `<div style="display:flex;justify-content:space-between;font-size:13px;margin:5px 0"><span style="color:var(--accent)">Magic Round windfall</span><b style="color:var(--accent)">${money(totalMagic)}</b></div>` : ''}
         <div style="display:flex;justify-content:space-between;font-size:13px;margin:5px 0"><span style="color:var(--muted)">Broadcast share</span><b>${money(totalBcast)}</b></div>
         <div style="border-top:1px solid var(--line);margin:8px 0"></div>
         <div style="display:flex;justify-content:space-between;font-size:14px;font-weight:700"><span>Total</span><span>${money(club.seasonRevenue)}</span></div>
       </div>
       <div class="card">
-        <div style="font-size:11px;color:var(--brass);font-weight:700;text-transform:uppercase;margin-bottom:8px">Wages This Season</div>
+        <div style="font-size:11px;color:var(--accent);font-weight:700;text-transform:uppercase;margin-bottom:8px">Wages This Season</div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin:5px 0"><span style="color:var(--muted)">Player wages</span><b>${money(Math.max(0,club.seasonWages - Math.round(allNonPlayerWages * (roundsDone/Math.max(1,totalRounds+3))*3))  )}</b></div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin:5px 0"><span style="color:var(--muted)">Staff wages</span><b>${money(Math.round(staffWages * (roundsDone/Math.max(1,totalRounds+3))*3))}</b></div>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin:5px 0"><span style="color:var(--muted)">Scouts</span><b>${money(Math.round(scoutWages * (roundsDone/Math.max(1,totalRounds+3))*3))}</b></div>
@@ -312,7 +313,7 @@ Object.assign(UI, {
         const activeSponsors = (G.club.sponsorships||[]).filter(s=>s.yearsLeft>0);
         if(!activeSponsors.length) return '<p style="color:var(--muted);font-size:13px;margin:0">No active sponsorship deals. Sign sponsors during preseason.</p>';
         const rows = activeSponsors.map(s=>{
-          const catCls = s.category==='major' ? 'var(--brass)' : 'var(--muted)';
+          const catCls = s.category==='major' ? 'var(--accent)' : 'var(--muted)';
           return `<div style="display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--line);gap:8px">
             <div style="flex:1;min-width:0">
               <span style="font-size:13px;font-weight:600">${esc(s.name)}</span>
@@ -336,7 +337,7 @@ Object.assign(UI, {
       ${capBar(capUsed)}
       <div style="display:flex;justify-content:space-between;font-size:13px;margin:5px 0">
         <span style="color:var(--muted)">Cap room remaining</span>
-        <b style="color:${capRoom < 200000 ? 'var(--red)' : capRoom < 800000 ? 'var(--brass)' : 'var(--green)'}">${money(capRoom)}</b>
+        <b style="color:${capRoom < 200000 ? 'var(--red)' : capRoom < 800000 ? 'var(--accent)' : 'var(--green)'}">${money(capRoom)}</b>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:12px;margin:5px 0;color:var(--muted)">
         <span>Staff wages (outside cap)</span><span>${money(staffWages + scoutWages)}/yr</span>

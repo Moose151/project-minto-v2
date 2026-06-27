@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Squad list — main, train & trial, and youth squads */
 Object.assign(UI, {
@@ -24,9 +25,9 @@ Object.assign(UI, {
     const trialRow = p => {
       const g = trialGamesUsed(p);
       const atLimit = g >= TRIAL_GAME_CAP;
-      const bar = `<div style="width:52px;height:5px;background:var(--card2);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:4px"><div style="width:${Math.min(100,g/TRIAL_GAME_CAP*100)}%;height:100%;background:${atLimit?'var(--red)':'var(--brass)'}"></div></div>`;
+      const bar = `<div style="width:52px;height:5px;background:var(--card2);border-radius:3px;overflow:hidden;display:inline-block;vertical-align:middle;margin-left:4px"><div style="width:${Math.min(100,g/TRIAL_GAME_CAP*100)}%;height:100%;background:${atLimit?'var(--red)':'var(--accent)'}"></div></div>`;
       return `<tr class="click" onclick="UI.playerModal(${p.id})">
-        <td><div class="player-cell">${playerAvatar(p,34)}<div><b>${playerTierBadge(p,true)} ${nationalityFlag(p.nationality)} ${esc(p.name)}</b><br><span style="font-size:9px;font-weight:800;letter-spacing:.06em;color:var(--brass);background:rgba(210,165,62,.18);padding:1px 5px;border-radius:8px">T&T CONTRACT</span></div></div></td>
+        <td><div class="player-cell">${playerAvatar(p,34)}<div><b>${playerTierBadge(p,true)} ${nationalityFlag(p.nationality)} ${esc(p.name)}</b><br><span style="font-size:9px;font-weight:800;letter-spacing:.06em;color:var(--accent);background:var(--accent-a18);padding:1px 5px;border-radius:8px">T&T CONTRACT</span></div></div></td>
         <td class="num">${p.age}</td>
         <td><span class="pos-tag">${p.pos}</span></td>
         <td class="num"><span class="ovr ${ovrCls(p.ovr)}">${p.ovr}</span></td>
@@ -54,7 +55,7 @@ Object.assign(UI, {
     </div>
     ${trial.length || top.length>=TOP_SQUAD_CAP?`<div class="card" style="padding:6px;overflow-x:auto;margin-top:12px">
       <div class="navsep" style="margin:4px 0 6px">Train & Trial (${trial.length}/${TRIAL_SQUAD_CAP})</div>
-      <p style="color:var(--muted);font-size:12px;margin:0 0 8px">Short-term depth — 1-year contracts capped at ${money(TRIAL_SALARY_CAP)}. They do not count against the salary cap. After ${TRIAL_GAME_CAP} games they <b>must be upgraded</b> to a main-squad deal or released. <span class="click" style="color:var(--brass);cursor:pointer" onclick="UI.go('recruitment')">Sign a T&T player →</span></p>
+      <p style="color:var(--muted);font-size:12px;margin:0 0 8px">Short-term depth — 1-year contracts capped at ${money(TRIAL_SALARY_CAP)}. They do not count against the salary cap. After ${TRIAL_GAME_CAP} games they <b>must be upgraded</b> to a main-squad deal or released. <span class="click" style="color:var(--accent);cursor:pointer" onclick="UI.go('recruitment')">Sign a T&T player →</span></p>
       ${trial.length?`<table style="overflow-x:auto"><thead>${trialThHead}</thead><tbody>${trial.map(trialRow).join('')}</tbody></table>`:'<p style="color:var(--dim);font-size:12px;padding:6px 0">No train & trial players currently signed.</p>'}
     </div>`:''}
     ${dev.length?`<div class="card" style="padding:6px;overflow-x:auto;margin-top:12px">
@@ -71,7 +72,7 @@ Object.assign(UI, {
         ? `<button class="btn sm" style="opacity:.7" onclick="event.stopPropagation();UI.demotePlayer(${p.id})">↓ Youth</button>`
         : '';
     return `<tr class="click" onclick="UI.playerModal(${p.id})">
-      <td><div class="player-cell">${playerAvatar(p,34)}<div><b>${playerTierBadge(p,true)} ${nationalityFlag(p.nationality)} ${esc(p.name)}</b><br><span class="pmeta" style="color:var(--muted);font-size:11px">${esc(p.style)}${p.repTeam?` · ${esc(p.repTeam)}`:''}</span>${promiseSummary(p)?`<br><span style="color:var(--brass);font-size:10px">📋 ${esc(promiseSummary(p))}</span>`:''}</div></div></td>
+      <td><div class="player-cell">${playerAvatar(p,34)}<div><b>${playerTierBadge(p,true)} ${nationalityFlag(p.nationality)} ${esc(p.name)}</b><br><span class="pmeta" style="color:var(--muted);font-size:11px">${esc(p.style)}${p.repTeam?` · ${esc(p.repTeam)}`:''}</span>${promiseSummary(p)?`<br><span style="color:var(--accent);font-size:10px">📋 ${esc(promiseSummary(p))}</span>`:''}</div></div></td>
       <td class="num">${p.age}</td>
       <td><span class="pos-tag">${p.pos}</span> <span class="pos-tag" style="opacity:.55">${p.pos2}</span></td>
       <td class="num"><span class="ovr ${ovrCls(p.ovr)}">${p.ovr}</span>${(()=>{const g=(p.seasonStartOvr!=null)?p.ovr-p.seasonStartOvr:0;if(!g) return '';const clr=g>0?'var(--green)':'var(--red)';return `<br><span style="color:${clr};font-size:11px;font-weight:700">${g>0?'+':''}${g}</span>`;})()}</td>

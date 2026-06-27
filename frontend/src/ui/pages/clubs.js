@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Clubs browser + club squad modal */
 Object.assign(UI, {
@@ -36,8 +37,8 @@ Object.assign(UI, {
         <div class="str">${ord(pos)} · ${r.w}-${r.l} · OVR <span class="${tr.cls}">${tr.text}</span></div>
         <div class="team-rating-row">${teamRatingPill(t,'atk','ATT')}${teamRatingPill(t,'def','DEF')}${teamRatingPill(t,'coh','COH')}</div>
         <div style="font-size:10px;color:var(--muted);margin-top:4px">Facilities avg Lv ${facAvg.toFixed(1)}</div>
-        ${coach ? `<div style="font-size:10px;color:var(--muted);margin-top:4px">HC: ${esc(coach.name)} · ${coachRep}${newCoach?' <span style="color:var(--brass)">NEW</span>':''}</div>` : ''}
-        ${legends ? `<div style="font-size:10px;color:var(--brass);margin-top:2px">HoF: ${legends} legend${legends===1?'':'s'}</div>` : ''}
+        ${coach ? `<div style="font-size:10px;color:var(--muted);margin-top:4px">HC: ${esc(coach.name)} · ${coachRep}${newCoach?' <span style="color:var(--accent)">NEW</span>':''}</div>` : ''}
+        ${legends ? `<div style="font-size:10px;color:var(--accent);margin-top:2px">HoF: ${legends} legend${legends===1?'':'s'}</div>` : ''}
       </div>`;
     }).join('');
 
@@ -62,8 +63,8 @@ Object.assign(UI, {
       <button class="btn sm danger" onclick="event.stopPropagation();UI.godReleasePlayer(${p.id})">Release</button>
     </div>` : '';
     const hofLegends = (G.hallOfFame||[]).filter(h=>h.teamId===t.id);
-    const legendLine = hofLegends.length ? `<p style="font-size:11px;color:var(--brass);margin:4px 0 0">Hall of Fame legends: ${hofLegends.slice(0,4).map(h=>esc(h.name)).join(', ')}${hofLegends.length>4?` +${hofLegends.length-4} more`:''}</p>` : '';
-    const newCoachBadge = t.headCoach && (t.headCoach.seasons||0)===0 ? `<span style="font-size:10px;background:rgba(210,165,62,.18);color:var(--brass);padding:1px 5px;border-radius:4px;margin-left:6px">NEW COACH</span>` : '';
+    const legendLine = hofLegends.length ? `<p style="font-size:11px;color:var(--accent);margin:4px 0 0">Hall of Fame legends: ${hofLegends.slice(0,4).map(h=>esc(h.name)).join(', ')}${hofLegends.length>4?` +${hofLegends.length-4} more`:''}</p>` : '';
+    const newCoachBadge = t.headCoach && (t.headCoach.seasons||0)===0 ? `<span style="font-size:10px;background:var(--accent-a18);color:var(--accent);padding:1px 5px;border-radius:4px;margin-left:6px">NEW COACH</span>` : '';
     const facKeys = Object.keys(FACILITY_DEFS);
     const facSummary = typeof teamFacilityLevel === 'function' ? `<div class="card" style="padding:8px;margin:8px 0">
       <div style="font-size:11px;color:var(--muted);margin-bottom:4px">Facilities · Avg Lv ${teamFacilityAverage(t).toFixed(1)}</div>

@@ -4,7 +4,10 @@
   "version": "0.1.0",
   "identifier": "com.minto.app",
   "build": {
-    "frontendDist": "../frontend"
+    "frontendDist": "../frontend/dist",
+    "devUrl": "http://localhost:5173",
+    "beforeDevCommand": "npm run frontend:dev",
+    "beforeBuildCommand": "npm run frontend:build"
   },
   "app": {
     "withGlobalTauri": true,

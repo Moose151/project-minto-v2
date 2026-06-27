@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Inbox — club news and post-match communications */
 Object.assign(UI, {
@@ -23,6 +24,8 @@ Object.assign(UI, {
       ['achievement',    'Achievements'],
       ['development',    'Development'],
       ['finance',        'Finance'],
+      ['milestone',      'Milestones'],
+      ['league',         'League News'],
     ];
 
     const news = G.news || [];
@@ -31,7 +34,7 @@ Object.assign(UI, {
       : news.filter(n => n.type === UI._inboxFilter);
 
     const toneIcon  = t => t==='good'?'✓':t==='bad'?'!':'·';
-    const toneColor = t => t==='good'?'var(--green)':t==='bad'?'var(--red)':'var(--brass)';
+    const toneColor = t => t==='good'?'var(--green)':t==='bad'?'var(--red)':'var(--accent)';
 
     const catUnread = k => k === 'all'
       ? news.filter(n => !n.read).length
@@ -60,6 +63,7 @@ Object.assign(UI, {
         ? `<button class="btn sm" style="margin-top:6px" onclick="event.stopPropagation();UI.teamModal(${n.teamId})">View club</button>`
         : '';
       const actionBtn = {
+        analysis:      `<button class="btn sm" onclick="event.stopPropagation();UI.go('tactics')">Tactics →</button>`,
         injury:        `<button class="btn sm" onclick="event.stopPropagation();UI.go('injuryward')">Injury Ward →</button>`,
         contract:      `<button class="btn sm" onclick="event.stopPropagation();UI.go('contracts')">Contracts →</button>`,
         recommendation:`<button class="btn sm" onclick="event.stopPropagation();UI.go('teamsheet')">Team Sheet →</button>`,
@@ -69,6 +73,8 @@ Object.assign(UI, {
         player:        `<button class="btn sm" onclick="event.stopPropagation();UI.go('squad')">Squad →</button>`,
         board:         `<button class="btn sm" onclick="event.stopPropagation();UI.go('club-management')">Club Management →</button>`,
         finance:       `<button class="btn sm" onclick="event.stopPropagation();UI.go('club-management')">Club Management →</button>`,
+        milestone:     `<button class="btn sm" onclick="event.stopPropagation();UI.go('squad')">Squad →</button>`,
+        league:        `<button class="btn sm" onclick="event.stopPropagation();UI.go('ladder')">Ladder →</button>`,
       }[n.type] || '';
       return `<div class="inbox-item${exp?' expanded':''}${isUnread?' unread':''}" onclick="UI._markRead(\`${key}\`);UI._inboxExpanded=(UI._inboxExpanded===\`${key}\`?null:\`${key}\`);UI.render()">
         <div class="inbox-header">

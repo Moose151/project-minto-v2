@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Stat leaders — switchable categories + position filter */
 Object.assign(UI, {

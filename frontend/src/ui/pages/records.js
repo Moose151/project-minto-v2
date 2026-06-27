@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Records — league-wide and club-scoped player records */
 Object.assign(UI, {

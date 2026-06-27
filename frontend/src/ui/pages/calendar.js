@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Calendar — daily schedule, stops, travel, and recovery */
 Object.assign(UI, {
@@ -46,11 +47,11 @@ Object.assign(UI, {
           detail = `${m.h===G.coach.teamId?'Home':'Away'} v ${teamName(opp)}${slotLabel}.`;
         }
       }
-      const border = tone === 'good' ? 'var(--green)' : tone === 'warn' ? 'var(--brass)' : 'var(--line)';
-      return `<div class="card" style="border-color:${border};padding:10px 12px;${day===today?'box-shadow:0 0 0 1px var(--brass) inset':''}">
+      const border = tone === 'good' ? 'var(--green)' : tone === 'warn' ? 'var(--accent)' : 'var(--line)';
+      return `<div class="card" style="border-color:${border};padding:10px 12px;${day===today?'box-shadow:0 0 0 1px var(--accent) inset':''}">
         <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-start">
           <div><b>${esc(date)}</b><br><span style="color:var(--muted);font-size:11px">Round ${r+1}</span></div>
-          ${day===today?'<span style="font-size:10px;color:var(--brass);font-weight:700">TODAY</span>':''}
+          ${day===today?'<span style="font-size:10px;color:var(--accent);font-weight:700">TODAY</span>':''}
         </div>
         <div style="margin-top:8px;font-weight:700">${esc(title)}</div>
         <p style="font-size:12px;color:var(--muted);margin:3px 0 0">${esc(detail)}</p>
@@ -67,8 +68,8 @@ Object.assign(UI, {
       const slotLabel = m.slot ? m.slot.label : 'Sat Afternoon';
       const status = m.played ? `${m.hs}–${m.as}` : 'Upcoming';
       const statusColour = m.played ? 'var(--ink)' : 'var(--muted)';
-      return `<tr style="${mine?'background:rgba(210,165,62,.07)':''}">
-        <td style="font-size:11px;color:var(--brass);font-weight:700">${esc(slotLabel)}</td>
+      return `<tr style="${mine?'background:var(--accent-a06)':''}">
+        <td style="font-size:11px;color:var(--accent);font-weight:700">${esc(slotLabel)}</td>
         <td>${teamLogo(h,20)} ${esc(h.nick)}</td>
         <td class="num" style="font-weight:700;color:${statusColour}">${status}</td>
         <td style="text-align:right">${esc(a.nick)} ${teamLogo(a,20)}</td>
@@ -78,11 +79,11 @@ Object.assign(UI, {
     <p class="page-sub">${calendarDateLabel()} · Round ${roundIdx+1} · ${esc(matchLine)}</p>
     <div class="grid3" style="margin-bottom:12px">
       <div class="card"><div class="navsep" style="margin:0">Current Stop</div><div style="font-family:var(--disp);font-size:24px;font-weight:700;margin-top:4px">${esc(stop ? stop.label : 'Training block')}</div><p class="page-sub">${reviewPending?`${stop.key==='recovery'?'Medical':'Training'} review still pending.`:stop && stop.key==='match' ? (bye?'Bye weekend':'Ready for match day') : 'Advance one day at a time.'}</p>${reviewPending?`<button class="btn sm primary" onclick="UI.go('${stop.key==='recovery'?'injuryward':'training'}')">Review ${stop.key==='recovery'?'medical':'training'}</button>`:''}</div>
-      <div class="card"><div class="navsep" style="margin:0">Fatigue Watch</div><div style="font-family:var(--disp);font-size:24px;font-weight:700;margin-top:4px;color:${lowCond.length?'var(--brass)':'var(--green)'}">${lowCond.length}</div><p class="page-sub">Main-squad players below 72 condition or above 62 load.</p></div>
+      <div class="card"><div class="navsep" style="margin:0">Fatigue Watch</div><div style="font-family:var(--disp);font-size:24px;font-weight:700;margin-top:4px;color:${lowCond.length?'var(--accent)':'var(--green)'}">${lowCond.length}</div><p class="page-sub">Main-squad players below 72 condition or above 62 load.</p></div>
       <div class="card"><div class="navsep" style="margin:0">Medical</div><div style="font-family:var(--disp);font-size:24px;font-weight:700;margin-top:4px;color:${injured?'var(--red)':'var(--green)'}">${injured}</div><p class="page-sub">Unavailable injured players.</p></div>
     </div>
     <div class="btnrow"><button class="btn primary" onclick="UI.advance()">${stop&&stop.key==='match'&&!bye?'Play Match Day':'Next Day'}</button><button class="btn" onclick="UI.go('teamsheet')">Team Sheet</button><button class="btn" onclick="UI.go('training')">Training</button><button class="btn" onclick="UI.go('injuryward')">Injury Ward</button>${lowCond.length?`<button class="btn" onclick="myTeam().focus='recovery';UI.toast('Team focus set to recovery.');UI.render()">Set recovery focus</button>`:''}</div>
-    ${lowCond.length?`<h2 class="sec">Load Watch</h2><div class="card" style="padding:6px;overflow-x:auto"><table><thead><tr><th class="noclick">Player</th><th class="noclick">Pos</th><th class="noclick num">Cond</th><th class="noclick num">Load</th><th class="noclick num">Fatigue</th></tr></thead><tbody>${lowCond.map(p=>`<tr class="click" onclick="UI.playerModal(${p.id})"><td><b>${esc(p.name)}</b></td><td><span class="pos-tag">${p.pos}</span></td><td class="num" style="color:${p.cond<65?'var(--red)':p.cond<78?'var(--brass)':'var(--muted)'}">${Math.round(p.cond)}%</td><td class="num">${Math.round(p.load||0)}</td><td class="num">${Math.round(p.fatigue||0)}</td></tr>`).join('')}</tbody></table></div>`:''}
+    ${lowCond.length?`<h2 class="sec">Load Watch</h2><div class="card" style="padding:6px;overflow-x:auto"><table><thead><tr><th class="noclick">Player</th><th class="noclick">Pos</th><th class="noclick num">Cond</th><th class="noclick num">Load</th><th class="noclick num">Fatigue</th></tr></thead><tbody>${lowCond.map(p=>`<tr class="click" onclick="UI.playerModal(${p.id})"><td><b>${esc(p.name)}</b></td><td><span class="pos-tag">${p.pos}</span></td><td class="num" style="color:${p.cond<65?'var(--red)':p.cond<78?'var(--accent)':'var(--muted)'}">${Math.round(p.cond)}%</td><td class="num">${Math.round(p.load||0)}</td><td class="num">${Math.round(p.fatigue||0)}</td></tr>`).join('')}</tbody></table></div>`:''}
     <h2 class="sec">Round ${roundIdx+1} Games</h2>
     <div class="card" style="padding:6px;overflow-x:auto"><table><thead><tr><th class="noclick">Kickoff</th><th class="noclick">Home</th><th class="noclick num">Status</th><th class="noclick" style="text-align:right">Away</th></tr></thead><tbody>${roundRows}</tbody></table></div>
     <h2 class="sec">Next 14 Days</h2>

@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "./01-core.js";
+
 
 Object.assign(UI, {
   /* ---------- offseason ---------- */
@@ -49,7 +50,7 @@ Object.assign(UI, {
       </div>
       <div style="font-size:12px;color:var(--muted)">${O.intl.results.map(r=>`<div><b style="color:var(--ink)">${esc(r.stage)}:</b> ${esc(r.label)}</div>`).join('')}</div>
     </div>`:''}
-    ${O.retirements.length?`<h2 class="sec">Retirements</h2><div class="card"><p style="font-size:13px; color:var(--muted)">${O.retirements.map(r=>`${esc(r.name)} (${r.team}, ${r.games} games)${r.hallOfFame?' <b style="color:var(--brass)">Hall of Fame</b>':''}`).join(' · ')}</p>${O.retirements.some(r=>r.hallOfFame)?`<div class="btnrow" style="margin-top:10px"><button class="btn sm primary" onclick="UI.go('halloffame')">View inductions</button></div>`:''}</div>`:''}
+    ${O.retirements.length?`<h2 class="sec">Retirements</h2><div class="card"><p style="font-size:13px; color:var(--muted)">${O.retirements.map(r=>`${esc(r.name)} (${r.team}, ${r.games} games)${r.hallOfFame?' <b style="color:var(--accent)">Hall of Fame</b>':''}`).join(' · ')}</p>${O.retirements.some(r=>r.hallOfFame)?`<div class="btnrow" style="margin-top:10px"><button class="btn sm primary" onclick="UI.go('halloffame')">View inductions</button></div>`:''}</div>`:''}
     ${offers.length?`<h2 class="sec">${O.sacked?'You need a new job':'Job offers'}</h2>
     <p class="page-sub">${O.sacked?'The following clubs have offered you a role. You must accept one to continue.':'Rival boards have taken notice. These clubs are open to talks — or you can stay put.'}</p>
     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
@@ -163,7 +164,7 @@ Object.assign(UI, {
     const fas = O.freeAgents.map(id=>G.players[id]).filter(Boolean).sort((a,b)=>b.ovr-a.ovr).slice(0,30);
     const sl = G.coach.shortlist || [];
     const row = (p, kind) => {
-      const starred = sl.includes(p.id) ? `<span style="color:var(--brass);margin-right:4px" title="Shortlisted">★</span>` : '';
+      const starred = sl.includes(p.id) ? `<span style="color:var(--accent);margin-right:4px" title="Shortlisted">★</span>` : '';
       const approached = p.approachTeam===G.coach.teamId ? `<span style="color:var(--green);font-size:11px;margin-left:4px">pre-contract ✓</span>` : '';
       return `<tr><td class="click" onclick="UI.playerModal(${p.id})">${starred}<b>${esc(p.name)}</b> <span class="pos-tag">${p.pos}</span>${approached}</td>
       <td class="num">${p.age}</td><td class="num"><span class="ovr ${ovrCls(p.ovr)}">${p.ovr}</span></td><td class="num">${potHtml(p)}</td><td class="num">${money(demandFor(p, myTeam()))}</td>
@@ -222,7 +223,7 @@ Object.assign(UI, {
     <div class="field"><label>Promises</label><div class="btnrow" style="margin:0">${promiseBtn('none','No role promise')}${promiseBtn('bench','Bench')}${promiseBtn('starter','Starter')}${promiseBtn('superstar','Superstar')}</div>
       <label style="display:flex;gap:8px;align-items:center;margin-top:8px;color:var(--muted);font-size:13px"><input type="checkbox" ${o.promises.captain?'checked':''} onchange="UI._offer.promises.captain=this.checked;UI.renderOffer(${demand})"> Promise captaincy</label></div>
     <div class="sign-meter"><i style="width:${pct}%"></i></div>
-    <p style="color:var(--muted); font-size:12px">Estimated signing chance: <b style="color:${pct>=70?'var(--green)':pct<40?'var(--red)':'var(--brass)'}">${pct}%</b> · first-year cap hit ${money(firstYear)} · cap space after deal: ${money(room - firstYear)}</p>
+    <p style="color:var(--muted); font-size:12px">Estimated signing chance: <b style="color:${pct>=70?'var(--green)':pct<40?'var(--red)':'var(--accent)'}">${pct}%</b> · first-year cap hit ${money(firstYear)} · cap space after deal: ${money(room - firstYear)}</p>
     <div class="btnrow"><button class="btn primary" onclick="UI.submitOffer()">Table the offer</button><button class="btn" onclick="UI.closeModal()">Cancel</button></div>`);
   },
   submitOffer(){
@@ -264,12 +265,12 @@ Object.assign(UI, {
     const mem = membershipProjection(ps.membershipPrice);
     const sponsorRow = s => {
       const accepted = ps.acceptedSponsorIds.includes(s.id);
-      const tag = s.renewal ? `<span style="color:var(--brass);font-size:10px;font-weight:700;margin-left:4px">RENEWAL</span>` : '';
-      const note = s.expiryNote ? `<span class="pmeta" style="color:var(--brass)"> · ${esc(s.expiryNote)}</span>` : '';
+      const tag = s.renewal ? `<span style="color:var(--accent);font-size:10px;font-weight:700;margin-left:4px">RENEWAL</span>` : '';
+      const note = s.expiryNote ? `<span class="pmeta" style="color:var(--accent)"> · ${esc(s.expiryNote)}</span>` : '';
       return `<tr>
         <td><b>${esc(s.name)}</b>${tag}<br><span class="pmeta">${esc(s.category)} sponsor · ${s.yearsLeft} yr${s.yearsLeft===1?'':'s'}</span>${note}</td>
         <td class="num"><b>${money(s.value)}</b>/yr</td>
-        <td>${accepted?'<span style="color:var(--green);font-size:11px">✓ Accepted</span>':`<button class="btn sm ${s.renewal?'':'primary'}" style="${s.renewal?'border-color:var(--brass);color:var(--brass)':''}" onclick="UI.acceptSponsor('${s.id}')">Accept</button>`}</td>
+        <td>${accepted?'<span style="color:var(--green);font-size:11px">✓ Accepted</span>':`<button class="btn sm ${s.renewal?'':'primary'}" style="${s.renewal?'border-color:var(--accent);color:var(--accent)':''}" onclick="UI.acceptSponsor('${s.id}')">Accept</button>`}</td>
       </tr>`;
     };
     const renewals = ps.sponsorOffers.filter(s=>s.renewal);
@@ -317,7 +318,7 @@ Object.assign(UI, {
     <h2 class="sec">Sponsorship Window</h2>
     <p class="page-sub" style="margin-top:-4px">Slots used: ${majorUsed}/1 major · ${minorUsed}/2 minor</p>
     ${activeSponsorRows.length ? `<div class="card" style="padding:6px;overflow-x:auto;margin-bottom:10px"><p style="font-size:11px;color:var(--muted);margin:4px 8px 6px">Active deals (already secured)</p><table><tbody>${activeSponsorRows.join('')}</tbody></table></div>` : ''}
-    ${renewals.length ? `<div class="card" style="padding:6px;overflow-x:auto;margin-bottom:10px;border-color:var(--brass)"><p style="font-size:11px;color:var(--brass);margin:4px 8px 6px">⚠ Expiring this season — renew or let expire</p><table><thead><tr><th class="noclick">Sponsor</th><th class="noclick num">Value</th><th class="noclick"></th></tr></thead><tbody>${renewals.map(sponsorRow).join('')}</tbody></table></div>` : ''}
+    ${renewals.length ? `<div class="card" style="padding:6px;overflow-x:auto;margin-bottom:10px;border-color:var(--accent)"><p style="font-size:11px;color:var(--accent);margin:4px 8px 6px">⚠ Expiring this season — renew or let expire</p><table><thead><tr><th class="noclick">Sponsor</th><th class="noclick num">Value</th><th class="noclick"></th></tr></thead><tbody>${renewals.map(sponsorRow).join('')}</tbody></table></div>` : ''}
     <div class="card" style="padding:6px;overflow-x:auto"><p style="font-size:11px;color:var(--muted);margin:4px 8px 6px">New sponsorship opportunities</p><table><thead><tr><th class="noclick">Sponsor</th><th class="noclick num">Value</th><th class="noclick"></th></tr></thead><tbody>${newOffers.map(sponsorRow).join('') || '<tr><td colspan="3" style="color:var(--muted)">No new offers this season.</td></tr>'}</tbody></table></div>
     <div class="btnrow" style="margin-top:16px"><button class="btn primary" onclick="UI.completePreseason()">Start season</button></div>`;
   },

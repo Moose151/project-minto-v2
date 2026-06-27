@@ -1,4 +1,5 @@
-'use strict';
+import { UI } from "../01-core.js";
+
 
 /* Predictions — bookie odds, season projections, award frontrunners, media */
 Object.assign(UI, {
@@ -30,14 +31,14 @@ Object.assign(UI, {
         <div style="text-align:center;flex:1;min-width:120px">
           <div style="font-size:11px;color:var(--muted)">${esc(h.city)}</div>
           <div style="font-family:var(--disp);font-size:18px;font-weight:700">${esc(h.nick)}</div>
-          <div style="font-size:26px;font-weight:700;color:${favH?'var(--brass)':'var(--ink)'}">${UI._oddsStr(o.oddsH)}</div>
+          <div style="font-size:26px;font-weight:700;color:${favH?'var(--accent)':'var(--ink)'}">${UI._oddsStr(o.oddsH)}</div>
           <div style="font-size:11px;color:var(--muted)">${Math.round(o.pH*100)}% implied win</div>
         </div>
         <div style="text-align:center;color:var(--muted);font-size:18px;font-weight:300">v</div>
         <div style="text-align:center;flex:1;min-width:120px">
           <div style="font-size:11px;color:var(--muted)">${esc(a.city)}</div>
           <div style="font-family:var(--disp);font-size:18px;font-weight:700">${esc(a.nick)}</div>
-          <div style="font-size:26px;font-weight:700;color:${favA?'var(--brass)':'var(--ink)'}">${UI._oddsStr(o.oddsA)}</div>
+          <div style="font-size:26px;font-weight:700;color:${favA?'var(--accent)':'var(--ink)'}">${UI._oddsStr(o.oddsA)}</div>
           <div style="font-size:11px;color:var(--muted)">${Math.round(o.pA*100)}% implied win</div>
         </div>
       </div>
@@ -84,7 +85,7 @@ Object.assign(UI, {
       snippets.push(`${esc(myTeam().nick)} are missing ${names.join(' and ')}${inj.length>2?` and ${inj.length-2} more`:''} through injury heading into this clash.`);
     }
     return `<div style="margin-top:12px;border-top:1px solid var(--line);padding-top:10px">
-      <div style="font-size:11px;color:var(--brass);font-weight:600;margin-bottom:6px">MEDIA PREVIEW</div>
+      <div style="font-size:11px;color:var(--accent);font-weight:600;margin-bottom:6px">MEDIA PREVIEW</div>
       ${snippets.map(s=>`<p style="font-size:12px;color:var(--muted);margin:4px 0">${s}</p>`).join('')}
     </div>`;
   },
@@ -172,7 +173,7 @@ Object.assign(UI, {
         const mh = G.teams[m.h], ma = G.teams[m.a];
         const o = UI._matchOdds(m);
         const fav = o.favoured==='h' ? mh : ma;
-        return `<tr><td><span class="team-spine" style="background:${mh.c1}"></span>${esc(mh.nick)}</td><td style="text-align:center;color:${o.favoured==='h'?'var(--brass)':'var(--muted)'}">${UI._oddsStr(o.oddsH)}</td><td style="text-align:center;color:${o.favoured==='a'?'var(--brass)':'var(--muted)'}">${UI._oddsStr(o.oddsA)}</td><td><span class="team-spine" style="background:${ma.c1}"></span>${esc(ma.nick)}</td><td style="color:var(--brass);font-size:11px">${esc(fav.nick)} fav.</td></tr>`;
+        return `<tr><td><span class="team-spine" style="background:${mh.c1}"></span>${esc(mh.nick)}</td><td style="text-align:center;color:${o.favoured==='h'?'var(--accent)':'var(--muted)'}">${UI._oddsStr(o.oddsH)}</td><td style="text-align:center;color:${o.favoured==='a'?'var(--accent)':'var(--muted)'}">${UI._oddsStr(o.oddsA)}</td><td><span class="team-spine" style="background:${ma.c1}"></span>${esc(ma.nick)}</td><td style="color:var(--accent);font-size:11px">${esc(fav.nick)} fav.</td></tr>`;
       }).join('');
       roundOddsHtml = `<div class="card" style="padding:6px;margin-bottom:12px"><h2 class="sec" style="margin:8px 10px">Round ${G.round+1} — all odds</h2>
         <table><thead><tr><th class="noclick">Home</th><th class="noclick num">Home $</th><th class="noclick num">Away $</th><th class="noclick">Away</th><th class="noclick">Tip</th></tr></thead><tbody>${rows}</tbody></table>
@@ -184,7 +185,7 @@ Object.assign(UI, {
     const projRows = proj.map((r,i)=>{
       const tm = G.teams[r.id];
       const myRow = tm.id === t.id;
-      return `<tr style="${myRow?'background:rgba(210,165,62,.07)':''}"><td class="lpos">${i+1}</td><td><span class="team-spine" style="background:${tm.c1}"></span>${esc(tm.nick)}</td><td class="num">${r.pts}</td><td class="num" style="color:var(--brass)">${r.projPts}</td><td class="num" style="color:var(--muted)">${Math.round(r.winRate*100)}%</td></tr>`;
+      return `<tr style="${myRow?'background:var(--accent-a06)':''}"><td class="lpos">${i+1}</td><td><span class="team-spine" style="background:${tm.c1}"></span>${esc(tm.nick)}</td><td class="num">${r.pts}</td><td class="num" style="color:var(--accent)">${r.projPts}</td><td class="num" style="color:var(--muted)">${Math.round(r.winRate*100)}%</td></tr>`;
     }).join('');
 
     // Award frontrunners
@@ -197,7 +198,7 @@ Object.assign(UI, {
     ${roundOddsHtml}
     <h2 class="sec">Projected final ladder</h2>
     <div class="card" style="padding:6px;margin-bottom:12px">
-      <table><thead><tr><th class="noclick lpos">#</th><th class="noclick">Club</th><th class="noclick num">Current pts</th><th class="noclick num" style="color:var(--brass)">Projected pts</th><th class="noclick num">Est. win%</th></tr></thead><tbody>${projRows}</tbody></table>
+      <table><thead><tr><th class="noclick lpos">#</th><th class="noclick">Club</th><th class="noclick num">Current pts</th><th class="noclick num" style="color:var(--accent)">Projected pts</th><th class="noclick num">Est. win%</th></tr></thead><tbody>${projRows}</tbody></table>
       <p style="color:var(--dim);font-size:11px;padding:6px 8px 0">Projection uses squad strength and current points. Does not account for schedule difficulty or injuries.</p>
     </div>
     ${formWatch}

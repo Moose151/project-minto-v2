@@ -1,17 +1,16 @@
-'use strict';
+import { G, setG } from './00-state.js';
 
 /* ---------- game state ---------- */
-let G = null;
 /* genPlayer must register into G.players — wrap creation */
-function makePlayer(G, pos, age, quality){ const p = genPlayer(pos, age, quality); G.players[p.id] = p; return p; }
-function genTeamLogo(t){
+export function makePlayer(G, pos, age, quality){ const p = genPlayer(pos, age, quality); G.players[p.id] = p; return p; }
+export function genTeamLogo(t){
   const shapes = ['shield','round','diamond','hex'];
   const shape = shapes[Math.abs((t.id || 0) + String(t.nick || '').length) % shapes.length];
   const letters = String(t.abbr || t.nick || 'TM').replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase() || 'TM';
   const stripe = ((t.id || 0) * 17 + letters.length * 11) % 3;
   return {shape, letters, stripe};
 }
-function ensureTeamLogo(t){
+export function ensureTeamLogo(t){
   if(!t) return null;
   if(!t.logo) t.logo = genTeamLogo(t);
   if(!t.logo.shape) t.logo.shape = 'shield';
@@ -21,7 +20,7 @@ function ensureTeamLogo(t){
 }
 
 /* rebuild genTeam to register properly */
-function buildTeam(G, identity, id, strength){
+export function buildTeam(G, identity, id, strength){
   const coachRep = ri(20, 62);
   const baseFacility = clamp(Math.round(1 + (strength - 50) / 10 + rf(-0.8, 0.8)), 1, 4);
   const facilities = {
@@ -55,7 +54,7 @@ function buildTeam(G, identity, id, strength){
   ensureTeamSpecialists(t);
   return t;
 }
-function ensureTeamSpecialists(t){
+export function ensureTeamSpecialists(t){
   const players = t.players.map(id=>G.players[id]).filter(Boolean);
   const goalPool = players.filter(p=>['HB','FE','FB','CE','WG'].includes(p.pos)).sort((a,b)=>roleScore(b,'goalKicker')-roleScore(a,'goalKicker'));
   if(goalPool[0] && goalPool[0].attrs.placeKick < 68) goalPool[0].attrs.placeKick = ri(68,82);
@@ -71,10 +70,10 @@ function ensureTeamSpecialists(t){
   }
   for(const p of players) p.ovr = calcOvr(p);
 }
-function startNewGame(cfg){
+export function startNewGame(cfg){
   srand(cfg.seed || Date.now());
-  _pid = 1;
-  G = { v:1, year:2026, season:1, round:0, phase:'regular', godMode:false, achievementsLocked:false,
+  resetPid();
+  setG({ v:1, year:2026, season:1, round:0, phase:'regular', godMode:false, achievementsLocked:false,
     config:{ nTeams:cfg.nTeams, cap:cfg.cap, capGrowth:.03, leagueName: cfg.leagueName || 'Minto Premiership', seasonRounds:cfg.seasonRounds || null },
     players:{}, teams:[], freeAgents:[], news:[], history:[], hallOfFame:[], achievements:[], finals:null, offseason:null,
     calendar:{day:0, startISO:'2026-03-02', lastStop:{key:'training', label:'Training review', page:'training', tone:'neutral'}},
@@ -85,7 +84,7 @@ function startNewGame(cfg){
     scouting: { scouts: [genScout(45)], missions: [], prospects: [] },
     coach:{ name:cfg.coachName, rep:30, teamId:null, conf:60, expect:null, history:[], seasonsAtClub:0, careerW:0, careerL:0, prems:0,
       shortlist:[], salary:120000, contractYears:2, cash:60000, attrs:{development:42, manMgmt:42, fitness:42, tactics:42} }
-  };
+  });
   const idents = cfg.identities ? cfg.identities.slice(0, cfg.nTeams) : shuffle(IDENTITIES).slice(0, cfg.nTeams);
   const spread = []; for(let i=0;i<cfg.nTeams;i++) spread.push(54 + Math.round(i*14/(cfg.nTeams-1)));
   const strengths = shuffle(spread);
@@ -113,11 +112,11 @@ function startNewGame(cfg){
   }
   return G;
 }
-function buildFreeAgentPool(G){
+export function buildFreeAgentPool(G){
   G.freeAgents = [];
   addFreeAgents(G, Math.max(18, Math.round(G.config.nTeams*2.2)));
 }
-function addFreeAgents(G, n){
+export function addFreeAgents(G, n){
   for(let i=0;i<n;i++){
     const pos = pick(SQUAD_TEMPLATE);
     const q = ri(0,9)<2 ? 52 : ri(0,9)<7 ? 45 : 38;
@@ -128,15 +127,15 @@ function addFreeAgents(G, n){
     G.freeAgents.push(p.id);
   }
 }
-function replenishFreeAgents(){
+export function replenishFreeAgents(){
   if(!G.freeAgents) G.freeAgents = [];
   G.freeAgents = G.freeAgents.filter(id=>G.players[id] && !G.teams.some(t=>t.players.includes(id)));
   const target = Math.max(18, Math.round(G.config.nTeams*2.3));
   if(G.freeAgents.length < target) addFreeAgents(G, target - G.freeAgents.length);
 }
-function teamName(t){ return t.city+' '+t.nick; }
-function myTeam(){ return G.teams[G.coach.teamId]; }
-function addNews(txt, opts){
+export function teamName(t){ return t.city+' '+t.nick; }
+export function myTeam(){ return G.teams[G.coach.teamId]; }
+export function addNews(txt, opts){
   opts = opts || {};
   const story = typeof txt === 'object' ? txt : {
     title: opts.title || opts.tag || 'Club News',
@@ -148,6 +147,7 @@ function addNews(txt, opts){
     playerId: opts.playerId,
     tag: opts.tag || opts.type || 'News',
   };
+  for(const [k, v] of Object.entries(opts)) if(story[k] === undefined) story[k] = v;
   if(!story.txt) story.txt = story.body || story.title || '';
   if(!story.body) story.body = story.txt;
   if(!story.title) story.title = story.tag || 'Club News';
@@ -160,7 +160,7 @@ function addNews(txt, opts){
   G.news.unshift(story);
   if(G.news.length>160) G.news.pop();
 }
-function setExpectation(){
+export function setExpectation(){
   const ranks = G.teams.slice().sort((a,b)=>squadStrength(b)-squadStrength(a)).map(t=>t.id);
   const r = ranks.indexOf(G.coach.teamId)+1, n = G.teams.length;
   if(r <= n*0.25) return {label:'Win the premiership', minPos:2};
@@ -168,7 +168,13 @@ function setExpectation(){
   if(r <= n*0.75) return {label:'Be competitive — push for finals', minPos:Math.ceil(n*0.66)};
   return {label:'Rebuild and develop young talent', minPos:n};
 }
-function squadStrength(t){
+export function squadStrength(t){
   const best = t.players.map(id=>G.players[id].ovr).sort((a,b)=>b-a).slice(0,17);
   return best.reduce((s,v)=>s+v,0)/17;
 }
+
+if (typeof window !== 'undefined') Object.assign(window, {
+  makePlayer, genTeamLogo, ensureTeamLogo, buildTeam, ensureTeamSpecialists,
+  startNewGame, buildFreeAgentPool, addFreeAgents, replenishFreeAgents,
+  teamName, myTeam, addNews, setExpectation, squadStrength,
+});
