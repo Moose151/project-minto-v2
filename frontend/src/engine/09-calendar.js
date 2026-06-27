@@ -301,6 +301,10 @@ function vulnerabilityRankPhrase(team, rows, channelLabel){
   if(rank > n - 5) return `among the stronger sides for ${channelLabel}`;
   return `around mid-table for ${channelLabel}`;
 }
+function teamRank(team, rows){
+  const idx = rows.findIndex(r=>r.team.id === team.id);
+  return idx < 0 ? null : idx + 1;
+}
 function currentLineupEntries(t){
   if(!validateLineup(t)) autoPick(t);
   return t.lineup.slice(0,17).map((id,i)=>({p:G.players[id], slot:i})).filter(x=>x.p);
@@ -319,12 +323,11 @@ function estimatedTackleBusts(p){
   const carryProfile = ((p.attrs.ballRunning||50) + (p.attrs.strength||50) + (p.attrs.acceleration||50)) / 3;
   return Math.round((s.lb || 0) * 4 + (s.runs || 0) * clamp((carryProfile - 48) / 85, 0.05, 0.46));
 }
-function leagueContextNotes(opp, entries, weak){
+function leagueContextNotes(opp, entries, weak, weakDefRisk){
   const notes = [];
   const middleMetres = rankTeamsBy(t=>channelSeasonStat(t, 'middle', 'm'), true);
   const leftTries = rankTeamsBy(t=>channelSeasonStat(t, 'left', 't'), true);
   const rightTries = rankTeamsBy(t=>channelSeasonStat(t, 'right', 't'), true);
-  const weakDefRisk = rankTeamsBy(t=>channelDefenceModel(t, weak.key), false);
   const middleLine = teamRankLine(opp, middleMetres, 'for metres through the middle');
   const edgeLine = weak.key === 'middle'
     ? ''
@@ -338,7 +341,27 @@ function leagueContextNotes(opp, entries, weak){
     .filter(x=>x.pos >= 0 && x.pos < 5 && x.tb > 0).sort((a,b)=>a.pos-b.pos)[0];
   if(topBust) notes.push(`${topBust.p.name} is top five in the league for tackle busts by the staff count.`);
   if(!notes.length) notes.push('There is not enough season data for firm league-ranking claims yet; staff are leaning more heavily on traits and recent selection.');
-  return `League context: ${notes.join(' ')}`;
+  return notes.join(' ');
+}
+function vulnerabilityReport(weak, middleDef, leftDef, rightDef, riskRank, teamCount){
+  const rankBit = riskRank <= 5
+    ? `Relative to the rest of the league, this still profiles as one of the softer ${weak.key === 'middle' ? 'middle-third' : weak.key + '-edge'} looks.`
+    : riskRank > teamCount - 5
+      ? 'League comparison says this is usually a strength, so there may not be a clear soft spot.'
+      : 'League comparison puts this around the middle of the pack.';
+  const absoluteBit = weak.rating <= 54
+    ? `${weak.label} looks like a genuine area to attack.`
+    : weak.rating <= 66
+      ? `${weak.label} is the most testable area, without being a glaring weakness.`
+      : `${weak.label} is the least secure area our staff can find, but it is not an obvious weakness on paper.`;
+  return `${absoluteBit} ${rankBit} Staff notes: middle is ${channelGradeText(middleDef, false)}, their left edge is ${channelGradeText(leftDef, false)}, and their right edge is ${channelGradeText(rightDef, false)}.`;
+}
+function tacticalRecommendation(weak, weakRank, teamCount){
+  const noClearSoftSpot = weak.rating > 66 && weakRank > 5 && weakRank <= teamCount - 5;
+  if(noClearSoftSpot) return 'Recommendation: do not chase a weakness that is not really there. Start balanced, kick well, and adjust once the ruck speed or edge reads show a crack.';
+  if(weak.key === 'middle') return 'Recommendation: start with a middle-dominance plan, use your best carriers, and chase fast play-the-balls before shifting wide.';
+  if(weak.key === 'left') return 'Recommendation: lean attack at their left edge. Consider a defensive right centre/edge pairing if their strike threat lines up there.';
+  return 'Recommendation: lean attack at their right edge. Use your left-side shape and back-row runners to test their reads.';
 }
 function buildOpponentAnalysis(myT, opp, match, ctx){
   const staff = staffReportConfidence();
@@ -363,6 +386,8 @@ function buildOpponentAnalysis(myT, opp, match, ctx){
     {key:'left', label:'their left edge defence', rating:leftDef},
     {key:'right', label:'their right edge defence', rating:rightDef},
   ].sort((a,b)=>a.rating-b.rating);
+  const weakDefRisk = rankTeamsBy(t=>channelDefenceModel(t, weakChannels[0].key), false);
+  const weakRiskRank = teamRank(opp, weakDefRisk) || Math.ceil(G.teams.length / 2);
   const strike = topBy(entries.filter(x=>['WG','CE','SR','FB'].includes(x.p.pos)),
     x=>attrScore(x.p, ['speed','acceleration','ballRunning','finishing']) + (x.p.s && x.p.s.t ? x.p.s.t*1.4 : 0));
   const playmaker = topBy(entries.filter(x=>['HB','FE','HK','FB'].includes(x.p.pos)),
@@ -375,13 +400,9 @@ function buildOpponentAnalysis(myT, opp, match, ctx){
   const staffLine = `${reportConfidenceText(confidence)}. Notes compiled by ${staff.attack ? staff.attack.name : 'the attack staff'}, ${staff.defence ? staff.defence.name : 'the defensive staff'} and ${staff.scout ? staff.scout.name : 'the scouting desk'}.`;
   const attackLine = `How they score: ${primary.label} looks like ${channelGradeText(primary.rating, true)}. Secondary threats are ${attackChannels.slice(1,3).map(x=>`${x.label} (${channelGradeText(x.rating, true)})`).join(' and ')}.`;
   const threatLine = `Key threats: ${describePlayer(playmaker && playmaker.p)} organising shape; ${describePlayer(strike && strike.p)} as strike runner; ${describePlayer(yardage && yardage.p)} for yardage/ruck speed.`;
-  const vulnLine = `Vulnerability: ${weak.label} looks like ${channelGradeText(weak.rating, false)}. Staff notes: middle is ${channelGradeText(middleDef, false)}, their left edge is ${channelGradeText(leftDef, false)}, and their right edge is ${channelGradeText(rightDef, false)}.`;
-  const contextLine = leagueContextNotes(opp, entries, weak);
-  const recommendation = weak.key === 'middle'
-    ? 'Recommendation: start with a middle-dominance plan, use your best carriers, and chase fast play-the-balls before shifting wide.'
-    : weak.key === 'left'
-      ? 'Recommendation: lean attack at their left edge. Consider a defensive right centre/edge pairing if their strike threat lines up there.'
-      : 'Recommendation: lean attack at their right edge. Use your left-side shape and back-row runners to test their reads.';
+  const vulnLine = vulnerabilityReport(weak, middleDef, leftDef, rightDef, weakRiskRank, G.teams.length);
+  const contextLine = leagueContextNotes(opp, entries, weak, weakDefRisk);
+  const recommendation = tacticalRecommendation(weak, weakRiskRank, G.teams.length);
   const targetLine = playmaker && playmaker.p
     ? `Pressure call: make ${playmaker.p.name} defend and consider rush pressure, but mistimed line speed can create edge overlaps.`
     : 'Pressure call: no clear organiser identified; keep the defensive plan balanced.';
@@ -396,7 +417,7 @@ function buildOpponentAnalysis(myT, opp, match, ctx){
     weakChannels,
     keyThreats: [playmaker && playmaker.p && playmaker.p.id, strike && strike.p && strike.p.id, yardage && yardage.p && yardage.p.id].filter(Boolean),
     recommendation,
-    body: `${staffLine}\nExpected XIII: ${lineupLine}\n${attackLine}\n${contextLine}\n${threatLine}\n${vulnLine}\n${injuryLine}\n${recommendation}\n${targetLine}`
+    body: `Summary\n${attackLine}\n${vulnLine}\n\nStaff read\n${staffLine}\n${injuryLine}\n\nLeague context\n${contextLine}\n\nExpected XIII\n${lineupLine}\n\nKey threats\n${threatLine}\n\nPlan\n${recommendation}\n${targetLine}`
   };
 }
 

@@ -59,6 +59,13 @@ _Updated every session._
   channel attack rankings use existing player season stats by lineup slot;
   defensive conceded-by-channel is still modelled from the lineup until the
   deeper set-by-set/channel telemetry lands.
+- **Inbox/report readability update:** Inbox now uses a mail-style layout with
+  messages in a left column and the selected item in a central reading pane.
+  Opponent reports are sectioned (`Summary`, `Staff read`, `League context`,
+  `Expected XIII`, `Key threats`, `Plan`) and the recommendation now checks
+  combined evidence so the report does not call an area both vulnerable and
+  well-defended. Future enhancement: add charts/tables/graphics to the analysis
+  pane once channel telemetry is richer.
 - **User clarified desired simulation depth:** add a strong manager-impact loop:
   Wednesday staff/scout pre-match analysis with accuracy based on staff ratings;
   actionable opponent tendencies and vulnerabilities; and pre-match/in-match

@@ -116,6 +116,10 @@ Target: **full FM-level tactical depth**.
   ranks for middle metres, edge scoring, defensive vulnerability, player leader
   notes such as tackle-bust leaders, and clear caveats when a claim is staff
   modelled rather than directly tracked.
+- Analysis presentation should feel like a real staff packet: readable inbox
+  message pane first, then later charts/tables/graphics for channel tendencies,
+  player leaders, scoring sources, and conceded zones once the engine tracks
+  those directly.
 - Team-page diagnostics view: show attacking and defensive output/weakness by
   middle, left edge, right edge, back three/backfield (wingers + fullback), and
   spine (fullback + halves + hooker). Include metres, tries, line breaks,

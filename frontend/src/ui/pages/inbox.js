@@ -13,8 +13,50 @@ Object.assign(UI, {
   _toggleInboxItem(key){
     key = String(key);
     UI._markRead(key);
-    UI._inboxExpanded = UI._inboxExpanded === key ? null : key;
+    UI._inboxExpanded = key;
     UI.render();
+  },
+
+  _inboxActions(n){
+    const playerLink = n.playerId && G.players[n.playerId]
+      ? `<button class="btn sm" onclick="UI.playerModal(${n.playerId})">View ${esc(G.players[n.playerId].name)}</button>`
+      : '';
+    const teamLink = n.teamId != null && UI.teamModal
+      ? `<button class="btn sm" onclick="UI.teamModal(${n.teamId})">View club</button>`
+      : '';
+    const actionBtn = {
+      analysis:      `<button class="btn sm primary" onclick="UI.go('tactics')">Tactics</button>`,
+      injury:        `<button class="btn sm primary" onclick="UI.go('injuryward')">Injury Ward</button>`,
+      contract:      `<button class="btn sm primary" onclick="UI.go('contracts')">Contracts</button>`,
+      recommendation:`<button class="btn sm primary" onclick="UI.go('teamsheet')">Team Sheet</button>`,
+      scouting:      `<button class="btn sm primary" onclick="UI.go('scouting')">Scouting</button>`,
+      recruitment:   `<button class="btn sm primary" onclick="UI.go('recruitment')">Recruitment</button>`,
+      form:          `<button class="btn sm primary" onclick="UI.go('squad')">Squad</button>`,
+      player:        `<button class="btn sm primary" onclick="UI.go('squad')">Squad</button>`,
+      board:         `<button class="btn sm primary" onclick="UI.go('club-management')">Club Management</button>`,
+      finance:       `<button class="btn sm primary" onclick="UI.go('club-management')">Club Management</button>`,
+      milestone:     `<button class="btn sm primary" onclick="UI.go('squad')">Squad</button>`,
+      league:        `<button class="btn sm primary" onclick="UI.go('ladder')">Ladder</button>`,
+    }[n.type] || '';
+    return [actionBtn, playerLink, teamLink].filter(Boolean).join('');
+  },
+
+  _inboxFormattedBody(n){
+    const raw = n.body || n.txt || '';
+    const sections = [];
+    let current = null;
+    const headings = new Set(['Summary','Staff read','League context','Expected XIII','Key threats','Plan']);
+    for(const line of raw.split(/\n+/).map(x=>x.trim()).filter(Boolean)){
+      if(headings.has(line)){
+        current = {h:line, rows:[]};
+        sections.push(current);
+      } else if(current) current.rows.push(line);
+      else{
+        current = {h:'Report', rows:[line]};
+        sections.push(current);
+      }
+    }
+    return sections.map(s=>`<section class="inbox-section"><h3>${esc(s.h)}</h3>${s.rows.map(r=>`<p>${esc(r)}</p>`).join('')}</section>`).join('');
   },
 
   p_inbox(){
@@ -62,43 +104,24 @@ Object.assign(UI, {
       return `<button class="btn sm ${UI._inboxFilter===k?'primary':''}" onclick="UI._inboxFilter='${k}';UI._inboxExpanded=null;UI.render()">${l}${badge}</button>`;
     }).filter(Boolean).join('');
 
+    if(filtered.length && !filtered.some(n => UI._inboxKey(n) === UI._inboxExpanded)) UI._inboxExpanded = UI._inboxKey(filtered[0]);
+    const selected = filtered.find(n => UI._inboxKey(n) === UI._inboxExpanded) || filtered[0] || null;
+    if(selected) UI._markRead(UI._inboxKey(selected));
+
     const itemHtml = n => {
       const key = UI._inboxKey(n);
       const jsKey = JSON.stringify(key).replace(/"/g, '&quot;');
-      const exp = UI._inboxExpanded === key;
+      const sel = selected && UI._inboxKey(selected) === key;
       const isUnread = !n.read;
       const rawBody = n.body || n.txt || '';
-      const preview = esc(rawBody);
-      const playerLink = n.playerId && G.players[n.playerId]
-        ? `<button class="btn sm" style="margin-top:6px" onclick="event.stopPropagation();UI.playerModal(${n.playerId})">View ${esc(G.players[n.playerId].name)}</button>`
-        : '';
-      const teamLink = n.teamId != null && UI.teamModal
-        ? `<button class="btn sm" style="margin-top:6px" onclick="event.stopPropagation();UI.teamModal(${n.teamId})">View club</button>`
-        : '';
-      const actionBtn = {
-        analysis:      `<button class="btn sm" onclick="event.stopPropagation();UI.go('tactics')">Tactics →</button>`,
-        injury:        `<button class="btn sm" onclick="event.stopPropagation();UI.go('injuryward')">Injury Ward →</button>`,
-        contract:      `<button class="btn sm" onclick="event.stopPropagation();UI.go('contracts')">Contracts →</button>`,
-        recommendation:`<button class="btn sm" onclick="event.stopPropagation();UI.go('teamsheet')">Team Sheet →</button>`,
-        scouting:      `<button class="btn sm" onclick="event.stopPropagation();UI.go('scouting')">Scouting →</button>`,
-        recruitment:   `<button class="btn sm" onclick="event.stopPropagation();UI.go('recruitment')">Recruitment →</button>`,
-        form:          `<button class="btn sm" onclick="event.stopPropagation();UI.go('squad')">Squad →</button>`,
-        player:        `<button class="btn sm" onclick="event.stopPropagation();UI.go('squad')">Squad →</button>`,
-        board:         `<button class="btn sm" onclick="event.stopPropagation();UI.go('club-management')">Club Management →</button>`,
-        finance:       `<button class="btn sm" onclick="event.stopPropagation();UI.go('club-management')">Club Management →</button>`,
-        milestone:     `<button class="btn sm" onclick="event.stopPropagation();UI.go('squad')">Squad →</button>`,
-        league:        `<button class="btn sm" onclick="event.stopPropagation();UI.go('ladder')">Ladder →</button>`,
-      }[n.type] || '';
-      return `<div class="inbox-item${exp?' expanded':''}${isUnread?' unread':''}" onclick="UI._toggleInboxItem(${jsKey})">
+      return `<div class="inbox-item${sel?' selected':''}${isUnread?' unread':''}" onclick="UI._toggleInboxItem(${jsKey})">
         <div class="inbox-header">
           <span class="inbox-tone" style="color:${toneColor(n.tone)}">${toneIcon(n.tone)}</span>
           <span class="inbox-title" style="${isUnread?'font-weight:700':'color:var(--muted)'}">${esc(n.title||n.tag||'Club News')}</span>
           ${isUnread ? `<span style="width:7px;height:7px;border-radius:50%;background:var(--red);display:inline-block;margin-left:4px;flex-shrink:0"></span>` : ''}
           <span class="inbox-meta" style="margin-left:auto">R${n.r||'?'} · ${n.y||G.year}</span>
         </div>
-        ${exp
-          ? `<div class="inbox-body" style="white-space:pre-wrap">${preview}<div class="btnrow" style="margin-top:8px;white-space:normal">${playerLink}${teamLink}${actionBtn}</div></div>`
-          : `<div class="inbox-preview" style="${isUnread?'color:var(--ink)':''}">${rawBody.length > 120 ? esc(rawBody.slice(0,120))+'…' : preview}</div>`}
+        <div class="inbox-preview" style="${isUnread?'color:var(--ink)':''}">${rawBody.length > 120 ? esc(rawBody.slice(0,120))+'…' : esc(rawBody)}</div>
       </div>`;
     };
 
@@ -107,16 +130,27 @@ Object.assign(UI, {
       ? `<span style="background:var(--red);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:6px">${totalUnread}</span>`
       : '';
 
+    const reader = selected ? `<article class="inbox-reader">
+      <div class="inbox-reader-head">
+        <div>
+          <div class="inbox-reader-tag">${esc(selected.tag || selected.type || 'News')} · R${selected.r||'?'} · ${selected.y||G.year}</div>
+          <h2>${esc(selected.title || selected.tag || 'Club News')}</h2>
+        </div>
+        <span class="inbox-tone big" style="color:${toneColor(selected.tone)}">${toneIcon(selected.tone)}</span>
+      </div>
+      <div class="inbox-reader-body">${UI._inboxFormattedBody(selected)}</div>
+      <div class="btnrow inbox-reader-actions">${UI._inboxActions(selected)}</div>
+    </article>` : `<div class="inbox-reader empty"><p class="page-sub">No items in this category.</p></div>`;
+
     return `<h1 class="page">Inbox${unreadBadge}</h1>
     <p class="page-sub">Post-match reports, club communications, and staff updates.</p>
     <div class="btnrow" style="flex-wrap:wrap;gap:4px;margin-bottom:8px">${catTabs}</div>
     ${totalUnread > 0
       ? `<div style="text-align:right;margin-bottom:6px"><button class="btn sm" onclick="UI._markAllRead()">Mark all as read</button></div>`
       : ''}
-    <div style="margin-top:4px">
-      ${filtered.length
-        ? filtered.map(itemHtml).join('')
-        : `<p class="page-sub">No items in this category.</p>`}
+    <div class="inbox-shell">
+      <div class="inbox-list">${filtered.length ? filtered.map(itemHtml).join('') : `<p class="page-sub" style="padding:12px">No items in this category.</p>`}</div>
+      ${reader}
     </div>`;
   },
 
