@@ -156,6 +156,10 @@ Target: **full FM-level tactical depth**.
   club merger/dissolution, loan system.
 - Deeper **youth academy** pathway and youth-grade competition.
 - ✅ **Rival club poaching** (offseason): when your quality expiring players (OVR 60+) go unsigned, AI clubs make specific offers with named rival + salary + years. The contracts screen shows "⚠️ Rival Interest" alerts — match the offer or release the player. Fires a news item for each outcome.
+- ✅ **Coach attribute development**: at end of each season, Tactical Coaching, Man Management, Player Development, and Recruitment attrs each grow 1–2 points based on earned criteria (top-4 finish, squad morale health, youth growth, exceeding board expectation). Complementary to the existing manual upgrade system.
+- ✅ **Career-threatening injury system**: ACL-type injuries (16+ weeks) have a 30% chance to flag `p.careerThreat`. Fires a named "Career-Threatening" inbox item; boosts offseason retirement probability; clears on return with a "Comeback" good-news item.
+- ✅ **Upset alerts**: detects when a bottom-half team (pos ≥ 8) beats a top-4 side by 10+ pts in other matches each round, fires a named "Upset!" news item. Max one per round.
+- ✅ **Media pressure storylines**: biweekly narrative news based on coached team's form — 4-game loss streaks, 4-game win streaks in top 4, and being well below expectation late in the season each fire varied-phrase inbox items.
 - **Free agent signings** (NRL-accurate): clubs can sign free agents at any time for injury cover; no formal mid-season window. Transfer requests result in release-with-payout or resolution. Build a free agent market page where out-of-contract players are listed and can be approached.
 - Deeper **board/finance**: transfer/loan budgets, stadium expansion projects, sponsorship negotiation.
 - Better **bye/draw** handling: forced even-team byes, Origin-round blocks,

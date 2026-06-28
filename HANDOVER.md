@@ -4,7 +4,7 @@ _Updated every session._
 
 ## ⏸️ Session Pause Note (for the next assistant)
 
-**Latest session work — Sin bin/send-off system, golden point, milestones, farewell, rival interest, live stats:**
+**Latest session work (session 3) — Sin bin, coach development, rival poaching, upset alerts, media pressure, career injuries:**
 
 ### 15. Career-threatening injury system (`07-match.js`, `08-progression.js`, `11-offseason.js`)
 - When a player suffers an injury of 16+ weeks (ACL-type), 30% chance it becomes career-threatening (`p.careerThreat = true`)
