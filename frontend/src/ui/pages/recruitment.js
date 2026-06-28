@@ -99,15 +99,42 @@ Object.assign(UI, {
       <th class="noclick"></th>
     </tr></thead>`;
 
-    const posFilters = ['all','FB','WG','CE','FE','HB','PR','HK','SR','LK'].map(pos=>
-      `<button class="btn sm ${UI._recPos===pos?'primary':''}" onclick="UI._recPos='${pos}';UI.render()">${pos==='all'?'All':pos}</button>`
-    ).join('');
-    const select = (prop, opts) => `<select style="max-width:170px" onchange="UI.${prop}=this.value;UI.render()">${opts.map(([v,l])=>`<option value="${v}" ${UI[prop]===v?'selected':''}>${l}</option>`).join('')}</select>`;
+    const POSITIONS = ['FB','WG','CE','FE','HB','PR','HK','SR','LK'];
+    const topPlayers = Object.values(G.players).filter(p => p && myIds.has(p.id) && p.squad === 'top');
+    const posCountInSquad = pos => topPlayers.filter(p => p.pos === pos || p.pos2 === pos).length;
+    const posCountInPool = pos => pool.filter(p => p.pos === pos || p.pos2 === pos).length;
 
-    const approachStatus = `<div style="display:flex;align-items:center;gap:8px;margin:4px 0 0;flex-wrap:wrap">
-      <span style="font-size:12px;color:var(--muted)">Pre-contract approaches: <b style="color:${approachesLeft===0?'var(--red)':approachesLeft===1?'var(--accent)':'var(--green)'}">${activeApproaches}/${MAX_APPROACHES} used</b> this season.</span>
-      ${approachesLeft>0?`<span style="font-size:12px;color:var(--muted)">${approachesLeft} remaining. Approaches give a +15% signing bonus in the off-season.</span>`:`<span style="font-size:12px;color:var(--red)">Approach limit reached for this season.</span>`}
+    const squadNeeds = `<div class="card" style="padding:10px 14px;margin-bottom:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:8px">
+        <div>
+          <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.05em">Squad Depth</div>
+          <div style="font-size:11px;color:var(--dim);margin-top:2px">Click a position to browse available targets</div>
+        </div>
+        <div style="font-size:11px;color:${approachesLeft===0?'var(--red)':approachesLeft===1?'var(--accent)':'var(--green)'};font-weight:700">
+          Approaches: ${activeApproaches}/${MAX_APPROACHES} used${approachesLeft>0?` · ${approachesLeft} left`:' · limit reached'}
+        </div>
+      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        ${POSITIONS.map(pos => {
+          const squad = posCountInSquad(pos);
+          const avail = posCountInPool(pos);
+          const col = squad <= 1 ? 'var(--red)' : squad === 2 ? 'var(--accent)' : 'var(--green)';
+          const lbl = squad <= 1 ? 'THIN' : squad === 2 ? 'DEPTH' : 'OK';
+          return `<div style="text-align:center;cursor:pointer;padding:6px 10px;border-radius:6px;border:1px solid ${squad<=1?'var(--red)':squad<=2?'var(--accent)':'var(--line)'};background:${squad<=1?'rgba(239,68,68,.08)':squad<=2?'rgba(245,158,11,.07)':'var(--hover)'}" onclick="UI._recPos='${pos}';UI._recTab='browse';UI.render()" title="${avail} available · ${squad} in squad">
+            <div style="font-weight:800;font-size:12px;color:var(--ink)">${pos}</div>
+            <div style="font-size:18px;font-weight:700;font-family:var(--disp);color:${col};line-height:1">${squad}</div>
+            <div style="font-size:9px;color:${col};font-weight:700">${lbl}</div>
+            <div style="font-size:9px;color:var(--dim);margin-top:1px">${avail} avail</div>
+          </div>`;
+        }).join('')}
+      </div>
     </div>`;
+
+    const posFilters = (countFn) => ['all','FB','WG','CE','FE','HB','PR','HK','SR','LK'].map(pos => {
+      const count = pos === 'all' ? null : countFn(pos);
+      return `<button class="btn sm${UI._recPos===pos?' primary':''}" onclick="UI._recPos='${pos}';UI.render()">${pos==='all'?'All':pos}${count!=null?` <span style="opacity:.55;font-size:10px">${count}</span>`:''}  </button>`;
+    }).join('');
+    const select = (prop, opts) => `<select style="max-width:170px" onchange="UI.${prop}=this.value;UI.render()">${opts.map(([v,l])=>`<option value="${v}" ${UI[prop]===v?'selected':''}>${l}</option>`).join('')}</select>`;
 
     const tabBtn = (id, label) =>
       `<button class="btn${UI._recTab===id?' primary':''}" onclick="UI._recTab='${id}';UI.render()">${label}</button>`;
@@ -118,7 +145,7 @@ Object.assign(UI, {
 
     const browseFinal = browse.filter(p => !UI._recFinalYear || (p.years != null && p.years <= 1));
     const browseContent = `
-      <div class="btnrow" style="flex-wrap:wrap">${posFilters}</div>
+      <div class="btnrow" style="flex-wrap:wrap">${posFilters(p => pool.filter(q => q.pos === p || q.pos2 === p).length)}</div>
       <div class="btnrow" style="align-items:center;flex-wrap:wrap">
         ${select('_recAge', [['all','All ages'],['u21','21 and under'],['22-26','22-26'],['27-30','27-30'],['31+','31+']])}
         ${select('_recOvr', [['all','Any OVR'],['60','OVR 60+'],['70','OVR 70+'],['80','OVR 80+'],['under60','Under 60']])}
@@ -146,7 +173,7 @@ Object.assign(UI, {
       .filter(p => UI._faSalaryMode === 'any' || salaryValue == null || (UI._faSalaryMode === 'under' ? demandFor(p, my) <= salaryValue : demandFor(p, my) >= salaryValue)));
     const typedInput = (prop, label, min, step, placeholder) => `<div class="field" style="min-width:120px"><label>${label}</label><input type="number" min="${min}" step="${step}" value="${esc(UI[prop])}" placeholder="${placeholder}" onchange="UI.${prop}=this.value;UI.render()"></div>`;
     const freeAgentContent = `
-      <div class="btnrow" style="flex-wrap:wrap">${posFilters}</div>
+      <div class="btnrow" style="flex-wrap:wrap">${posFilters(p => freeAgents.filter(q => q.pos === p || q.pos2 === p).length)}</div>
       <div class="card" style="margin-bottom:10px">
         <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
           ${typedInput('_faMinAge','Min age',16,1,'Any')}
@@ -168,9 +195,9 @@ Object.assign(UI, {
 
     return `<h1 class="page">Recruitment</h1>
     <p class="page-sub">Watch targets, lodge pre-contract approaches, and sign free agents.</p>
-    ${approachStatus}
-    <div class="btnrow" style="margin-top:12px">${tabBtn('shortlist',`★ Shortlist (${shortlisted.length})`)}${tabBtn('browse','Browse all players')}${tabBtn('freeAgents','Free Agents')}</div>
-    <div style="margin-top:10px">${UI._recTab==='shortlist' ? shortlistContent : UI._recTab==='freeAgents' ? freeAgentContent : browseContent}</div>`;
+    ${squadNeeds}
+    <div class="btnrow" style="margin-bottom:10px">${tabBtn('shortlist',`★ Shortlist (${shortlisted.length})`)}${tabBtn('browse','Browse all players')}${tabBtn('freeAgents','Free Agents')}</div>
+    <div>${UI._recTab==='shortlist' ? shortlistContent : UI._recTab==='freeAgents' ? freeAgentContent : browseContent}</div>`;
   },
 
   setRecruitmentSort(key){

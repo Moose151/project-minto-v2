@@ -35,7 +35,10 @@ Object.assign(UI, {
       player:        n.playerId && G.players[n.playerId] && (G.players[n.playerId].morale||50) < 50
         ? `<button class="btn sm primary" onclick="UI.playerMeeting(${n.playerId})">One-on-one meeting</button>`
         : `<button class="btn sm primary" onclick="UI.go('squad')">Squad</button>`,
-      board:         `<button class="btn sm primary" onclick="UI.go('club-management')">Club Management</button>`,
+      transfer:      n.playerId && G.players[n.playerId]
+        ? `<button class="btn sm primary" style="background:var(--red)" onclick="UI.handleTransferRequest(${n.playerId})">Handle request</button>`
+        : '',
+      board:         `<button class="btn sm primary" onclick="UI.go('coach')">Coach</button>`,
       finance:       `<button class="btn sm primary" onclick="UI.go('club-management')">Club Management</button>`,
       milestone:     `<button class="btn sm primary" onclick="UI.go('squad')">Squad</button>`,
       league:        `<button class="btn sm primary" onclick="UI.go('ladder')">Ladder</button>`,
@@ -71,6 +74,7 @@ Object.assign(UI, {
       ['board',          'Board'],
       ['origin',         'State of Origin'],
       ['player',         'Player Messages'],
+      ['transfer',       'Transfer Requests'],
       ['recommendation', 'Staff Reports'],
       ['form',           'Form Alerts'],
       ['scouting',       'Scouting'],

@@ -215,7 +215,7 @@ Object.assign(UI, {
           <div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(m.teamTalk.desc)}</div>
           <div style="font-size:11px;margin-top:6px;color:var(--green)">+${m.teamTalk.moraleD} morale to starting 13${m.teamTalk.cohD>0?` · +${m.teamTalk.cohD} cohesion`:m.teamTalk.cohD<0?` · ${m.teamTalk.cohD} cohesion`:''}</div>
         </div>`
-      : `<div class="card" style="margin-bottom:10px;border-color:var(--accent-a30);padding:12px 14px">
+      : `<div class="card" style="margin-bottom:10px;border-color:var(--accent-line);padding:12px 14px">
           <h2 class="sec" style="margin-top:0;margin-bottom:6px">Pre-match team talk</h2>
           <p class="page-sub" style="margin:0 0 10px">Choose your message before kick-off. Your tone affects player morale and cohesion — and that directly changes how the match plays out.</p>
           ${(()=>{
@@ -228,7 +228,7 @@ Object.assign(UI, {
               ${TEAM_TALKS.map(tt => {
                 const effMor = Math.round(tt.moraleD * mmMult);
                 const effCoh = tt.cohD ? Math.round(tt.cohD * mmMult) : 0;
-                return `<button onclick="UI.doTeamTalk(${JSON.stringify(tt).replace(/"/g,'&quot;')})" style="background:var(--hover);border:1px solid ${toneAccent[tt.tone]||'var(--line)'};border-radius:8px;padding:10px 12px;text-align:left;cursor:pointer;transition:background .15s" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='var(--hover)'">
+                return `<button onclick="UI.doTeamTalk(${JSON.stringify(tt).replace(/"/g,'&quot;')})" style="background:var(--hover);border:1px solid ${toneAccent[tt.tone]||'var(--line)'};border-radius:8px;padding:10px 12px;text-align:left;cursor:pointer;transition:background .15s" onmouseover="this.style.background='var(--panel2)'" onmouseout="this.style.background='var(--hover)'">
                   <div style="font-weight:700;font-size:13px;color:${toneAccent[tt.tone]||'var(--ink)'};margin-bottom:4px">${esc(tt.label)}</div>
                   <div style="font-size:11px;color:var(--muted);line-height:1.4;margin-bottom:6px">${esc(tt.desc)}</div>
                   <div style="font-size:10px;font-weight:700;color:var(--green)">+${effMor} morale${effCoh!==0?` · ${effCoh>0?'+':''}${effCoh} cohesion`:''}</div>
@@ -238,26 +238,53 @@ Object.assign(UI, {
           })()}
         </div>`) : '';
     return `<h1 class="page">Match Day</h1>
-    <p class="page-sub" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Round ${G.round+1} · ${slotBadge} ${teamLogo(h,28)} ${esc(teamName(h))} v ${teamLogo(a,28)} ${esc(teamName(a))}</p>
-    ${isMagicRound ? `<div style="background:linear-gradient(135deg,var(--accent-a18),var(--accent-a05));border:1px solid var(--accent-a50);border-radius:8px;padding:10px 14px;margin:6px 0;display:flex;align-items:center;gap:10px">
-      <div style="font-size:20px">✦</div>
-      <div><div style="font-weight:700;color:var(--accent);font-size:14px">Magic Round ${G.year}</div>
-      <div style="font-size:11px;color:var(--muted)">All fixtures at ${esc(G.magicRound.venue)} · Neutral ground — no home advantage for either side${mrHost&&mrHost.id===G.coach.teamId?' · Your club earns a $1.5M hosting fee':''}</div></div>
-    </div>` : ''}
-    ${coachLine}
-    ${standingStrip}
-    ${teamTalkSection}
-    ${focusCard}
-    ${weatherTacticsCard}
-    ${oddsBar}
-    <div class="btnrow"><button class="btn ${UI._matchMode==='result'?'primary':''}" onclick="UI._matchMode='result';UI.render()">Sim result</button><button class="btn ${UI._matchMode==='watch'?'primary':''}" onclick="UI._matchMode='watch';UI.render()">Watch game</button><button class="btn" onclick="UI.go('teamsheet')">Adjust team sheet</button></div>
-    <div class="grid2">
-      <div class="card"><h2 class="sec" style="margin-top:0">${esc(h.nick)} lineup</h2><table><tbody>${Array.from({length:17},(_,i)=>row(h,i)).join('')}</tbody></table></div>
-      <div class="card"><h2 class="sec" style="margin-top:0">${esc(a.nick)} lineup</h2><table><tbody>${Array.from({length:17},(_,i)=>row(a,i)).join('')}</tbody></table></div>
+    <p class="page-sub">Round ${G.round+1} match desk. Review the setup, deliver the talk, then choose a quick sim or live watch.</p>
+    <div class="matchday-hero">
+      <div class="matchday-team">
+        ${teamLogo(h,54)}
+        <div><span>${esc(h.city)}</span><b>${esc(h.nick)}</b></div>
+      </div>
+      <div class="matchday-centre">
+        ${slotBadge}
+        <div class="matchday-v">v</div>
+        <p>${esc(venue)}</p>
+      </div>
+      <div class="matchday-team right">
+        <div><span>${esc(a.city)}</span><b>${esc(a.nick)}</b></div>
+        ${teamLogo(a,54)}
+      </div>
     </div>
-    ${ticketControls}
-    ${watchControls}
-    <div class="btnrow" style="margin-top:16px"><button class="btn primary" onclick="UI.playMatchDay(UI._matchMode==='watch')">${UI._matchMode==='watch'?'Kick off':'Sim to result'}</button></div>`;
+    ${isMagicRound ? `<div class="matchday-notice">
+      <b>Magic Round ${G.year}</b>
+      <span>All fixtures at ${esc(G.magicRound.venue)} · Neutral ground — no home advantage${mrHost&&mrHost.id===G.coach.teamId?' · Your club earns a $1.5M hosting fee':''}</span>
+    </div>` : ''}
+    <div class="matchday-meta">
+      ${coachLine}
+      ${standingStrip}
+      ${oddsBar}
+    </div>
+    <div class="matchday-actions">
+      <div>
+        <button class="btn ${UI._matchMode==='result'?'primary':''}" onclick="UI._matchMode='result';UI.render()">Sim result</button>
+        <button class="btn ${UI._matchMode==='watch'?'primary':''}" onclick="UI._matchMode='watch';UI.render()">Watch game</button>
+        <button class="btn" onclick="UI.go('teamsheet')">Team sheet</button>
+        <button class="btn" onclick="UI.go('tactics')">Tactics</button>
+      </div>
+      <button class="btn primary" onclick="UI.playMatchDay(UI._matchMode==='watch')">${UI._matchMode==='watch'?'Kick off':'Sim to result'}</button>
+    </div>
+    <div class="matchday-layout">
+      <div class="matchday-coaching">
+        ${teamTalkSection}
+        ${focusCard}
+        ${weatherTacticsCard}
+        ${ticketControls}
+        ${watchControls}
+      </div>
+      <div class="matchday-lineups">
+        <div class="card"><div class="ts-card-head"><span class="navsep">${esc(h.nick)} Lineup</span><p>${h.id===t.id?'Your 17':'Opposition 17'}</p></div><div class="matchday-lineup-table"><table><tbody>${Array.from({length:17},(_,i)=>row(h,i)).join('')}</tbody></table></div></div>
+        <div class="card"><div class="ts-card-head"><span class="navsep">${esc(a.nick)} Lineup</span><p>${a.id===t.id?'Your 17':'Opposition 17'}</p></div><div class="matchday-lineup-table"><table><tbody>${Array.from({length:17},(_,i)=>row(a,i)).join('')}</tbody></table></div></div>
+      </div>
+    </div>`;
   },
 
   doTeamTalk(tt){
@@ -737,11 +764,32 @@ Object.assign(UI, {
     const oppNick = myM ? esc(G.teams[myM.h===t.id?myM.a:myM.h].nick) : '';
     const myScore = myM && myM.h===t.id ? liveH : liveA;
     const oppScore = myM && myM.h===t.id ? liveA : liveH;
+    const myDiff = parseInt(myScore) - parseInt(oppScore);
+    const halfLabel = (UI._watchHalf || 1) === 1 ? '1st half' : '2nd half';
+    const sitText = myDiff > 12 ? 'Leading well — protect?' : myDiff > 0 ? `Ahead by ${myDiff}` : myDiff === 0 ? 'Level' : myDiff > -12 ? `Down ${Math.abs(myDiff)} — chase?` : `Down ${Math.abs(myDiff)} — high-risk chase`;
+    const sitCol = myDiff > 6 ? 'var(--green)' : myDiff < -6 ? 'var(--red)' : 'var(--muted)';
+
+    // Squad mood for HT context
+    const moodSnippet = (UI._watchHalf || 1) === 2 ? (() => {
+      const t2 = myTeam();
+      const starters = t2.lineup.slice(0,13).map(id=>G.players[id]).filter(Boolean);
+      if(!starters.length) return '';
+      const avg = Math.round(starters.reduce((s,p)=>s+(p.morale||50),0)/starters.length);
+      const low = starters.filter(p=>(p.morale||50)<40).length;
+      const moodLbl = avg>=70?'Buoyant':avg>=55?'Positive':avg>=40?'Flat':'Low';
+      const moodCol = avg>=70?'var(--green)':avg>=55?'var(--muted)':avg<40?'var(--red)':'var(--accent)';
+      return `<div style="font-size:10px;color:var(--dim);margin-top:4px;padding-top:4px;border-top:1px solid var(--line)">
+        Mood: <span style="color:${moodCol};font-weight:700">${moodLbl}</span> (avg ${avg})${low?` · <span style="color:var(--red)">${low} low</span>`:''}
+      </div>`;
+    })() : '';
+
     return `<div class="card" style="padding:12px;position:sticky;top:8px;max-height:calc(100vh - 100px);overflow-y:auto">
       <div style="text-align:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)">
-        <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Live score</div>
+        <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Live score · ${halfLabel}</div>
         <div style="font-family:var(--disp);font-size:26px;font-weight:900;letter-spacing:.04em"><span id="cp-scoreH">${myScore}</span> – <span id="cp-scoreA">${oppScore}</span></div>
         <div style="font-size:9px;color:var(--dim)">${myNick} v ${oppNick}</div>
+        <div id="cp-situation" style="font-size:11px;color:${sitCol};font-weight:700;margin-top:4px">${sitText}</div>
+        ${moodSnippet}
       </div>
       ${subsHtml}
       <div style="margin-bottom:10px">
@@ -778,6 +826,16 @@ Object.assign(UI, {
     if(panel && UI._watchMyM) panel.innerHTML = UI._buildCoachingPanel(UI._watchMyM);
   },
 
+  _updateCpSituation(myM, myScore, oppScore){
+    const el = document.getElementById('cp-situation');
+    if(!el) return;
+    const diff = myScore - oppScore;
+    const text = diff > 12 ? `Leading by ${diff} — protect?` : diff > 0 ? `Ahead by ${diff}` : diff === 0 ? 'Level' : diff > -12 ? `Down ${Math.abs(diff)} — chase?` : `Down ${Math.abs(diff)} — high-risk chase`;
+    const col = diff > 6 ? 'var(--green)' : diff < -6 ? 'var(--red)' : 'var(--muted)';
+    el.textContent = text;
+    el.style.color = col;
+  },
+
   // ── Live watch engine ───────────────────────────────────────────────────
   // Single setInterval tick — speed changes take effect every tick, pause is a flag.
   // TICK_MS = 50ms (20 ticks/real-sec).
@@ -791,6 +849,7 @@ Object.assign(UI, {
     UI._liveHtPaused = false;
     UI._watchMyM = myM;
     UI._watchPaused = false;
+    UI._watchHalf = 1;
 
     if(UI._liveIntervalId) clearInterval(UI._liveIntervalId);
 
@@ -894,6 +953,7 @@ Object.assign(UI, {
           const myS = myM.h===t.id ? sc.h : sc.a, oppS = myM.h===t.id ? sc.a : sc.h;
           const cph = document.getElementById('cp-scoreH'), cpa = document.getElementById('cp-scoreA');
           if(cph) cph.textContent = myS; if(cpa) cpa.textContent = oppS;
+          UI._updateCpSituation(myM, +myS, +oppS);
         }
       }
     }
@@ -903,6 +963,7 @@ Object.assign(UI, {
       const sc = UI._extractLiveScore(ev.txt);
       if(sc){ const sh=document.getElementById('wg-scoreH'),sa=document.getElementById('wg-scoreA'); if(sh)sh.textContent=sc.h; if(sa)sa.textContent=sc.a; }
       const banner = document.getElementById('wg-banner'); if(banner) banner.textContent = '⏸ HALF TIME';
+      UI._watchHalf = 2;
       UI._refreshCoachPanel();
     }
 

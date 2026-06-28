@@ -4,7 +4,147 @@ _Updated every session._
 
 ## ⏸️ Session Pause Note (for the next assistant)
 
-**Latest session work — morale system, board relationship, man management depth:**
+**Latest session work — Win/loss streak morale, transfer requests, board briefing, bug fix:**
+
+### 1. Win/loss streak morale (`08-progression.js`)
+- After each round completes, checks the coached team's current win/loss streak
+- Win streak 3+: +1 morale per round to all top-squad players; +2 at 4-game, +3 at 5-game streak. Man Management scales the boost (0.7×–1.3×)
+- Loss streak 3+: −1 morale per round; −2 at 4, −3 at 5+. Good Man Management partially mitigates
+- Inbox notification fires at milestone streaks (3-game and 5-game) for both win and loss runs
+- Only fires during regular season, not on bye weeks
+
+### 2. `recentWinStreak` bug fix (`08-progression.js`)
+- `recentWinStreak()` was comparing `f.hScore`/`f.aScore` (undefined) instead of `f.hs`/`f.as` — meaning win streaks were always 0 and the crowd boost from winning streaks was never applying. Fixed.
+- Added `recentLossStreak(teamId)` function alongside it; both exported to `window`
+
+### 3. Transfer request system (`08-progression.js`, `player-modal.js`, `inbox.js`, `squad.js`, `dashboard.js`)
+- Players with morale < 28 AND 5+ consecutive weeks out of the squad trigger a transfer request via `generatePlayerMessages()` — sets `p.transferRequest = true`, prevents duplication
+- Transfer request type inbox message with "Handle request" button (red) → `UI.handleTransferRequest(id)`
+- `handleTransferRequest` modal: 3 options:
+  - **Release**: immediate release to free agency, clean cut
+  - **Promise a path back**: +10 morale (scaled by Man Management), clears request, sets `p.promisedGameTime`
+  - **Reject**: −5 morale, −3 board confidence, player stays but remains unsettled
+- Transfer requests clear at offseason (`delete p.transferRequest` in player reset)
+- "Transfer Requests" added as inbox filter category
+- Board action button in inbox now links to "Coach" page instead of "Club Management"
+- Squad Alerts card counts transfer requests; dashboard shows a red alert when any player has requested a transfer
+- Player modal squad label shows "Transfer request lodged" in red; squad table status column shows "Transfer req." badge
+
+### 4. Board season briefing (`11-offseason.js`)
+- Replaced the bare `addNews(...)` season-start message with a richer "Board Season Briefing" inbox item
+- Includes: season target (label + position required), salary cap, board confidence sentiment, contract years remaining
+- Confidence-aware tone: "full confidence" at 75+, "watching closely" at 40–55, "under pressure" below 40
+
+### 5. Previous session work carried forward
+- See previous session entries below for Squad page, Recruitment Squad Needs, coaching panel changes
+
+---
+
+**Previous session work — Squad page overhaul, Recruitment Squad Needs panel, coaching panel situational awareness:**
+
+### 1. Squad page full overhaul (`squad.js`)
+- Added `UI._squadPos` state variable (persists position filter across re-renders)
+- Added 4-card summary header strip: Cap Usage (bar + room/over), Squad Size (fill bar, T&T/youth footnote), Availability (injured count, fit bar), Alerts (expiring contracts + low morale, links to Contracts)
+- Added position filter pills (All / FB / WG / CE / FE / HB / PR / HK / SR / LK) each showing count of main squad players at that position — clicking filters the main squad table in-place
+- Nav buttons moved to a flex row: position pills left, page-link buttons right (Team sheet, Injury ward, Contracts, Sign T&T)
+- `playerRow()` enhanced:
+  - Condition column: number + 3px mini-bar (red/amber/green)
+  - Morale column: number + 3px mini-bar + rotation badge ("Out Xw" in red / "Xw starter" in green)
+  - Contract Yrs cell: red+bold for ≤1 year, amber for 2 years
+  - OVR delta (season gain) preserved
+
+### 2. Recruitment page Squad Needs panel (`recruitment.js`)
+- Added Squad Needs card at the top of the Recruitment page (always visible regardless of which tab is active)
+- Shows all 9 positions in compact tiles: your squad count + "avail" count from the browse pool
+- Tiles are colour-coded: red border = thin (≤1), amber = needs depth (2), green = covered (3+)
+- Clicking a position tile jumps to the Browse tab filtered to that position
+- Approach limit status moved into this card (right-aligned)
+- Previous `approachStatus` paragraph removed
+- Position filter pills on Browse and Free Agents tabs now show the count of available players at each position
+
+### 3. Watch-game coaching panel situational awareness (`matchday.js`)
+- `UI._watchHalf` initialized to `1` in `_startLiveWatch`; set to `2` at the HT event
+- `_buildCoachingPanel` score header now shows half label ("1st half" / "2nd half") and a contextual situation line: "Leading by X", "Trailing by X — chase?", "Down X — high-risk chase", "Level"
+- Situation line is colour-coded: green if leading comfortably, red if down significantly, muted if close/level
+- `id="cp-situation"` injected into the panel's score section — updated in-place by `_updateCpSituation(myM, myS, oppS)` on every scoring event without a full panel refresh
+- `_updateCpSituation()` method added
+- At second-half entry (panel refresh at HT), adds a squad mood snippet: starting 13 average morale + "X low" warning if any starters are below 40 morale — gives coaching context for HT sub decisions
+
+### 4. Build
+- `npm run build` clean after all changes (54 modules, no errors)
+
+### 5. Current UI priority
+- Next best targets: Transfer/recruitment window (mid-season loan/free agency), win/loss streak morale, board season briefing at season start.
+- Alternatively: deeper set-by-set match engine (Feature A) for more realistic live watching.
+- Avoid spending time on mobile layout unless explicitly requested.
+
+---
+
+**Previous session work — desktop UI overhaul pass:**
+
+### 1. App shell/navigation overhaul (`index.html`, `01-core.js`, `styles.css`)
+- Moved `#nav` inside `#shell` and replaced the old two-row horizontal hub/sub-tab navigation with a persistent left sidebar.
+- Sidebar shows all game areas at once, grouped by My Club / Squad / Competition / Football Ops / League.
+- Added page metadata so the topbar shows the current view label.
+- Added `Offseason` to the My Club nav group.
+- Fixed render ordering bug where off-season page redirects happened after `topbar()`, causing stale page labels such as "Dashboard" while the Preseason page was showing.
+- Desktop is the priority for this UI pass; mobile compatibility is explicitly not a focus right now.
+
+### 2. Visual system refresh (`styles.css`)
+- Darker, calmer desktop management-sim palette and updated card/table/button styling.
+- Native selects/dropdowns now use `color-scheme: dark`, dark control faces, readable text, and a custom arrow so filter dropdowns no longer render as bright white browser controls.
+- Tables, dashboard status tiles, alerts, news cards, modals, and repeated cards were tightened for desktop density.
+
+### 3. Team Sheet overhaul (`teamsheet.js`, `styles.css`)
+- Rebuilt Team Sheet into a desktop "selection desk" layout:
+  - left panel: grouped Starting XIII (Back three, Centres, Halves, Middle unit, Edges)
+  - middle panel: 17-man metrics, compact pitch, interchange, reserves
+  - right panel: Squad Pool with sort/position filters and captain/goal-kicker summary
+- Preserved drag/drop and click-to-pick modal workflows.
+- Added clearer submit/compliance banner.
+- Reduced pitch dominance and added internal scrolling for long starter/pool lists.
+- Slot picker modal still works and shows effective OVR comparisons.
+
+### 4. Tactics page overhaul (`tactics.js`, `styles.css`)
+- Reworked Tactics into a desktop coaching desk:
+  - left panel: Match Identity with Attack Focus, Game Intent, Offload Risk, Defensive Style
+  - right panel: Opponent Report and Specialists
+  - lower section: Field Position Plan and Position Roles
+- Replaced stacked form fields with option cards and summary chips for the current tactical identity.
+- Team specialist selectors now show the currently selected player and rating context in compact cards.
+- Existing tactical state and match-engine wiring preserved (`myTeam().matchPrefs`, `roles`, `zoneTactics`, `positionRoles`).
+
+### 5. Match Day pre-match overhaul (`matchday.js`, `styles.css`)
+- Reworked the pre-match Match Day page into a desktop match desk:
+  - fixture hero with both teams, slot badge, venue/weather/crowd/ticket context
+  - metadata strip for coaches, standings/form, odds, and prediction link
+  - action rail for sim/watch/team sheet/tactics plus the main play button
+  - coaching stack for team talk, tactical focus, weather tactics, tickets, watch controls
+  - side-by-side lineup panels with internal scrolling
+- Preserved existing team talk, match mode, ticket, weather, watch-game, and `UI.playMatchDay()` behavior.
+- Fixed two stale CSS variable references in Match Day inline styles (`--accent-a30`, `--card2`) so the team talk card no longer renders a bright border/undefined hover color.
+
+### 6. Verification
+- `npm run frontend:build` passes after the shell/dropdown/team-sheet work.
+- Checked live rendered screenshots in headless Chrome for:
+  - setup wizard
+  - regular dashboard
+  - Contracts dropdown/filter row
+  - Team Sheet
+  - Team Sheet slot picker modal
+  - Tactics page
+  - Match Day page
+- Checked Tactics page body for accidental `undefined` text in headless Chrome.
+- Checked Match Day page body for accidental `undefined` text in headless Chrome.
+
+### 7. Current UI priority
+- Continue the desktop-first UI overhaul.
+- Good next targets: watch-game coaching panel, Recruitment/Contracts filtering, Squad/player list scanning.
+- Avoid spending time on mobile layout unless explicitly requested later.
+
+---
+
+**Previous session work — morale system, board relationship, man management depth:**
 
 ### 1. Rotation-based morale (`08-progression.js` — `weeklyRecoveryAndDev`)
 - Top-squad players consistently dropped from the 17 lose morale each week: −1 after 2w out, −2 after 3w, −3 after 5w+

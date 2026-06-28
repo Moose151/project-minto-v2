@@ -28,6 +28,8 @@ Object.assign(UI, {
     const topSquad = t.players.map(id=>G.players[id]).filter(p=>p && p.squad==='top');
     const avgMorale = topSquad.length ? Math.round(topSquad.reduce((s,p)=>s+(p.morale||50),0)/topSquad.length) : 50;
     const droppedRisk = topSquad.filter(p=>(p.weeksDropped||0)>=4 && !p.injury).length;
+    const transferReqs = topSquad.filter(p=>p.transferRequest);
+    if(transferReqs.length) alerts.push({tone:'bad', title:`Transfer request${transferReqs.length>1?'s':''}`, body:`${transferReqs.map(p=>p.name).join(', ')} ${transferReqs.length>1?'have':'has'} requested a transfer. Handle it from the inbox.`, action:`<button class="btn sm primary" onclick="UI.go('inbox')">Inbox</button>`});
     if(avgMorale < 40) alerts.push({tone:'bad', title:'Squad morale low', body:`Average squad morale is ${avgMorale}. Team talks, positive results, and consistent selection will help.`, action:`<button class="btn sm" onclick="UI.go('training')">Squad mood</button>`});
     else if(droppedRisk >= 3) alerts.push({tone:'neutral', title:'Rotation discontent', body:`${droppedRisk} top-squad players have been out of the 17 for 4+ weeks and are losing morale.`, action:`<button class="btn sm" onclick="UI.go('training')">Review</button>`});
     if(!alerts.length && G.phase==='regular') alerts.push({tone:'good', title:'Week in hand', body:`The club is ${ord(pos)} and ready for the next round. Review training or play on.`, action:`<button class="btn sm" onclick="UI.go('training')">Training</button>`});

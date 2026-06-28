@@ -230,6 +230,33 @@ export function completeRound(roundIdx){
     G.coach.conf = clamp((G.coach.conf||50) + confD, 0, 100);
     addNews(body, {title, type:'board', tone, tag:'Board', teamId:G.coach.teamId, r:halfwayRound, y:G.year});
   }
+
+  // Form streak morale — winning/losing runs affect squad mood
+  if(!onBye && G.round >= 3){
+    const mt = myTeam();
+    const mm = (G.coach.attrs && G.coach.attrs.manMgmt) || 40;
+    const mmFactor = 0.7 + (mm / 99) * 0.6; // 0.7× at mm=0, 1.3× at mm=99
+    const wStreak = recentWinStreak(G.coach.teamId);
+    const lStreak = recentLossStreak(G.coach.teamId);
+    if(wStreak >= 3){
+      const boost = Math.round((wStreak >= 5 ? 3 : wStreak >= 4 ? 2 : 1) * mmFactor);
+      for(const id of mt.players){
+        const p = G.players[id]; if(p && p.squad==='top') p.morale = clamp((p.morale||50)+boost, 5, 99);
+      }
+      if(wStreak === 3 || wStreak === 5){
+        addNews(`${mt.nick} are on a ${wStreak}-game winning run — the squad is energised.`, {title:`${wStreak}-Game Winning Streak`, type:'club', tone:'good', tag:'Form', teamId:G.coach.teamId});
+      }
+    } else if(lStreak >= 3){
+      const penalty = Math.round((lStreak >= 5 ? 3 : lStreak >= 4 ? 2 : 1) * (1.4 - mmFactor * 0.4));
+      for(const id of mt.players){
+        const p = G.players[id]; if(p && p.squad==='top') p.morale = clamp((p.morale||50)-Math.max(1,penalty), 5, 99);
+      }
+      if(lStreak === 3 || lStreak === 5){
+        addNews(`${mt.nick} have now lost ${lStreak} in a row. Confidence in the group is wavering.`, {title:`${lStreak}-Game Losing Streak`, type:'club', tone:'bad', tag:'Form', teamId:G.coach.teamId});
+      }
+    }
+  }
+
   return {type:'round', round, roundIdx, myM, onBye};
 }
 export function completeRoundIfReady(roundIdx){
@@ -477,8 +504,25 @@ export function recentWinStreak(teamId){
   played.sort((a, b) => b.rIdx - a.rIdx);
   let streak = 0;
   for(const {f} of played.slice(0, 8)){
-    const won = f.h === teamId ? f.hScore > f.aScore : f.aScore > f.hScore;
+    const won = f.h === teamId ? f.hs > f.as : f.as > f.hs;
     if(won) streak++;
+    else break;
+  }
+  return streak;
+}
+export function recentLossStreak(teamId){
+  const played = [];
+  (G.fixtures || []).forEach((round, rIdx) => {
+    if(!round) return;
+    for(const f of round){
+      if(f && f.played && (f.h === teamId || f.a === teamId)) played.push({f, rIdx});
+    }
+  });
+  played.sort((a, b) => b.rIdx - a.rIdx);
+  let streak = 0;
+  for(const {f} of played.slice(0, 8)){
+    const lost = f.h === teamId ? f.hs < f.as : f.as < f.hs;
+    if(lost) streak++;
     else break;
   }
   return streak;
@@ -1243,11 +1287,21 @@ export function generatePlayerMessages(){
   const players = mt.players.map(id=>G.players[id]).filter(p=>p && (p.squad==='top' || p.squad==='dev' || p.squad==='trial'));
   const eligible = players.filter(p=>!p.injury && (p._lastPlayerMessageRound == null || round - p._lastPlayerMessageRound >= 6));
   if(!eligible.length) return;
-  const lowMorale = eligible.filter(p=>(p.morale||50) <= 38 && p.squad==='top').sort((a,b)=>(a.morale||50)-(b.morale||50));
+  const transferWanted = eligible.filter(p=>p.squad==='top' && (p.morale||50) < 28 && (p.weeksDropped||0) >= 5 && !p.transferRequest).sort((a,b)=>(a.morale||50)-(b.morale||50));
+  const lowMorale = eligible.filter(p=>(p.morale||50) <= 38 && p.squad==='top' && !(p.weeksDropped>=5&&(p.morale||50)<28)).sort((a,b)=>(a.morale||50)-(b.morale||50));
   const youthPath = eligible.filter(p=>p.squad==='dev' && p.age<=20 && p.ovr>=54).sort((a,b)=>b.pot-a.pot);
   const inForm = eligible.filter(p=>p.squad==='top' && (p.form||50)>=78 && (p.s.g||0)>=3).sort((a,b)=>(b.form||50)-(a.form||50));
   let p, title, body, tone;
-  if(lowMorale.length){
+  if(transferWanted.length){
+    p = transferWanted[0];
+    p.transferRequest = true;
+    p._lastPlayerMessageRound = round;
+    title = 'Transfer Request';
+    body = `${p.name} has formally requested a transfer. ${p.weeksDropped||0} weeks out of the squad and morale at rock bottom — he believes his future lies elsewhere.`;
+    tone = 'bad';
+    addNews(body, {title, type:'transfer', tone, playerId:p.id, teamId:mt.id, tag:'Transfer', r:round, y:G.year});
+    return;
+  } else if(lowMorale.length){
     p = lowMorale[0];
     title = 'Player Message';
     body = `${p.name} has asked for a one-on-one conversation. He feels his role and morale need attention before frustration becomes a bigger issue.`;
@@ -1326,7 +1380,7 @@ if (typeof window !== 'undefined') Object.assign(window, {
   teamFacilityLevel, teamFacilityAverage, facilityUnderConstruction, stadiumCapacity,
   tickConstruction, facilityUpgradeCost, facilityPrestige, clubPrestigeScore, clubPrestigeTier,
   aiTicketPrice, aiMembershipPrice, leagueTicketInfo, leagueClubPrices,
-  recentWinStreak, matchCrowd, weeklyRecoveryAndDev, staffMultiplier, positionalCoachMultiplier,
+  recentWinStreak, recentLossStreak, matchCrowd, weeklyRecoveryAndDev, staffMultiplier, positionalCoachMultiplier,
   PHYSICAL_ATTRS, TECHNICAL_ATTRS, MENTAL_ATTRS, positionKeyAttrs, developPlayer,
   handleIndividualTraining, payCoachWeekly, payClubWeekly, aiUseFreeAgents,
   auditContractPromises, coachWeekly, generateWeeklyMedia, generateStaffRecommendations,

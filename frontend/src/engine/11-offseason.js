@@ -937,7 +937,7 @@ export function startNewSeason(){
       if(t.id===G.coach.teamId) addNews(`${p.name}'s train & trial contract has expired — released to free agency.`,{type:'contract',tone:'neutral',tag:'Contracts',teamId:t.id});
     }
   }
-  for(const id in G.players){ const p=G.players[id]; resetSeasonStats(p); p.morale=clamp(p.morale, 45, 90); p.form=clamp(Math.round((p.form == null ? 50 : p.form)*0.72 + 50*0.28), 25, 85); p.ovr=calcOvr(p); p.pot=Math.max(p.pot,p.ovr); p.seasonStartOvr=p.ovr; p.seasonStartPot=p.pot; p.seasonStartGames=p.career.games; p.seasonStartAttrs={...p.attrs}; delete p.approachTeam; delete p.weeksDropped; delete p.weeksStarting; if(p.ovrHistory){ p.ovrHistory.push({year:G.year, ovr:p.ovr}); if(p.ovrHistory.length>20) p.ovrHistory.shift(); } }
+  for(const id in G.players){ const p=G.players[id]; resetSeasonStats(p); p.morale=clamp(p.morale, 45, 90); p.form=clamp(Math.round((p.form == null ? 50 : p.form)*0.72 + 50*0.28), 25, 85); p.ovr=calcOvr(p); p.pot=Math.max(p.pot,p.ovr); p.seasonStartOvr=p.ovr; p.seasonStartPot=p.pot; p.seasonStartGames=p.career.games; p.seasonStartAttrs={...p.attrs}; delete p.approachTeam; delete p.weeksDropped; delete p.weeksStarting; delete p.transferRequest; if(p.ovrHistory){ p.ovrHistory.push({year:G.year, ovr:p.ovr}); if(p.ovrHistory.length>20) p.ovrHistory.shift(); } }
   for(const t of G.teams){ t.rep = Math.round(squadStrength(t)); autoPick(t); }
   const fixtResult = genFixtures(G.teams.map(t=>t.id), G.config.seasonRounds);
   G.fixtures = fixtResult.rounds;
@@ -987,7 +987,15 @@ export function startNewSeason(){
     G.scouting.scouts = G.scouting.scouts.filter(s=>s.yearsLeft>0);
   }
   replenishFreeAgents();
-  addNews(`Season ${G.year} begins. Salary cap: ${money(G.config.cap)}. Board expectation: ${G.coach.expect.label}.`);
+  // Board season briefing — richer opening inbox message
+  const mt = myTeam();
+  const conf = G.coach.conf || 50;
+  const expect = G.coach.expect || {};
+  const confLine = conf >= 75 ? 'The board has full confidence in your direction.' : conf >= 55 ? 'The board\'s confidence in your leadership remains solid.' : conf >= 40 ? 'The board is watching closely — results this season are important.' : 'The board is under pressure to see improvement. Do not start the season slowly.';
+  const contractLine = (G.coach.contractYears || 0) <= 1 ? `Your contract expires at the end of this season — a strong run will secure an extension.` : `You have ${G.coach.contractYears} year${G.coach.contractYears>1?'s':''} remaining on your deal.`;
+  const capLine = `Salary cap: ${money(G.config.cap)}.`;
+  const targetLine = `Season target: ${expect.label || 'Finals qualification'} — finish ${ord(expect.minPos || 8)} or better.`;
+  addNews(`${targetLine} ${capLine} ${confLine} ${contractLine}`, {title:`${G.year} Board Season Briefing`, type:'board', tone: conf>=55?'good':conf>=40?'neutral':'bad', tag:'Board', teamId:G.coach.teamId, y:G.year});
 }
 export function updateAiClubFacilities(){
   if(!G || !G.teams || typeof ensureTeamFacilities !== 'function') return;

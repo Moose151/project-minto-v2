@@ -30,9 +30,11 @@ Object.assign(UI, {
       ? 'Youth squad'
       : p.squad === 'trial'
         ? `T&T ${trialGamesUsed(p)}/${TRIAL_GAME_CAP}g`
+        : p.transferRequest ? `Transfer request lodged`
         : (p.weeksDropped >= 3) ? `Out of 17 · ${p.weeksDropped}w`
         : (p.weeksStarting >= 3) ? `Regular starter · ${p.weeksStarting}w`
         : 'Main squad';
+    const squadLabelColor = p.transferRequest ? 'var(--red)' : (p.weeksDropped >= 3) ? 'var(--red)' : (p.weeksStarting >= 3) ? 'var(--green)' : 'var(--muted)';
 
     // Quality tier
     const displayOvr = isMyTeam ? p.ovr : scoutedOvr(p).mid;
@@ -140,7 +142,7 @@ Object.assign(UI, {
       </div>
       <div class="player-score"><span class="lbl">Condition</span><b>${Math.round(p.cond)}%</b><em>${p.injury?esc(p.injury.n)+' · '+p.injury.weeks+'w':'Available'}</em></div>
       <div class="player-score"><span class="lbl">Form</span><b>${formHtml(p)}</b><em>week-to-week confidence</em></div>
-      <div class="player-score"><span class="lbl">Morale</span><b>${Math.round(p.morale)}%</b><em>${squadLabel}</em></div>
+      <div class="player-score"><span class="lbl">Morale</span><b>${Math.round(p.morale)}%</b><em style="color:${squadLabelColor}">${squadLabel}</em></div>
       <div class="player-score"><span class="lbl">Contract</span><b>${money(currentSalary(p))}</b><em>${contractTypeLabel(p.contractType)} · ${Math.max(0,p.years)} yr${Math.max(0,p.years)===1?'':'s'} left</em></div>
       <div class="player-score">
         <span class="lbl">Quality</span>
@@ -445,6 +447,60 @@ Object.assign(UI, {
     }
     UI.closeModal();
     UI.toast(`Met with ${p.name} — morale +${morD}.`);
+    autoSave();
+  },
+
+  handleTransferRequest(id){
+    const p = G.players[id]; if(!p) return;
+    const t = myTeam();
+    const mm = (G.coach.attrs && G.coach.attrs.manMgmt) || 40;
+    const mmLabel = mm >= 70 ? 'high' : mm >= 50 ? 'average' : 'low';
+    const demand = demandFor(p, t);
+    UI.modal(`<h3>Transfer Request — ${esc(p.name)}</h3>
+      <p class="page-sub">${p.pos} · Age ${p.age} · OVR ${p.ovr} · ${p.weeksDropped||0} weeks out of squad · Morale ${Math.round(p.morale||50)}</p>
+      <div class="card" style="padding:10px 14px;margin-bottom:12px;border-color:var(--red)">
+        <p style="margin:0;font-size:13px;color:var(--ink)">${p.name} has formally requested a transfer. He feels his future at this club is over and wants to move on. How do you respond?</p>
+      </div>
+      <div style="display:grid;gap:8px;margin-bottom:14px">
+        <button onclick="UI._resolveTransfer(${id},'release')" class="btn" style="border-color:var(--red);color:var(--red);text-align:left;padding:10px 14px">
+          <b>Release him</b><br><span style="font-size:11px;color:var(--muted)">Cut ties immediately — he becomes a free agent. No cap hit from next season. He may demand a payout.</span>
+        </button>
+        <button onclick="UI._resolveTransfer(${id},'promise')" class="btn" style="text-align:left;padding:10px 14px">
+          <b>Promise him a path back in</b><br><span style="font-size:11px;color:var(--muted)">Commit to selection — +10 morale, clears the request. Your Man Management (${mmLabel}) matters here. He'll watch closely.</span>
+        </button>
+        <button onclick="UI._resolveTransfer(${id},'keep')" class="btn" style="text-align:left;padding:10px 14px">
+          <b>Reject the request — he's staying</b><br><span style="font-size:11px;color:var(--muted)">He remains but morale drops further (−5). Board confidence −3. Risk of ongoing disruption.</span>
+        </button>
+      </div>
+      <p style="font-size:11px;color:var(--dim)">Market value if released: ~${money(demand)}/yr. ${t.players.length > 25?'You have depth to cover his exit.':'Releasing him leaves a gap in the squad.'}</p>
+      <button class="btn sm" onclick="UI.closeModal()">Decide later</button>`);
+  },
+
+  _resolveTransfer(id, action){
+    const p = G.players[id]; if(!p) return;
+    const t = myTeam();
+    const mm = (G.coach.attrs && G.coach.attrs.manMgmt) || 40;
+    if(action === 'release'){
+      t.players = t.players.filter(pid => pid !== id);
+      t.lineup = (t.lineup || []).map(pid => pid === id ? null : pid);
+      p.squad = null; p.transferRequest = false;
+      if(!G.freeAgents) G.freeAgents = [];
+      if(!G.freeAgents.includes(id)) G.freeAgents.push(id);
+      addNews(`${p.name} released following his transfer request. He is now a free agent.`, {type:'contract', tone:'neutral', tag:'Contracts', teamId:G.coach.teamId});
+      UI.closeModal(); UI.toast(`${p.name} released.`); UI.render();
+    } else if(action === 'promise'){
+      const morBoost = Math.round(10 * (0.7 + (mm/99) * 0.6));
+      p.morale = clamp((p.morale || 50) + morBoost, 5, 99);
+      p.promisedGameTime = true; p.promiseConcern = 0;
+      p.transferRequest = false;
+      addNews(`${p.name} withdraws his transfer request after a conversation with the coaching staff. He returns to the squad with a fresh mindset.`, {type:'player', tone:'good', tag:'Player Message', playerId:id, teamId:G.coach.teamId});
+      UI.closeModal(); UI.toast(`${p.name} stays — morale +${morBoost}.`); UI.render();
+    } else {
+      p.morale = clamp((p.morale || 50) - 5, 5, 99);
+      G.coach.conf = clamp((G.coach.conf || 50) - 3, 0, 100);
+      addNews(`${p.name}'s transfer request has been rejected. He remains at the club but the situation remains fragile.`, {type:'player', tone:'bad', tag:'Player Message', playerId:id, teamId:G.coach.teamId});
+      UI.closeModal(); UI.toast(`Request rejected — ${p.name} stays but remains unsettled.`); UI.render();
+    }
     autoSave();
   },
 });
