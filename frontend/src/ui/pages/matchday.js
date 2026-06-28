@@ -415,6 +415,22 @@ Object.assign(UI, {
           <span id="wg-poss-lbl-a" style="font-size:11px;font-weight:700;color:var(--dim)">${esc(a.nick)}</span>
         </div>
         <div id="wg-banner" style="font-size:12px;color:var(--muted);margin-top:6px">Kick off — 80 min match</div>
+        <div id="wg-stats-bar" style="display:flex;align-items:center;justify-content:center;gap:0;margin-top:8px;font-size:11px;color:var(--muted);border:1px solid var(--line);border-radius:6px;overflow:hidden">
+          <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;text-align:center">
+            <div style="padding:4px 6px;border-right:1px solid var(--line)"><div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em">Tries</div><b id="wg-stat-tries-h" style="font-size:15px">0</b></div>
+            <div style="padding:4px 6px;border-right:1px solid var(--line)"><div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em">Line Breaks</div><b id="wg-stat-lb-h" style="font-size:15px">0</b></div>
+            <div style="padding:4px 6px"><div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em">Errors</div><b id="wg-stat-err-h" style="font-size:15px;color:var(--red)">0</b></div>
+          </div>
+          <div style="padding:4px 10px;background:var(--bg);border-left:1px solid var(--line);border-right:1px solid var(--line);white-space:nowrap;text-align:center">
+            <div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em">Poss</div>
+            <span id="wg-stat-poss" style="font-size:11px;color:var(--muted)">—</span>
+          </div>
+          <div style="flex:1;display:grid;grid-template-columns:1fr 1fr 1fr;text-align:center">
+            <div style="padding:4px 6px;border-left:1px solid var(--line)"><div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em">Errors</div><b id="wg-stat-err-a" style="font-size:15px;color:var(--red)">0</b></div>
+            <div style="padding:4px 6px;border-left:1px solid var(--line)"><div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em">Line Breaks</div><b id="wg-stat-lb-a" style="font-size:15px">0</b></div>
+            <div style="padding:4px 6px;border-left:1px solid var(--line)"><div style="font-size:9px;color:var(--dim);text-transform:uppercase;letter-spacing:.08em">Tries</div><b id="wg-stat-tries-a" style="font-size:15px">0</b></div>
+          </div>
+        </div>
         <div style="font-size:10px;color:var(--dim);margin-top:2px">${esc(myM.det&&myM.det.venue||'Stadium')} · ${esc(myM.det&&myM.det.weather||'')} · ${((myM.det&&myM.det.crowd)||0).toLocaleString()} crowd</div>
       </div>
 
@@ -605,6 +621,7 @@ Object.assign(UI, {
       }
     }
     const poss = UI._wgPossTeam;
+    if(UI._liveStats) { if(poss==='h') UI._liveStats.hPoss++; else UI._liveStats.aPoss++; UI._updateLiveStatsBar(); }
     const ballH = document.getElementById('wg-ball-h');
     const ballA = document.getElementById('wg-ball-a');
     const lblH = document.getElementById('wg-poss-lbl-h');
@@ -617,6 +634,28 @@ Object.assign(UI, {
       const dot = document.getElementById('wg-tck-' + n);
       if(dot) dot.style.background = n <= (UI._wgTackle || 1) ? 'var(--accent)' : 'var(--line)';
     }
+  },
+
+  _updateLiveStatsBar(){
+    if(!UI._liveStats) return;
+    const s = UI._liveStats;
+    const total = s.hPoss + s.aPoss;
+    const hPct = total > 0 ? Math.round(s.hPoss / total * 100) : 50;
+    const aPct = 100 - hPct;
+    const elTH = document.getElementById('wg-stat-tries-h');
+    const elTA = document.getElementById('wg-stat-tries-a');
+    const elPoss = document.getElementById('wg-stat-poss');
+    const elLBH = document.getElementById('wg-stat-lb-h');
+    const elLBA = document.getElementById('wg-stat-lb-a');
+    const elEH = document.getElementById('wg-stat-err-h');
+    const elEA = document.getElementById('wg-stat-err-a');
+    if(elTH) elTH.textContent = s.hTries;
+    if(elTA) elTA.textContent = s.aTries;
+    if(elPoss && total > 10) elPoss.textContent = `Poss ${hPct}%–${aPct}%`;
+    if(elLBH) elLBH.textContent = s.hLB||0;
+    if(elLBA) elLBA.textContent = s.aLB||0;
+    if(elEH) elEH.textContent = s.hErr||0;
+    if(elEA) elEA.textContent = s.aErr||0;
   },
 
   _wgDragStart(event, fromSlot){
@@ -850,6 +889,7 @@ Object.assign(UI, {
     UI._watchMyM = myM;
     UI._watchPaused = false;
     UI._watchHalf = 1;
+    UI._liveStats = {hTries:0, aTries:0, hPoss:0, aPoss:0};
 
     if(UI._liveIntervalId) clearInterval(UI._liveIntervalId);
 
@@ -956,6 +996,11 @@ Object.assign(UI, {
           UI._updateCpSituation(myM, +myS, +oppS);
         }
       }
+      if(ev.evType==='try' && UI._liveStats){
+        const homeScored = myM && G.teams[myM.h] && ev.txt.includes(G.teams[myM.h].nick+':');
+        if(homeScored) UI._liveStats.hTries++; else UI._liveStats.aTries++;
+        UI._updateLiveStatsBar();
+      }
     }
 
     // HT: refresh panel + scoreboard
@@ -973,6 +1018,24 @@ Object.assign(UI, {
       if(UI._liveIntervalId){ clearInterval(UI._liveIntervalId); UI._liveIntervalId = null; }
       UI._handleFullTime(myM);
       return;
+    }
+
+    // Track errors and line breaks for stats bar
+    if(UI._liveStats && myM && (ev.evType==='error' || ev.evType==='narrative')){
+      const th = G.teams[myM.h];
+      if(ev.evType==='error'){
+        const homeErr = th && ev.txt.includes('('+th.nick+')');
+        if(homeErr) UI._liveStats.hErr = (UI._liveStats.hErr||0)+1;
+        else UI._liveStats.aErr = (UI._liveStats.aErr||0)+1;
+        UI._updateLiveStatsBar();
+      } else if(ev.txt && (ev.txt.includes('breaks the line')||ev.txt.includes('sprints clear')||ev.txt.includes('charges through')
+          ||ev.txt.includes('gets to the edge')||ev.txt.includes('drives through the middle')||ev.txt.includes('bursts through')
+          ||ev.txt.includes('steps inside')||ev.txt.includes('cuts inside and sprints'))){
+        const homeLB = th && ev.txt.includes('('+th.nick+')');
+        if(homeLB) UI._liveStats.hLB = (UI._liveStats.hLB||0)+1;
+        else UI._liveStats.aLB = (UI._liveStats.aLB||0)+1;
+        UI._updateLiveStatsBar();
+      }
     }
 
     UI._updatePossession(myM, ev);

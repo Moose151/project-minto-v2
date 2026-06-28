@@ -4,7 +4,38 @@ _Updated every session._
 
 ## ⏸️ Session Pause Note (for the next assistant)
 
-**Latest session work — Win/loss streak morale, transfer requests, board briefing, bug fix:**
+**Latest session work — Tactics + Team Sheet UI rewrites, post-match form boosts, injury replacement alert:**
+
+### 1. Tactics page rewrite (`tactics.js`, `styles.css`)
+- New desktop two-column layout: left = Match Identity panel, right = Opponent Report + Specialists
+- `tacticControl()` helper renders each setting as a card-style choice grid with label, active highlight, and subtitle hint
+- `tactic-summary` chips at the top of the identity card shows current Attack/Intent/Offloads/Defence at a glance
+- Role selector cards show chosen player name + OVR instead of bare select labels
+- All existing tactical state (`matchPrefs`, `roles`, `zoneTactics`, `positionRoles`) preserved and wired as before
+
+### 2. Team Sheet page rewrite (`teamsheet.js`, `styles.css`)
+- Starting XIII grouped by position unit (Back three, Centres, Halves, Middle unit, Edges) with `.ts-group` sections
+- Submit-state consolidated into a `ts-submit-card` component: grey = ready, green = submitted, red = issues
+- Issues list surfaces inline (up to 3 shown) before the user can confirm
+- Existing drag/drop, click-to-pick modal, slot picker, and compliance logic all preserved
+
+### 3. Post-match form boosts (`08-progression.js` — `generateWeeklyMedia`)
+- After each match, player form moves based on their match rating:
+  - Rating ≥8.5 → +6 form, ≥7.5 → +3, ≤5.5 → −1, ≤4.5 → −4
+- `clamp(0, 100)` applied; applied before the injury/news block
+
+### 4. Injury replacement alert (`08-progression.js`, `inbox.js`)
+- Injury news item now carries `injPos: item.p.pos`
+- In inbox, injury items with `injPos` show "Find [POS] cover" button instead of "Injury Ward"
+- Button pre-sets `UI._recPos` and `UI._recTab = 'freeAgents'` then navigates to Recruitment
+
+### 5. Build and git
+- `npm run build` clean
+- Committed and pushed: all changes in one commit `d9a14f2`
+
+---
+
+**Previous session work — Win/loss streak morale, transfer requests, board briefing, bug fix:**
 
 ### 1. Win/loss streak morale (`08-progression.js`)
 - After each round completes, checks the coached team's current win/loss streak
