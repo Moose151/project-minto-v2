@@ -179,12 +179,26 @@ Object.assign(UI, {
       const lS = `${lastIH?lastFx.hs:lastFx.as}–${lastIH?lastFx.as:lastFx.hs}`;
       return `<span style="font-size:11px;color:var(--muted)">H2H this season: <b>${myW}W ${myL}L${myD?' '+myD+'D':''}</b> · Last: ${lS}</span>`;
     })() : '';
+    // Opponent's last 4 completed matches
+    const oppRecentFx = G.fixtures.slice(0, G.round).flat()
+      .filter(fx => fx.played && (fx.h === oppTeam.id || fx.a === oppTeam.id))
+      .slice(-4);
+    const oppFormLine = oppRecentFx.length ? oppRecentFx.map(fx => {
+      const isH = fx.h === oppTeam.id;
+      const pf = isH ? fx.hs : fx.as, pa = isH ? fx.as : fx.hs;
+      const won = pf > pa, drew = pf === pa;
+      const other = G.teams[isH ? fx.a : fx.h];
+      const col = won ? 'var(--green)' : drew ? 'var(--muted)' : 'var(--red)';
+      const lbl = won ? 'W' : drew ? 'D' : 'L';
+      const rdNum = fx.det ? fx.det.round + 1 : '';
+      return `<span style="font-size:11px"><span style="color:${col};font-weight:700">${lbl}</span> <span style="color:var(--muted)">${pf}–${pa}${other?' v '+esc(other.nick):''}${rdNum?' (Rd '+rdNum+')':''}</span></span>`;
+    }).join(' &nbsp;') : '';
     const standingStrip = `<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:4px 0 8px;font-size:12px">
       <span>${teamLogo(t,20)} <b>${esc(t.nick)}</b> <span style="color:var(--muted)">${ord(myPos)} · ${myLadRow.w}–${myLadRow.l}</span> ${formDots(myLadRow)}</span>
       <span style="color:var(--dim)">vs</span>
       <span>${teamLogo(oppTeam,20)} <b>${esc(oppTeam.nick)}</b> <span style="color:var(--muted)">${ord(oppPos)} · ${oppLadRow.w}–${oppLadRow.l}</span> ${formDots(oppLadRow)}</span>
       ${h2hHtml}
-    </div>`;
+    </div>${oppFormLine ? `<div style="font-size:11px;color:var(--muted);margin:-4px 0 8px"><b>${esc(oppTeam.nick)} last ${oppRecentFx.length}:</b> ${oppFormLine}</div>` : ''}`;
     return `<h1 class="page">Match Day</h1>
     <p class="page-sub" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Round ${G.round+1} · ${slotBadge} ${teamLogo(h,28)} ${esc(teamName(h))} v ${teamLogo(a,28)} ${esc(teamName(a))}</p>
     ${isMagicRound ? `<div style="background:linear-gradient(135deg,var(--accent-a18),var(--accent-a05));border:1px solid var(--accent-a50);border-radius:8px;padding:10px 14px;margin:6px 0;display:flex;align-items:center;gap:10px">

@@ -4,7 +4,31 @@ _Updated every session._
 
 ## ⏸️ Session Pause Note (for the next assistant)
 
-**Latest session work — continuous watch-game rewrite (complete):**
+**Latest session work — match report grades, opponent form guide, richer watch-game feed:**
+
+1. **Match grade column** added to the full match report player table (`match-report.js`).
+   Uses the existing `l.r` (1–10 rating computed in `simTeamStats`) and converts to
+   letter grades: A+/A/B+/B/C/D. Sorted by grade descending (highest-rated player first).
+
+2. **Opponent recent form guide** on the matchday page (`matchday.js`). Shows the
+   opposition's last 4 completed match results (W/L/D, score, opponent, round number)
+   in a compact strip below the head-to-head record.
+
+3. **Richer watch-game narrative** (`_buildHalfFeedEvents` in `07-match.js`):
+   - Second line-break event if a player has 3+ LBs in the match
+   - Kicking duel commentary naming the halfback/five-eighth
+   - Late-game fatigue event (63–78 min) naming a forward still working hard
+   - Scoreline context: "This is a real contest" (close) or "looking comfortable now" (big lead)
+   All existing tactic-aware events preserved.
+
+4. **Advance bug defensive fixes** (committed previously):
+   - `advance()` intercepts match days, routes to matchday instead of auto-simming
+   - try-catch around `advanceCalendarDay()` surfaces JS errors as toasts
+   - Stale `_htPending`/`_60Pending` flags cleared in `buildMatchEventStream` and `simGamesForDow`
+
+Build clean: 54 modules, 592 kB, no errors.
+
+**Previous session work — continuous watch-game rewrite (complete):**
 
 Replaced the old three-phase split-match system (0–40 / HT team-talk / 40–60 / 60–80) with a
 fully continuous event stream. Subs and tactical changes can now happen at any point.

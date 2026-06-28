@@ -302,6 +302,55 @@ export function _buildHalfFeedEvents(det_h, det_a, th, ta, finalScoreH, finalSco
       all.push({min: ri(lo+5, hi-5), txt: `${topDefender.name} (${team.nick}) ${tkDesc(topDefender)}`});
     if(errPlayers.length && rnd() < 0.6)
       all.push({min: ri(lo+8, hi), txt: `${errPlayers[0].name} (${team.nick}) ${errDesc()}`});
+    // Second line-break event if multiple breakers
+    if(topLb >= 3 && topBreaker && rnd() < 0.55)
+      all.push({min: ri(Math.min(lo+22, hi-5), hi-2), txt: `${topBreaker.name} (${team.nick}) ${lbDesc(topBreaker)} again — he's been unstoppable tonight.`});
+    // Kicking duel — territory specialist vs kicker
+    const lineupAll = (team.lineup||[]).slice(0,13).map(id=>G.players[id]).filter(Boolean);
+    const topKicker = lineupAll.filter(p=>['HB','FE'].includes(p.pos)).sort((a,b)=>(b.attrs.kickAccuracy||50)-(a.attrs.kickAccuracy||50))[0];
+    if(topKicker && rnd() < 0.35)
+      all.push({min: ri(lo+6, hi-4), txt: pick([
+        `${topKicker.name} (${team.nick}) finds the sideline with a long kick — puts them back inside their own ten.`,
+        `${topKicker.name} (${team.nick}) gets a great kick away and earns repeat set territory.`,
+        `${topKicker.name} (${team.nick}) chips into the in-goal and forces the fullback to come back.`,
+      ])});
+  }
+
+  // Late-game fatigue and closing narrative (65–78 min)
+  const lateLo = Math.max(lo, 63), lateHi = Math.min(hi, 78);
+  if(lateHi > lateLo + 4){
+    const allPlayers = [...Object.keys(det_h).map(id=>G.players[+id]), ...Object.keys(det_a).map(id=>G.players[+id])].filter(Boolean);
+    const forwardPool = allPlayers.filter(p=>['PR','SR','LK'].includes(p.pos) && !p.injury);
+    if(forwardPool.length && rnd() < 0.55){
+      const fw = pick(forwardPool);
+      const teamNick = det_h[fw.id] ? th.nick : ta.nick;
+      all.push({min: ri(lateLo, lateHi), txt: pick([
+        `${fw.name} (${teamNick}) is sucking in air but still getting to every carry — the big men are being asked a lot late in the game.`,
+        `${fw.name} (${teamNick}) goes up again and takes it on — the interchange bench getting a serious workout here.`,
+        `${fw.name} (${teamNick}) is running on empty but refusing to come off — heart of a lion.`,
+        `${fw.name} (${teamNick}) waves away the trainer's attention and digs in — not done yet.`,
+      ])});
+    }
+  }
+
+  // Scoreline context — big-game narrative based on final margin
+  const bigLead = Math.abs(curH - curA) >= 12;
+  const leaderTm = curH > curA ? th : ta;
+  const trailerTm = curH > curA ? ta : th;
+  if(bigLead && rnd() < 0.55){
+    all.push({min: ri(Math.max(lo, 55), Math.min(hi, 76)), txt: pick([
+      `${leaderTm.nick} looking comfortable now — ${trailerTm.nick} need a response.`,
+      `${trailerTm.nick} are throwing everything at it but the clock is working against them.`,
+      `${leaderTm.nick} controlling the ruck and slowing the game down — real game management.`,
+      `${trailerTm.nick} on the attack but ${leaderTm.nick} defending their line well — this might be the result.`,
+    ])});
+  } else if(!bigLead && rnd() < 0.5){
+    all.push({min: ri(Math.max(lo, 50), Math.min(hi, 75)), txt: pick([
+      `This is a real contest — both sides trading heavy blows through the middle.`,
+      `Tight as you like here — any score could be the difference.`,
+      `Both defences holding firm — the next mistake could cost someone dearly.`,
+      `Neither side is giving an inch — it's a genuine battle in the middle of the park.`,
+    ])});
   }
 
   // Tactic-aware narrative events — context-sensitive, composite construction

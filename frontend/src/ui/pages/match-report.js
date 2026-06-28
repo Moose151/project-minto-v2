@@ -102,6 +102,15 @@ Object.assign(UI, {
     }).join('');
 
     // Full player stat table for one team
+    const matchGrade = r => {
+      if(!r) return '<span style="color:var(--dim)">—</span>';
+      if(r >= 9.0) return '<span style="color:#c9a227;font-weight:700">A+</span>';
+      if(r >= 8.0) return '<span style="color:var(--green);font-weight:700">A</span>';
+      if(r >= 7.0) return '<span style="color:var(--green)">B+</span>';
+      if(r >= 6.0) return 'B';
+      if(r >= 5.0) return '<span style="color:var(--muted)">C</span>';
+      return '<span style="color:var(--red)">D</span>';
+    };
     const playerStatTable = (det, teamNick) => {
       const rows = Object.entries(det)
         .map(([id,l])=>({p:G.players[+id], l}))
@@ -113,6 +122,7 @@ Object.assign(UI, {
           <thead><tr style="color:var(--muted);font-size:10px">
             <th class="noclick" style="text-align:left;padding:3px 4px">Player</th>
             <th class="noclick" style="padding:2px 3px">Pos</th>
+            <th class="noclick num" style="padding:2px 3px">Grade</th>
             <th class="noclick num" style="padding:2px 3px">T</th>
             <th class="noclick num" style="padding:2px 3px">TA</th>
             <th class="noclick num" style="padding:2px 3px">G</th>
@@ -127,6 +137,7 @@ Object.assign(UI, {
             <tr style="border-bottom:1px solid var(--line);cursor:pointer" onclick="UI.playerModal(${p.id})">
               <td style="padding:4px 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:120px">${esc(p.name)}</td>
               <td style="padding:2px 3px"><span class="pos-tag" style="font-size:9px">${p.pos}</span></td>
+              <td class="num" style="padding:2px 3px">${matchGrade(l.r)}</td>
               <td class="num" style="padding:2px 3px;color:${(l.t||0)?'var(--green)':'inherit'}">${l.t||'—'}</td>
               <td class="num" style="padding:2px 3px;color:var(--muted)">${l.ta||'—'}</td>
               <td class="num" style="padding:2px 3px">${l.gl!=null&&l.ga!=null?l.gl+'/'+l.ga:'—'}</td>
