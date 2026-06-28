@@ -6,6 +6,15 @@ _Updated every session._
 
 **Latest session work — Sin bin/send-off system, golden point, milestones, farewell, rival interest, live stats:**
 
+### 12. Coach attribute development from season results (`11-offseason.js`)
+- At end of each season in `startOffseason()`, coach attrs grow based on performance
+- Tactics: +1 if top 4, +2 if premiership
+- Man Management: +1 if average squad morale was ≥ 62 at season end
+- Player Development: +1 if 2+ youth players (age ≤ 23) had positive OVR growth this season
+- Recruitment: +1 if finished above expectation (better than `G.coach.expect.minPos`)
+- All capped at 95; uses `p.seasonStartOvr` (set at start of each season) for youth growth detection
+- Fires "Coach Development" inbox item listing which attributes improved
+
 ### 11. Sin bin / send-off system (`07-match.js`, `matchday.js`)
 - Each match chunk (0–40, 40–60, 60–80) independently rolls a 9% chance per team for a sin bin
 - Sin bin: 10-minute penalty; reduces that team's expected tries for the chunk by ~13% and boosts opponent by ~8%

@@ -55,6 +55,32 @@ export function startOffseason(){
   G.coach.history.unshift({year:G.year, team:teamName(myTeam()), pos:myPos, premier:G.finals.premier===G.coach.teamId, w:myLadRow.w, l:myLadRow.l, d:myLadRow.d});
   checkAchievements('season', {lad, best, rookie, myPos});
   for(const id in G.players) recordPlayerSeason(G.players[id]);
+
+  // Coach attribute growth from season experience
+  if(G.coach.attrs){
+    const ca = G.coach.attrs;
+    const wasPrem = G.finals.premier === G.coach.teamId;
+    const topFour = myPos <= 4;
+    const mt2 = myTeam();
+    const topSquad2 = mt2.players.map(id=>G.players[id]).filter(p=>p && p.squad==='top');
+    const avgMorale2 = topSquad2.length ? topSquad2.reduce((s,p)=>s+(p.morale||50),0)/topSquad2.length : 50;
+    const youthGrown = topSquad2.filter(p=>p && p.age<=23 && p.ovr>(p.seasonStartOvr||p.ovr)).length;
+    const beatExpect = myPos < (G.coach.expect && G.coach.expect.minPos || 8);
+    const tacGain = wasPrem ? 2 : topFour ? 1 : 0;
+    const mmGain  = avgMorale2 >= 62 ? 1 : 0;
+    const devGain = youthGrown >= 2 ? 1 : 0;
+    const recGain = beatExpect ? 1 : 0;
+    const gains = [];
+    if(tacGain){ ca.tactics     = clamp((ca.tactics||40)+tacGain, 20, 95); gains.push(`Tactical Coaching +${tacGain}`); }
+    if(mmGain) { ca.manMgmt     = clamp((ca.manMgmt||40)+mmGain,  20, 95); gains.push(`Man Management +${mmGain}`); }
+    if(devGain){ ca.development = clamp((ca.development||40)+devGain, 20, 95); gains.push(`Player Development +${devGain}`); }
+    if(recGain){ ca.recruitment = clamp((ca.recruitment||40)+recGain, 20, 95); gains.push(`Recruitment +${recGain}`); }
+    if(gains.length){
+      addNews(`End-of-season review: ${gains.join(', ')}. Another year of experience adds to your coaching credentials.`,
+        {title:'Coach Development', type:'coach', tone:'good', tag:'Coach', r:G.round||1, y:G.year});
+    }
+  }
+
   // retirements
   for(const t of G.teams){
     t.players = t.players.filter(id=>{
