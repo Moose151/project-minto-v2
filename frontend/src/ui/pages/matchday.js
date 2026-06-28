@@ -411,8 +411,18 @@ Object.assign(UI, {
     const gameplanOpts = [['attacking','Attacking'],['balanced','Balanced'],['grinding','Grinding']];
     const gameplanSel = gameplanOpts.map(([v,l])=>`<option value="${v}" ${(t.plan||'balanced')===v?'selected':''}>${l}</option>`).join('');
 
+    const liveH = (typeof document !== 'undefined' && document.getElementById('wg-scoreH')?.textContent) || (myM && myM._liveH != null ? myM._liveH : '0');
+    const liveA = (typeof document !== 'undefined' && document.getElementById('wg-scoreA')?.textContent) || (myM && myM._liveA != null ? myM._liveA : '0');
+    const myNick = myM ? esc(G.teams[myM.h===t.id?myM.h:myM.a].nick) : '';
+    const oppNick = myM ? esc(G.teams[myM.h===t.id?myM.a:myM.h].nick) : '';
+    const myScore = myM && myM.h===t.id ? liveH : liveA;
+    const oppScore = myM && myM.h===t.id ? liveA : liveH;
     return `<div class="card" style="padding:12px;position:sticky;top:8px;max-height:calc(100vh - 100px);overflow-y:auto">
-      <div style="font-size:10px;font-weight:700;text-transform:uppercase;color:var(--accent);letter-spacing:.07em;margin-bottom:10px">Coaching</div>
+      <div style="text-align:center;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--line)">
+        <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Live score</div>
+        <div style="font-family:var(--disp);font-size:26px;font-weight:900;letter-spacing:.04em"><span id="cp-scoreH">${myScore}</span> – <span id="cp-scoreA">${oppScore}</span></div>
+        <div style="font-size:9px;color:var(--dim)">${myNick} v ${oppNick}</div>
+      </div>
       ${subsHtml}
       <div style="margin-bottom:10px">
         <div style="font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:700">Attack focus</div>
@@ -491,8 +501,20 @@ Object.assign(UI, {
       + '<span style="color:var(--dim);font-size:11px;min-width:28px;flex-shrink:0">' + minLabel + '</span>'
       + '<span style="' + color + '">' + esc(ev.txt) + '</span></div>';
     box.scrollTop = box.scrollHeight;
-    // Live score update
-    if(isScore){ const sc=UI._extractLiveScore(ev.txt); if(sc){const sh=document.getElementById('wg-scoreH'),sa=document.getElementById('wg-scoreA');if(sh)sh.textContent=sc.h;if(sa)sa.textContent=sc.a;} }
+    // Live score update — main scoreboard and coaching panel mini-score
+    if(isScore){
+      const sc=UI._extractLiveScore(ev.txt);
+      if(sc){
+        const sh=document.getElementById('wg-scoreH'),sa=document.getElementById('wg-scoreA');
+        if(sh)sh.textContent=sc.h; if(sa)sa.textContent=sc.a;
+        const cph=document.getElementById('cp-scoreH'),cpa=document.getElementById('cp-scoreA');
+        if(myM){
+          const t=myTeam();
+          const myS=myM.h===t.id?sc.h:sc.a, oppS=myM.h===t.id?sc.a:sc.h;
+          if(cph)cph.textContent=myS; if(cpa)cpa.textContent=oppS;
+        }
+      }
+    }
     // Banner + coaching panel refresh at half-time
     if(isHT){
       const banner=document.getElementById('wg-banner'); if(banner) banner.textContent='⏸ HALF TIME';

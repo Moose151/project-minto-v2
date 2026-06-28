@@ -1170,6 +1170,27 @@ export function buildMatchEventStream(m, isFinal){
     if(ev.pts===1) events.push({...ev, evType:'fieldgoal', stoppage:true});
   }
 
+  // Momentum shift: back-to-back tries (≤6 min gap) for same team
+  const tryEvStream = events.filter(e=>e.evType==='try').sort((a,b)=>a.min-b.min);
+  for(let i=1;i<tryEvStream.length;i++){
+    const prev=tryEvStream[i-1], curr=tryEvStream[i];
+    if(curr.min-prev.min<=6 && curr.min-prev.min>=1){
+      const prevH = prev.txt.includes(th.nick+':');
+      const currH = curr.txt.includes(th.nick+':');
+      if(prevH===currH){
+        const team = prevH ? th : ta;
+        const gap = curr.min-prev.min;
+        events.push({min:Math.max(prev.min+1, curr.min-1), evType:'narrative', stoppage:false,
+          txt: pick([
+            `${team.nick} have scored twice in ${gap} minutes — momentum has swung completely.`,
+            `Back-to-back tries for ${team.nick}! This crowd is electric.`,
+            `${team.nick} are on fire — two tries in quick succession and everything has changed here.`,
+            `Two tries in ${gap} minutes — ${team.nick} are controlling this game now.`,
+          ])});
+      }
+    }
+  }
+
   // Full-time marker
   events.push({min:80, evType:'fulltime', stoppage:false,
     txt:`FULL TIME — ${th.nick} ${m.hs}–${m.as} ${ta.nick}`});
