@@ -1202,9 +1202,16 @@ export function buildMatchEventStream(m, isFinal){
     }
   }
 
-  // Full-time marker
-  events.push({min:80, evType:'fulltime', stoppage:false,
-    txt:`FULL TIME — ${th.nick} ${m.hs}–${m.as} ${ta.nick}`});
+  // Full-time marker; for golden point matches, add ET announcement and defer FT to after GP
+  if(m._goldenPoint){
+    events.push({min:80, evType:'narrative', stoppage:false,
+      txt:`SCORES LEVEL at ${m._preGpHs}–${m._preGpAs} at full time — the game goes to golden point extra time!`});
+    events.push({min:83, evType:'fulltime', stoppage:false,
+      txt:`FULL TIME — ${th.nick} ${m.hs}–${m.as} ${ta.nick} (Golden Point)`});
+  } else {
+    events.push({min:80, evType:'fulltime', stoppage:false,
+      txt:`FULL TIME — ${th.nick} ${m.hs}–${m.as} ${ta.nick}`});
+  }
 
   events.sort((a,b)=>a.min-b.min);
   return events;

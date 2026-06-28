@@ -2,8 +2,37 @@
 
 /* ---------- finals ---------- */
 export function _newFinalMatch(h, a){ return {h, a, played:false, hs:0, as:0, det:null}; }
-export function _w(m){ return m.hs >= m.as ? m.h : m.a; }
-export function _l(m){ return m.hs >= m.as ? m.a : m.h; }
+export function _w(m){ return m.hs > m.as ? m.h : m.as > m.hs ? m.a : m._gpWinner || m.h; }
+export function _l(m){ return m.hs > m.as ? m.a : m.as > m.hs ? m.h : (m._gpWinner === m.h ? m.a : m.h); }
+
+export function resolveIfDraw(m){
+  if(!m || m.hs !== m.as) return;
+  const th = G.teams[m.h], ta = G.teams[m.a];
+  // Determine golden point winner from each team's best kicker
+  const kicScore = t => {
+    const lineup = (t.lineup || []).slice(0,13).map(id=>G.players[id]).filter(Boolean);
+    const kicker = lineup.sort((a,b)=>(b.attrs.placeKick||b.attrs.kicking||50)-(a.attrs.placeKick||a.attrs.kicking||50))[0];
+    return kicker ? ((kicker.attrs.placeKick||kicker.attrs.kicking||50)*0.6 + (kicker.attrs.composure||50)*0.2 + (kicker.attrs.kickAccuracy||50)*0.2) : 50;
+  };
+  const hScore = kicScore(th), aScore = kicScore(ta);
+  const total = hScore + aScore;
+  const hWins = rnd() < (hScore / total);
+  m._gpWinner = hWins ? m.h : m.a;
+  const winner = hWins ? th : ta;
+  m._preGpHs = m.hs; m._preGpAs = m.as;
+  if(hWins) m.hs += 1; else m.as += 1;
+  m._goldenPoint = true;
+  const isMyGame = m.h === G.coach.teamId || m.a === G.coach.teamId;
+  const kicker = (winner.lineup||[]).slice(0,13).map(id=>G.players[id]).filter(Boolean)
+    .sort((a,b)=>(b.attrs.placeKick||b.attrs.kicking||50)-(a.attrs.placeKick||a.attrs.kicking||50))[0];
+  const kickerName = kicker ? kicker.name : 'the kicker';
+  const gpLine = `GOLDEN POINT — ${kickerName} (${winner.nick}) slots a field goal in extra time to win ${m.hs}–${m.as}. ${winner.nick} advance!`;
+  if(m.det){
+    m.det.events = m.det.events || [];
+    m.det.events.push({min:82, pts:1, txt:gpLine, evType:'fieldgoal', stoppage:true});
+  }
+  addNews(gpLine, {title:'Golden Point!', type:'match', tone:isMyGame?(hWins===G.coach.teamId===m.h?'good':'bad'):'neutral', tag:'Finals', teamId:winner.id});
+}
 
 export function startFinals(){
   G.phase = 'finals';
@@ -64,7 +93,7 @@ export function advanceFinals(){
 
 export function _advanceTop8(F){
   if(F.week === 1){
-    for(const m of F.qf) simMatch(m, true);
+    for(const m of F.qf){ simMatch(m, true); resolveIfDraw(m); }
     weeklyRecoveryAndDev();
     payCoachWeekly();
     payClubWeekly(F.qf);
@@ -87,7 +116,7 @@ export function _advanceTop8(F){
   }
 
   if(F.week === 2){
-    for(const m of F.sf) simMatch(m, true);
+    for(const m of F.sf){ simMatch(m, true); resolveIfDraw(m); }
     weeklyRecoveryAndDev();
     payCoachWeekly();
     payClubWeekly(F.sf);
@@ -104,7 +133,7 @@ export function _advanceTop8(F){
   }
 
   if(F.week === 3){
-    for(const m of F.pf) simMatch(m, true);
+    for(const m of F.pf){ simMatch(m, true); resolveIfDraw(m); }
     weeklyRecoveryAndDev();
     payCoachWeekly();
     payClubWeekly(F.pf);
@@ -118,7 +147,7 @@ export function _advanceTop8(F){
   }
 
   if(F.week === 4){
-    simMatch(F.gf, true);
+    simMatch(F.gf, true); resolveIfDraw(F.gf);
     weeklyRecoveryAndDev();
     payCoachWeekly();
     payClubWeekly([F.gf]);
@@ -129,7 +158,7 @@ export function _advanceTop8(F){
 export function _advanceTop4(F){
   if(F.week === 1){
     const matches = F.qf;
-    for(const m of matches) simMatch(m, true);
+    for(const m of matches){ simMatch(m, true); resolveIfDraw(m); }
     weeklyRecoveryAndDev();
     payCoachWeekly();
     payClubWeekly(matches);
@@ -143,7 +172,7 @@ export function _advanceTop4(F){
   }
 
   if(F.week === 2){
-    simMatch(F.gf, true);
+    simMatch(F.gf, true); resolveIfDraw(F.gf);
     weeklyRecoveryAndDev();
     payCoachWeekly();
     payClubWeekly([F.gf]);
@@ -168,5 +197,5 @@ export function _declareChampion(F){
 }
 
 if (typeof window !== 'undefined') Object.assign(window, {
-  startFinals, advanceFinals,
+  startFinals, advanceFinals, resolveIfDraw,
 });
