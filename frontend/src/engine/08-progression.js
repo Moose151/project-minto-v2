@@ -583,7 +583,13 @@ export function weeklyRecoveryAndDev(){
           const medicBonus = isMine && medic ? medic.ability/220 : 0;
           if(rnd() < medicBonus + medFacilityBonus) p.injury.weeks = Math.max(0, p.injury.weeks-1);
         }
-        if(p.injury.weeks<=0){ p.injury=null; p.playInjured=false; p.cond=Math.min(p.cond,80); }
+        if(p.injury.weeks<=0){
+          p.injury=null; p.playInjured=false; p.cond=Math.min(p.cond,80);
+          if(p.careerThreat){ delete p.careerThreat;
+            if(isMine) addNews(`${p.name} has completed his rehabilitation and is back in training. A serious question mark is now behind him.`,
+              {title:'Comeback — Career Threat Cleared', type:'injury', tone:'good', playerId:p.id, teamId:t.id, tag:'Medical', r:G.round+1, y:G.year});
+          }
+        }
       }
       if(p.suspended && p.suspended.weeks > 0){ p.suspended.weeks--; if(p.suspended.weeks<=0) p.suspended=null; }
 
@@ -1010,15 +1016,22 @@ export function generateWeeklyMedia(round, myM){
     const replacementHint = weeksOut >= 3 && isStarter
       ? ` Consider checking the <b>Free Agent</b> pool for ${item.p.pos} cover.`
       : '';
-    addNews(`${item.p.name} picked up ${item.l.inj} against ${opp.nick} and is expected to miss ${weeksOut} week${weeksOut===1?'':'s'}.${replacementHint}`, {
-      title: injuries.length > 1 ? 'Casualty Ward Fills' : 'Injury Report',
-      type: 'injury',
-      tone: 'bad',
-      playerId: item.p.id,
-      teamId: mt.id,
-      tag: 'Medical',
-      injPos: item.p.pos,
-    });
+    if(item.p.careerThreat){
+      addNews(
+        `${item.p.name} has suffered a potentially career-threatening ${item.l.inj} and is expected to miss ${weeksOut} week${weeksOut===1?'':'s'}. The club will support him through what could be a very long road back.`,
+        {title:`Career-Threatening: ${item.p.name}`, type:'injury', tone:'bad', playerId:item.p.id, teamId:mt.id, tag:'Medical', injPos:item.p.pos}
+      );
+    } else {
+      addNews(`${item.p.name} picked up ${item.l.inj} against ${opp.nick} and is expected to miss ${weeksOut} week${weeksOut===1?'':'s'}.${replacementHint}`, {
+        title: injuries.length > 1 ? 'Casualty Ward Fills' : 'Injury Report',
+        type: 'injury',
+        tone: 'bad',
+        playerId: item.p.id,
+        teamId: mt.id,
+        tag: 'Medical',
+        injPos: item.p.pos,
+      });
+    }
   }
 
   // Post-match analysis: richer item for the inbox

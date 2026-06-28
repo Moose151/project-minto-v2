@@ -828,6 +828,7 @@ export function simTeamStats(t, tries, out, kickSkill, weatherCtx, opts){
       x.p.injuries = x.p.injuries || [];
       x.p.injuries.unshift({y:G.year, r:G.round+1, n:inj.n, weeks:x.p.injury.weeks});
       if(x.p.injury.weeks >= 4) x.p.attrs.injury = clamp(x.p.attrs.injury - ri(1,3), 20, 99);
+      if(x.p.injury.weeks >= 16 && rnd() < 0.30) x.p.careerThreat = true;
       line.inj = inj.n;
       line.injMin = isHalf
         ? (isFinalChunk ? ri(62,79) : isEarlySecond ? ri(41,59) : ri(10,39))

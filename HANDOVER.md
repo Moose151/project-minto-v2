@@ -6,6 +6,13 @@ _Updated every session._
 
 **Latest session work — Sin bin/send-off system, golden point, milestones, farewell, rival interest, live stats:**
 
+### 15. Career-threatening injury system (`07-match.js`, `08-progression.js`, `11-offseason.js`)
+- When a player suffers an injury of 16+ weeks (ACL-type), 30% chance it becomes career-threatening (`p.careerThreat = true`)
+- If career-threatening, `generateWeeklyMedia` fires a "Career-Threatening: [Player]" inbox item instead of a normal injury report
+- When the player returns from injury, `weeklyRecoveryAndDev` fires a "Comeback — Career Threat Cleared" good-tone news (only for coached team players), and clears `p.careerThreat`
+- In offseason retirements: career-threatened players have +30% retirement chance and an additional 18% flat chance of retiring regardless of age/OVR
+- Creates meaningful long-term consequences for serious injuries
+
 ### 14. Upset alerts and media pressure storylines (`08-progression.js`)
 - After each round, checks other matches for upsets: lower-ranked team (pos ≥ 8) beats top-4 side by 10+ pts → "Upset!" inbox item with named teams and score
 - Max one upset alert per round; doesn't fire for matches involving the coached team (already covered by post-match analysis)

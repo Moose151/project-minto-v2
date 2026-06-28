@@ -85,7 +85,8 @@ export function startOffseason(){
   for(const t of G.teams){
     t.players = t.players.filter(id=>{
       const p = G.players[id];
-      const retire = p.age>=33 && rnd() < (p.age-31)*.22 || (p.age>=31 && p.ovr<55 && rnd()<.4);
+      const ctBonus = p.careerThreat ? 0.30 : 0;
+      const retire = p.age>=33 && rnd() < (p.age-31)*.22 + ctBonus || (p.age>=31 && p.ovr<55 && rnd()<.4) || (p.careerThreat && rnd() < 0.18);
       if(retire){
         const hof = considerHallOfFame(p, t);
         G.offseason.retirements.push({name:p.name, age:p.age, team:t.nick, games:p.career.games, hallOfFame:!!hof});
