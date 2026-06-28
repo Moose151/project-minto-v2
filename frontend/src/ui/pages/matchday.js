@@ -199,6 +199,44 @@ Object.assign(UI, {
       <span>${teamLogo(oppTeam,20)} <b>${esc(oppTeam.nick)}</b> <span style="color:var(--muted)">${ord(oppPos)} · ${oppLadRow.w}–${oppLadRow.l}</span> ${formDots(oppLadRow)}</span>
       ${h2hHtml}
     </div>${oppFormLine ? `<div style="font-size:11px;color:var(--muted);margin:-4px 0 8px"><b>${esc(oppTeam.nick)} last ${oppRecentFx.length}:</b> ${oppFormLine}</div>` : ''}`;
+    // Team talk section
+    const TEAM_TALKS = [
+      { key:'fire',     label:'Fire them up',       desc:'We\'re going out there to make a statement. High intensity from the first whistle.',        moraleD:8,  cohD:0,  tone:'red'   },
+      { key:'composed', label:'Stay composed',      desc:'Play your game. Trust the structure. The points will come if we execute.',                   moraleD:4,  cohD:5,  tone:'blue'  },
+      { key:'belief',   label:'Back yourselves',    desc:'This group has worked hard for this. Go out and show them what you\'re made of.',            moraleD:6,  cohD:2,  tone:'green' },
+      { key:'pressure', label:'Put them under',     desc:'We\'ve prepared for this opponent. Attack early, force errors, and don\'t let up.',          moraleD:5,  cohD:-2, tone:'orange'},
+      { key:'enjoy',    label:'Enjoy the moment',   desc:'This is what you play for. Play free, play together, and enjoy every minute of it.',         moraleD:3,  cohD:4,  tone:'yellow'},
+    ];
+    const toneAccent = { red:'var(--red)', blue:'var(--accent)', green:'var(--green)', orange:'#f59e0b', yellow:'#eab308' };
+    const teamTalkSection = !m.played ? (m.teamTalk
+      ? `<div class="card" style="margin-bottom:10px;border-color:${toneAccent[m.teamTalk.tone]||'var(--accent)'};padding:10px 14px">
+          <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px">Team talk delivered</div>
+          <div style="font-size:14px;font-weight:700;color:${toneAccent[m.teamTalk.tone]||'var(--accent)'}">${esc(m.teamTalk.label)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(m.teamTalk.desc)}</div>
+          <div style="font-size:11px;margin-top:6px;color:var(--green)">+${m.teamTalk.moraleD} morale to starting 13${m.teamTalk.cohD>0?` · +${m.teamTalk.cohD} cohesion`:m.teamTalk.cohD<0?` · ${m.teamTalk.cohD} cohesion`:''}</div>
+        </div>`
+      : `<div class="card" style="margin-bottom:10px;border-color:var(--accent-a30);padding:12px 14px">
+          <h2 class="sec" style="margin-top:0;margin-bottom:6px">Pre-match team talk</h2>
+          <p class="page-sub" style="margin:0 0 10px">Choose your message before kick-off. Your tone affects player morale and cohesion — and that directly changes how the match plays out.</p>
+          ${(()=>{
+            const mm = (G.coach.attrs && G.coach.attrs.manMgmt) || 40;
+            const mmMult = 0.84 + (mm / 99) * 0.66;
+            const mmLabel = mm >= 70 ? `Man Mgmt ${mm} — high impact` : mm >= 50 ? `Man Mgmt ${mm} — average impact` : `Man Mgmt ${mm} — low impact`;
+            const mmColor = mm >= 70 ? 'var(--green)' : mm >= 50 ? 'var(--accent)' : 'var(--muted)';
+            return `<p style="font-size:11px;color:${mmColor};margin:0 0 10px">Your coaching attribute scales effectiveness · <b>${mmLabel}</b></p>
+            <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px">
+              ${TEAM_TALKS.map(tt => {
+                const effMor = Math.round(tt.moraleD * mmMult);
+                const effCoh = tt.cohD ? Math.round(tt.cohD * mmMult) : 0;
+                return `<button onclick="UI.doTeamTalk(${JSON.stringify(tt).replace(/"/g,'&quot;')})" style="background:var(--hover);border:1px solid ${toneAccent[tt.tone]||'var(--line)'};border-radius:8px;padding:10px 12px;text-align:left;cursor:pointer;transition:background .15s" onmouseover="this.style.background='var(--card2)'" onmouseout="this.style.background='var(--hover)'">
+                  <div style="font-weight:700;font-size:13px;color:${toneAccent[tt.tone]||'var(--ink)'};margin-bottom:4px">${esc(tt.label)}</div>
+                  <div style="font-size:11px;color:var(--muted);line-height:1.4;margin-bottom:6px">${esc(tt.desc)}</div>
+                  <div style="font-size:10px;font-weight:700;color:var(--green)">+${effMor} morale${effCoh!==0?` · ${effCoh>0?'+':''}${effCoh} cohesion`:''}</div>
+                </button>`;
+              }).join('')}
+            </div>`;
+          })()}
+        </div>`) : '';
     return `<h1 class="page">Match Day</h1>
     <p class="page-sub" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">Round ${G.round+1} · ${slotBadge} ${teamLogo(h,28)} ${esc(teamName(h))} v ${teamLogo(a,28)} ${esc(teamName(a))}</p>
     ${isMagicRound ? `<div style="background:linear-gradient(135deg,var(--accent-a18),var(--accent-a05));border:1px solid var(--accent-a50);border-radius:8px;padding:10px 14px;margin:6px 0;display:flex;align-items:center;gap:10px">
@@ -208,6 +246,7 @@ Object.assign(UI, {
     </div>` : ''}
     ${coachLine}
     ${standingStrip}
+    ${teamTalkSection}
     ${focusCard}
     ${weatherTacticsCard}
     ${oddsBar}
@@ -219,6 +258,29 @@ Object.assign(UI, {
     ${ticketControls}
     ${watchControls}
     <div class="btnrow" style="margin-top:16px"><button class="btn primary" onclick="UI.playMatchDay(UI._matchMode==='watch')">${UI._matchMode==='watch'?'Kick off':'Sim to result'}</button></div>`;
+  },
+
+  doTeamTalk(tt){
+    const t = myTeam();
+    const m = G.phase === 'regular' && G.fixtures[G.round]
+      ? G.fixtures[G.round].find(m => m.h === t.id || m.a === t.id)
+      : null;
+    if(!m || m.played || m.teamTalk) return;
+    // Man Management scales effectiveness: 40 = 1.0×, 70 = 1.25×, 99 = 1.5×
+    const mm = (G.coach.attrs && G.coach.attrs.manMgmt) || 40;
+    const mmMult = 0.84 + (mm / 99) * 0.66;
+    const effectiveMorD = Math.round((tt.moraleD || 0) * mmMult);
+    const effectiveCohD = tt.cohD ? Math.round(tt.cohD * mmMult) : 0;
+    m.teamTalk = { ...tt, moraleD: effectiveMorD, cohD: effectiveCohD };
+    // Apply morale boost to the starting 13
+    t.lineup.slice(0, 13).forEach(id => {
+      const p = G.players[id];
+      if(p) p.morale = clamp((p.morale || 50) + effectiveMorD, 5, 99);
+    });
+    // Cohesion boost (positive or negative)
+    if(effectiveCohD) t.cohesion = clamp((t.cohesion || 50) + effectiveCohD, 0, 100);
+    UI.toast(`Team talk: "${tt.label}" — squad is ready.`);
+    UI.render();
   },
 
   setTicketPrice(value){
@@ -248,6 +310,11 @@ Object.assign(UI, {
       UI._watchEarlyMatches = prepRes.earlyMatches || [];
       UI._watchPaused = false;
       UI._subQueue = [];
+      UI._watchTab = 'feed';
+      UI._wgPossTeam = 'h';
+      UI._wgTackle = 1;
+      UI._watchCurrentMin = 0;
+      UI._wgDragFromSlot = null;
       UI.go('watchgame');
       return;
     }
@@ -272,24 +339,16 @@ Object.assign(UI, {
 
     if(!UI._subQueue) UI._subQueue = [];
     if(UI._watchPaused == null) UI._watchPaused = false;
+    if(!UI._watchTab) UI._watchTab = 'feed';
+    if(UI._wgPossTeam == null) UI._wgPossTeam = 'h';
+    if(UI._wgTackle == null) UI._wgTackle = 1;
+    if(UI._watchCurrentMin == null) UI._watchCurrentMin = 0;
+
     const h = G.teams[myM.h], a = G.teams[myM.a];
     const speedVal = UI._watchSpeed || 1;
+    const activeTab = UI._watchTab || 'feed';
 
-    const lineupCol = (team) => {
-      const rows = Array.from({length:17}, (_,i) => {
-        const p = G.players[team.lineup[i]];
-        if(!p) return `<div style="display:flex;gap:6px;align-items:center;padding:2px 0;border-bottom:1px solid var(--line);opacity:.3"><span style="color:var(--dim);min-width:16px;font-size:10px">${i+1}</span><span style="font-size:11px;color:var(--muted)">—</span></div>`;
-        return `<div style="display:flex;gap:6px;align-items:center;padding:2px 0;border-bottom:1px solid var(--line)">
-          <span style="color:var(--dim);min-width:16px;font-size:10px">${i+1}</span>
-          <span style="flex:1;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${esc(p.name)}</span>
-          <span class="pos-tag" style="font-size:9px">${p.pos}</span>
-        </div>`;
-      }).join('');
-      return `<div id="wg-lineup-${team.id}" style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">${esc(team.nick)}</div>${rows}</div>`;
-    };
-
-    // Start streaming after render
-    setTimeout(() => UI._revealFeedContinuous(UI._watchEvents||[], 0, myM), 120);
+    setTimeout(() => UI._startLiveWatch(UI._watchEvents||[], myM), 120);
 
     return `<div style="margin-bottom:12px">
       <div style="background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
@@ -303,32 +362,293 @@ Object.assign(UI, {
         <button id="wg-pause-btn" class="btn sm" onclick="UI._toggleWatchPause()" style="min-width:86px">${UI._watchPaused?'▶ Resume':'⏸ Pause'}</button>
         <button class="btn sm" id="wg-allResultsBtn" style="display:none" onclick="UI.showRoundResults(UI._watchGameRound,UI._watchGameTitle||'Match result')">All results</button>
       </div>
-      <div id="wg-header" style="background:var(--card);border:1px solid var(--line);border-radius:10px;padding:14px;text-align:center;margin-bottom:12px">
+
+      <div id="wg-header" style="background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px 14px;text-align:center;margin-bottom:12px">
         <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap">
           <div style="text-align:center">${teamLogo(h,40)}<div style="font-weight:700;margin-top:4px;font-size:13px">${esc(h.nick)}</div></div>
-          <div style="font-family:var(--disp);font-size:44px;font-weight:900;min-width:110px;text-align:center;letter-spacing:.04em">
-            <span id="wg-scoreH" style="color:var(--dim)">0</span>
-            <span style="color:var(--muted);font-size:28px;margin:0 4px">:</span>
-            <span id="wg-scoreA" style="color:var(--dim)">0</span>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <div style="font-family:var(--disp);font-size:44px;font-weight:900;min-width:110px;text-align:center;letter-spacing:.04em">
+              <span id="wg-scoreH" style="color:var(--dim)">0</span>
+              <span style="color:var(--muted);font-size:28px;margin:0 4px">:</span>
+              <span id="wg-scoreA" style="color:var(--dim)">0</span>
+            </div>
+            <div style="font-family:var(--disp);font-size:18px;font-weight:700;color:var(--accent);min-width:60px;text-align:center" id="wg-clock">0:00</div>
           </div>
           <div style="text-align:center">${teamLogo(a,40)}<div style="font-weight:700;margin-top:4px;font-size:13px">${esc(a.nick)}</div></div>
+        </div>
+        <div id="wg-possession" style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px">
+          <span id="wg-poss-lbl-h" style="font-size:11px;font-weight:700;color:var(--ink)">${esc(h.nick)}</span>
+          <div style="display:flex;align-items:center;gap:3px">
+            <div id="wg-ball-h" style="width:10px;height:10px;border-radius:50%;background:var(--accent);transition:opacity .3s"></div>
+            <div style="display:flex;gap:3px" id="wg-tackle-dots">
+              ${[1,2,3,4,5,6].map(n=>`<div id="wg-tck-${n}" style="width:9px;height:9px;border-radius:2px;background:${n<=1?'var(--accent)':'var(--line)'};transition:background .2s"></div>`).join('')}
+            </div>
+            <div id="wg-ball-a" style="width:10px;height:10px;border-radius:50%;background:var(--accent);transition:opacity .3s;opacity:0.15"></div>
+          </div>
+          <span id="wg-poss-lbl-a" style="font-size:11px;font-weight:700;color:var(--dim)">${esc(a.nick)}</span>
         </div>
         <div id="wg-banner" style="font-size:12px;color:var(--muted);margin-top:6px">Kick off — 80 min match</div>
         <div style="font-size:10px;color:var(--dim);margin-top:2px">${esc(myM.det&&myM.det.venue||'Stadium')} · ${esc(myM.det&&myM.det.weather||'')} · ${((myM.det&&myM.det.crowd)||0).toLocaleString()} crowd</div>
       </div>
-      <div style="display:grid;grid-template-columns:148px 1fr 210px;gap:12px;align-items:start">
-        <div id="wg-lineups">
-          ${lineupCol(h)}
-          ${lineupCol(a)}
-        </div>
+
+      <div style="display:grid;grid-template-columns:1fr 220px;gap:12px;align-items:start">
         <div>
-          <h2 class="sec" style="margin:0 0 8px">Live Feed</h2>
-          <div id="wg-feedBox" style="background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px;min-height:360px;max-height:580px;overflow-y:auto;font-size:13px"></div>
+          <div style="display:flex;gap:6px;margin-bottom:8px">
+            <button id="wg-tab-btn-feed" class="btn sm${activeTab==='feed'?' primary':''}" onclick="UI._switchWatchTab('feed')">Live Feed</button>
+            <button id="wg-tab-btn-stats" class="btn sm${activeTab==='stats'?' primary':''}" onclick="UI._switchWatchTab('stats')">Team List</button>
+          </div>
+          <div id="wg-tab-feed" style="display:${activeTab==='feed'?'block':'none'}">
+            <div id="wg-feedBox" style="background:var(--card);border:1px solid var(--line);border-radius:8px;padding:10px;min-height:360px;max-height:600px;overflow-y:auto;font-size:13px"></div>
+          </div>
+          <div id="wg-tab-stats" style="display:${activeTab==='stats'?'block':'none'}">
+            ${UI._buildTeamStatsTab(myM)}
+          </div>
         </div>
         <div id="wg-coachPanel">${UI._buildCoachingPanel(myM)}</div>
       </div>
       <div id="wg-postMatch" style="display:none;margin-top:16px"></div>
     </div>`;
+  },
+
+  _switchWatchTab(tab){
+    UI._watchTab = tab;
+    const feedDiv = document.getElementById('wg-tab-feed');
+    const statsDiv = document.getElementById('wg-tab-stats');
+    const feedBtn = document.getElementById('wg-tab-btn-feed');
+    const statsBtn = document.getElementById('wg-tab-btn-stats');
+    if(feedDiv) feedDiv.style.display = tab==='feed' ? 'block' : 'none';
+    if(statsDiv){ statsDiv.style.display = tab==='stats' ? 'block' : 'none'; if(tab==='stats') UI._refreshTeamStats(); }
+    if(feedBtn){ feedBtn.classList.toggle('primary', tab==='feed'); }
+    if(statsBtn){ statsBtn.classList.toggle('primary', tab==='stats'); }
+  },
+
+  _buildTeamStatsTab(myM){
+    if(!myM || !myM.det) return '<p style="padding:12px;color:var(--muted);font-size:12px">Loading match data...</p>';
+    const t = myTeam();
+    const myTeamId = G.coach.teamId;
+    const isMineHome = myM.h === myTeamId;
+    const myDet = isMineHome ? myM.det.h : myM.det.a;
+    const oppDet = isMineHome ? myM.det.a : myM.det.h;
+    const myTeamObj = G.teams[myTeamId];
+    const oppTeamObj = G.teams[isMineHome ? myM.a : myM.h];
+    const pct = Math.min((UI._watchCurrentMin || 0) / 80, 1);
+
+    const condBar = (p) => {
+      const cond = Math.round(p.cond || 50);
+      const col = cond >= 70 ? 'var(--green)' : cond >= 50 ? 'var(--accent)' : 'var(--red)';
+      return `<div style="display:flex;align-items:center;gap:3px;min-width:48px">
+        <div style="width:28px;height:5px;background:var(--line);border-radius:2px;overflow:hidden">
+          <div style="height:100%;width:${cond}%;background:${col}"></div>
+        </div>
+        <span style="font-size:9px;color:${col}">${cond}</span>
+      </div>`;
+    };
+
+    const sc = (v) => v != null ? Math.round((v || 0) * pct) : 0;
+    const gradeHtml = (r) => {
+      if(!r || pct < 0.1) return '<span style="color:var(--dim)">—</span>';
+      if(r >= 9) return '<span style="color:#c9a227;font-weight:700">A+</span>';
+      if(r >= 8) return '<span style="color:var(--green);font-weight:700">A</span>';
+      if(r >= 7) return '<span style="color:var(--green)">B+</span>';
+      if(r >= 6) return 'B';
+      if(r >= 5) return '<span style="color:var(--muted)">C</span>';
+      return '<span style="color:var(--red)">D</span>';
+    };
+
+    const instrSel = (p) => {
+      const instr = (t.matchPrefs && t.matchPrefs.playerInstr && t.matchPrefs.playerInstr[p.id]) || 'auto';
+      return `<select style="font-size:9px;padding:1px 2px;max-width:64px;background:var(--card);border:1px solid var(--line);border-radius:3px;color:var(--ink)" onchange="UI._setPlayerInstr(${p.id},this.value)">
+        <option value="auto"${instr==='auto'?' selected':''}>Auto</option>
+        <option value="run"${instr==='run'?' selected':''}>Run hard</option>
+        <option value="defend"${instr==='defend'?' selected':''}>Defend</option>
+        <option value="kick"${instr==='kick'?' selected':''}>Kick</option>
+      </select>`;
+    };
+
+    const myRows = t.lineup.slice(0, 17).map((id, si) => {
+      const p = G.players[id];
+      const isBench = si >= 13;
+      if(!p) return `<tr style="opacity:.3"><td style="font-size:10px;color:var(--dim);padding:3px 4px">${si+1}</td><td colspan="9" style="font-size:10px;color:var(--dim);padding:3px 4px">—</td></tr>`;
+      const line = myDet && myDet[id] ? myDet[id] : {};
+      return `<tr id="wg-prow-${id}" draggable="true" style="cursor:grab;border-bottom:1px solid var(--line)"
+          ondragstart="UI._wgDragStart(event,${si})"
+          ondragover="event.preventDefault();this.style.background='var(--hover)'"
+          ondragleave="this.style.background=''"
+          ondrop="UI._wgDrop(event,${si});this.style.background=''">
+        <td style="font-size:10px;color:var(--dim);padding:3px 4px;white-space:nowrap">${si+1}</td>
+        <td style="font-size:11px;padding:3px 4px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap${isBench?';color:var(--muted)':''}">${esc(p.name)}</td>
+        <td style="padding:3px 4px"><span class="pos-tag" style="font-size:9px">${p.pos}</span></td>
+        <td style="padding:3px 4px">${condBar(p)}</td>
+        <td style="font-size:10px;text-align:right;padding:3px 4px;color:var(--muted)">${sc(line.tk)}</td>
+        <td style="font-size:10px;text-align:right;padding:3px 4px;color:var(--muted)">${sc(line.runs)}</td>
+        <td style="font-size:10px;text-align:right;padding:3px 4px;color:var(--muted)">${sc(line.m)}</td>
+        <td style="font-size:10px;text-align:right;padding:3px 4px;color:var(--muted)">${sc(line.lb)}</td>
+        <td style="font-size:10px;text-align:right;padding:3px 4px">${gradeHtml(line.r)}</td>
+        <td style="padding:3px 4px">${instrSel(p)}</td>
+      </tr>`;
+    }).join('');
+
+    const oppRows = oppTeamObj ? oppTeamObj.lineup.slice(0, 17).map((id, si) => {
+      const p = G.players[id];
+      if(!p) return '';
+      const line = oppDet && oppDet[id] ? oppDet[id] : {};
+      return `<tr style="border-bottom:1px solid var(--line)">
+        <td style="font-size:10px;color:var(--dim);padding:3px 4px">${si+1}</td>
+        <td style="font-size:11px;padding:3px 4px;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap${si>=13?';color:var(--muted)':''}">${esc(p.name)}</td>
+        <td style="padding:3px 4px"><span class="pos-tag" style="font-size:9px">${p.pos}</span></td>
+        <td style="font-size:10px;text-align:right;padding:3px 4px;color:var(--muted)">${sc(line.tk)}</td>
+        <td style="font-size:10px;text-align:right;padding:3px 4px;color:var(--muted)">${sc(line.runs)}</td>
+        <td style="font-size:10px;text-align:right;padding:3px 4px;color:var(--muted)">${sc(line.m)}</td>
+        <td style="font-size:10px;text-align:right;padding:3px 4px;color:var(--muted)">${sc(line.lb)}</td>
+      </tr>`;
+    }).join('') : '';
+
+    const thStyle = 'font-size:9px;color:var(--dim);text-align:left;padding:3px 4px;font-weight:600;border-bottom:1px solid var(--line)';
+    const thR = 'font-size:9px;color:var(--dim);text-align:right;padding:3px 4px;font-weight:600;border-bottom:1px solid var(--line)';
+    return `<div class="card" style="padding:10px">
+      <div style="margin-bottom:14px">
+        <div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">
+          ${esc(myTeamObj.nick)} — drag rows to swap positions
+        </div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr>
+            <th style="${thStyle}">#</th><th style="${thStyle}">Name</th><th style="${thStyle}">Pos</th>
+            <th style="${thStyle}">Cond</th><th style="${thR}">Tk</th><th style="${thR}">Runs</th>
+            <th style="${thR}">Mtrs</th><th style="${thR}">LB</th><th style="${thR}">Grd</th>
+            <th style="${thStyle}">Instr</th>
+          </tr></thead>
+          <tbody id="wg-my-rows">${myRows}</tbody>
+        </table>
+      </div>
+      <div>
+        <div style="font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">${esc(oppTeamObj ? oppTeamObj.nick : 'Opposition')}</div>
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr>
+            <th style="${thStyle}">#</th><th style="${thStyle}">Name</th><th style="${thStyle}">Pos</th>
+            <th style="${thR}">Tk</th><th style="${thR}">Runs</th><th style="${thR}">Mtrs</th><th style="${thR}">LB</th>
+          </tr></thead>
+          <tbody>${oppRows}</tbody>
+        </table>
+      </div>
+    </div>`;
+  },
+
+  _refreshTeamStats(){
+    const statsDiv = document.getElementById('wg-tab-stats');
+    if(!statsDiv || statsDiv.style.display === 'none' || !UI._watchMyM) return;
+    statsDiv.innerHTML = UI._buildTeamStatsTab(UI._watchMyM);
+  },
+
+  _updateTeamStatsRows(myM){
+    if(!myM || !myM.det) return;
+    const t = myTeam();
+    const isMineHome = myM.h === G.coach.teamId;
+    const myDet = isMineHome ? myM.det.h : myM.det.a;
+    const pct = Math.min((UI._watchCurrentMin || 0) / 80, 1);
+    t.lineup.slice(0, 17).forEach(id => {
+      if(!id) return;
+      const row = document.getElementById('wg-prow-' + id);
+      if(!row) return;
+      const line = myDet && myDet[id] ? myDet[id] : {};
+      const cells = row.querySelectorAll('td');
+      if(cells[4]) cells[4].textContent = Math.round((line.tk || 0) * pct);
+      if(cells[5]) cells[5].textContent = Math.round((line.runs || 0) * pct);
+      if(cells[6]) cells[6].textContent = Math.round((line.m || 0) * pct);
+      if(cells[7]) cells[7].textContent = Math.round((line.lb || 0) * pct);
+    });
+  },
+
+  _updatePossession(myM, ev){
+    const isTry = ev && ev.evType === 'try';
+    const isHT = ev && ev.evType === 'halftime';
+    const isFT = ev && ev.evType === 'fulltime';
+    if(isFT) return;
+    if(isTry){
+      const homeScored = ev.txt && G.teams[myM.h] && ev.txt.includes(G.teams[myM.h].nick + ':');
+      UI._wgPossTeam = homeScored ? 'a' : 'h';
+      UI._wgTackle = 1;
+    } else if(isHT){
+      UI._wgPossTeam = UI._wgPossTeam === 'h' ? 'a' : 'h';
+      UI._wgTackle = 1;
+    } else {
+      UI._wgTackle = (UI._wgTackle || 1) + 1;
+      if(UI._wgTackle > 6){
+        UI._wgTackle = 1;
+        UI._wgPossTeam = UI._wgPossTeam === 'h' ? 'a' : 'h';
+      }
+    }
+    const poss = UI._wgPossTeam;
+    const ballH = document.getElementById('wg-ball-h');
+    const ballA = document.getElementById('wg-ball-a');
+    const lblH = document.getElementById('wg-poss-lbl-h');
+    const lblA = document.getElementById('wg-poss-lbl-a');
+    if(ballH) ballH.style.opacity = poss === 'h' ? '1' : '0.15';
+    if(ballA) ballA.style.opacity = poss === 'a' ? '1' : '0.15';
+    if(lblH) { lblH.style.color = poss === 'h' ? 'var(--ink)' : 'var(--dim)'; lblH.style.fontWeight = poss === 'h' ? '700' : '400'; }
+    if(lblA) { lblA.style.color = poss === 'a' ? 'var(--ink)' : 'var(--dim)'; lblA.style.fontWeight = poss === 'a' ? '700' : '400'; }
+    for(let n = 1; n <= 6; n++){
+      const dot = document.getElementById('wg-tck-' + n);
+      if(dot) dot.style.background = n <= (UI._wgTackle || 1) ? 'var(--accent)' : 'var(--line)';
+    }
+  },
+
+  _wgDragStart(event, fromSlot){
+    UI._wgDragFromSlot = fromSlot;
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(fromSlot));
+  },
+
+  _wgDrop(event, toSlot){
+    event.preventDefault();
+    const fromSlot = UI._wgDragFromSlot;
+    if(fromSlot == null || fromSlot === toSlot) return;
+    const t = myTeam();
+    const fromBench = fromSlot >= 13;
+    const toBench = toSlot >= 13;
+    // Capture IDs before swap
+    const fromId = t.lineup[fromSlot];
+    const toId = t.lineup[toSlot];
+    const fromP = G.players[fromId];
+    const toP = G.players[toId];
+    // Swap
+    t.lineup[fromSlot] = toId;
+    t.lineup[toSlot] = fromId;
+    UI._wgDragFromSlot = null;
+    // If bench ↔ starter swap, log as a sub event in the feed
+    if(fromBench !== toBench && fromP && toP && UI._watchMyM){
+      const atMin = UI._watchCurrentMin || 0;
+      const inP = fromBench ? fromP : toP;
+      const outP = fromBench ? toP : fromP;
+      UI._watchMyM.det.subs = UI._watchMyM.det.subs || [];
+      UI._watchMyM.det.subs.push({outId: outP.id, inId: inP.id, min: atMin});
+      const feedBox = document.getElementById('wg-feedBox');
+      if(feedBox){
+        feedBox.innerHTML += `<div style="padding:5px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:baseline"><span style="color:var(--dim);font-size:11px;min-width:28px;flex-shrink:0">${atMin}'</span><span style="color:var(--muted)">↕ SUB — ${esc(inP.name)} on for ${esc(outP.name)} (${esc(t.nick)})</span></div>`;
+        feedBox.scrollTop = feedBox.scrollHeight;
+      }
+      if(UI._watchTab === 'feed') UI._switchWatchTab('feed');
+    }
+    UI._refreshTeamStats();
+    UI._refreshCoachPanel();
+  },
+
+  _setPlayerInstr(playerId, instr){
+    const t = myTeam();
+    if(!t.matchPrefs) t.matchPrefs = {};
+    if(!t.matchPrefs.playerInstr) t.matchPrefs.playerInstr = {};
+    t.matchPrefs.playerInstr[playerId] = instr;
+    if(instr !== 'auto' && UI._watchMyM){
+      const p = G.players[playerId];
+      if(p){
+        const atMin = UI._watchCurrentMin || 0;
+        const instrLabel = {run:'run hard', defend:'focus on defence', kick:'look to kick'}[instr] || instr;
+        const feedBox = document.getElementById('wg-feedBox');
+        if(feedBox){
+          feedBox.innerHTML += `<div style="padding:5px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:baseline"><span style="color:var(--dim);font-size:11px;min-width:28px;flex-shrink:0">${atMin}'</span><span style="color:var(--muted);font-style:italic">Coach: ${esc(p.name)} — ${instrLabel}</span></div>`;
+          feedBox.scrollTop = feedBox.scrollHeight;
+        }
+      }
+    }
   },
 
   _buildCoachingPanel(myM){
@@ -458,84 +778,150 @@ Object.assign(UI, {
     if(panel && UI._watchMyM) panel.innerHTML = UI._buildCoachingPanel(UI._watchMyM);
   },
 
-  // Continuous event-stream streaming — replaces all three-phase reveal functions
-  _revealFeedContinuous(events, i, myM){
-    if(UI.page !== 'watchgame') return;
-    if(UI._watchPaused){ UI._watchIdx = i; UI._watchEvents = events; return; }
-    UI._watchIdx = i; UI._watchEvents = events; UI._watchMyM = myM;
+  // ── Live watch engine ───────────────────────────────────────────────────
+  // Single setInterval tick — speed changes take effect every tick, pause is a flag.
+  // TICK_MS = 50ms (20 ticks/real-sec).
+  // At speed=1: 6 game-secs per tick → 120 game-sec/real-sec → 40 game-min in 20 real-sec.
+  _startLiveWatch(events, myM){
+    UI._liveEvents = events.slice().sort((a,b) => a.min - b.min);
+    UI._liveEventIdx = 0;
+    UI._liveGameSec = 0;
+    UI._liveHtDone = false;
+    UI._liveFtDone = false;
+    UI._liveHtPaused = false;
+    UI._watchMyM = myM;
+    UI._watchPaused = false;
+
+    if(UI._liveIntervalId) clearInterval(UI._liveIntervalId);
+
+    const TICK_MS = 50;
+    const BASE_SECS_PER_TICK = 6; // game-seconds advanced per tick at speed=1
+
+    UI._liveIntervalId = setInterval(() => {
+      if(UI.page !== 'watchgame'){ clearInterval(UI._liveIntervalId); return; }
+      if(UI._watchPaused || UI._liveHtPaused) return;
+
+      const speed = UI._watchSpeed || 1;
+      UI._liveGameSec += speed * BASE_SECS_PER_TICK;
+
+      const secInt = Math.floor(UI._liveGameSec);
+      const gameMins = Math.floor(secInt / 60);
+      const gameSecs = secInt % 60;
+      UI._watchCurrentMin = gameMins;
+
+      // Update clock display (MM:SS)
+      const clockEl = document.getElementById('wg-clock');
+      if(clockEl && !UI._liveHtPaused){
+        if(gameMins >= 80) clockEl.textContent = "80:00";
+        else clockEl.textContent = `${gameMins}:${String(gameSecs).padStart(2,'0')}`;
+      }
+
+      // Fire all events whose minute has now been reached
+      const currentGameMin = UI._liveGameSec / 60;
+      while(UI._liveEventIdx < UI._liveEvents.length){
+        const ev = UI._liveEvents[UI._liveEventIdx];
+        if(ev.min > currentGameMin) break;
+        UI._liveEventIdx++;
+        UI._fireLiveEvent(ev, myM);
+        if(ev.evType === 'halftime'){
+          // Auto-resume after a brief HT break (scaled by speed, max 3s)
+          UI._liveHtPaused = true;
+          if(clockEl) clockEl.textContent = 'HT';
+          setTimeout(() => {
+            UI._liveHtPaused = false;
+            if(clockEl) clockEl.textContent = '40:00';
+          }, Math.max(400, Math.round(3000 / speed)));
+        }
+        if(ev.evType === 'fulltime' || UI._liveFtDone) return;
+      }
+
+      // Update stats tab if open
+      if(UI._watchTab === 'stats') UI._updateTeamStatsRows(myM);
+
+      // Safety: end game if clock passes 80 min and fulltime event hasn't fired
+      if(UI._liveGameSec >= 4810 && !UI._liveFtDone){
+        UI._liveFtDone = true;
+        clearInterval(UI._liveIntervalId);
+        while(UI._liveEventIdx < UI._liveEvents.length){
+          UI._fireLiveEvent(UI._liveEvents[UI._liveEventIdx++], myM);
+        }
+        UI._handleFullTime(myM);
+      }
+    }, TICK_MS);
+  },
+
+  _fireLiveEvent(ev, myM){
     const box = document.getElementById('wg-feedBox');
     if(!box) return;
-    if(i >= events.length){ UI._handleFullTime(myM); return; }
-    const ev = events[i];
-    // Apply sub queue at stoppages (never at half-time)
-    if(ev.stoppage && ev.evType !== 'halftime' && UI._subQueue && UI._subQueue.length){
+    const isScore = ev.evType==='try'||ev.evType==='penalty'||ev.evType==='fieldgoal';
+    const isHT   = ev.evType==='halftime';
+    const isFT   = ev.evType==='fulltime';
+    const isSub  = ev.evType==='sub';
+    const isInj  = ev.evType==='injury';
+
+    // Apply sub queue at stoppages
+    if(ev.stoppage && !isHT && UI._subQueue && UI._subQueue.length){
       const subEvs = UI._flushSubQueue(myM, ev.min);
       if(subEvs.length){
-        events.splice(i+1, 0, ...subEvs);
+        // Insert sub events just after current position
+        UI._liveEvents.splice(UI._liveEventIdx, 0, ...subEvs);
         UI._refreshCoachPanel();
-        // Refresh lineup display
-        const lu = document.getElementById('wg-lineups');
-        if(lu){
-          const h = G.teams[myM.h], a = G.teams[myM.a];
-          const lineupCol = (team) => {
-            const rows = Array.from({length:17},(_,si)=>{
-              const p = G.players[team.lineup[si]];
-              if(!p) return '<div style="display:flex;gap:6px;align-items:center;padding:2px 0;border-bottom:1px solid var(--line);opacity:.3"><span style="color:var(--dim);min-width:16px;font-size:10px">'+si+'</span><span style="font-size:11px;color:var(--muted)">—</span></div>';
-              return '<div style="display:flex;gap:6px;align-items:center;padding:2px 0;border-bottom:1px solid var(--line)"><span style="color:var(--dim);min-width:16px;font-size:10px">'+(si+1)+'</span><span style="flex:1;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(p.name)+'</span><span class="pos-tag" style="font-size:9px">'+p.pos+'</span></div>';
-            }).join('');
-            return '<div style="margin-bottom:10px"><div style="font-size:10px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">'+esc(team.nick)+'</div>'+rows+'</div>';
-          };
-          lu.innerHTML = lineupCol(h) + lineupCol(a);
-        }
+        UI._refreshTeamStats();
       }
     }
-    // Render event
-    const isScore = ev.evType==='try'||ev.evType==='penalty'||ev.evType==='fieldgoal';
-    const isHT = ev.evType==='halftime';
-    const isFT = ev.evType==='fulltime';
-    const isSub = ev.evType==='sub';
-    const isInj = ev.evType==='injury';
-    const color = isScore?'color:var(--accent);font-weight:700':isHT?'color:var(--accent);font-weight:600':isSub?'color:var(--muted)':isInj?'color:var(--red)':'';
-    const minLabel = isHT ? 'HT' : isFT ? 'FT' : ev.min+"'";
+
+    const color = isScore ? 'color:var(--accent);font-weight:700'
+                : isHT   ? 'color:var(--accent);font-weight:600'
+                : isSub  ? 'color:var(--muted)'
+                : isInj  ? 'color:var(--red)' : '';
+    const mins = isHT ? 40 : isFT ? 80 : (ev.min || 0);
+    const secs = 0;
+    const minLabel = isHT ? 'HT' : isFT ? 'FT' : `${mins}:${String(secs).padStart(2,'0')}`;
+
     box.innerHTML += '<div style="padding:5px 0;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:baseline">'
-      + '<span style="color:var(--dim);font-size:11px;min-width:28px;flex-shrink:0">' + minLabel + '</span>'
+      + '<span style="color:var(--dim);font-size:11px;min-width:40px;flex-shrink:0">' + minLabel + '</span>'
       + '<span style="' + color + '">' + esc(ev.txt) + '</span></div>';
     box.scrollTop = box.scrollHeight;
-    // Live score update — main scoreboard and coaching panel mini-score
+
+    // Score update
     if(isScore){
-      const sc=UI._extractLiveScore(ev.txt);
+      const sc = UI._extractLiveScore(ev.txt);
       if(sc){
-        const sh=document.getElementById('wg-scoreH'),sa=document.getElementById('wg-scoreA');
-        if(sh)sh.textContent=sc.h; if(sa)sa.textContent=sc.a;
-        const cph=document.getElementById('cp-scoreH'),cpa=document.getElementById('cp-scoreA');
+        const sh = document.getElementById('wg-scoreH'), sa = document.getElementById('wg-scoreA');
+        if(sh) sh.textContent = sc.h; if(sa) sa.textContent = sc.a;
         if(myM){
-          const t=myTeam();
-          const myS=myM.h===t.id?sc.h:sc.a, oppS=myM.h===t.id?sc.a:sc.h;
-          if(cph)cph.textContent=myS; if(cpa)cpa.textContent=oppS;
+          const t = myTeam();
+          const myS = myM.h===t.id ? sc.h : sc.a, oppS = myM.h===t.id ? sc.a : sc.h;
+          const cph = document.getElementById('cp-scoreH'), cpa = document.getElementById('cp-scoreA');
+          if(cph) cph.textContent = myS; if(cpa) cpa.textContent = oppS;
         }
       }
     }
-    // Banner + coaching panel refresh at half-time
+
+    // HT: refresh panel + scoreboard
     if(isHT){
-      const banner=document.getElementById('wg-banner'); if(banner) banner.textContent='⏸ HALF TIME';
-      const sc=UI._extractLiveScore(ev.txt); if(sc){const sh=document.getElementById('wg-scoreH'),sa=document.getElementById('wg-scoreA');if(sh)sh.textContent=sc.h;if(sa)sa.textContent=sc.a;}
+      const sc = UI._extractLiveScore(ev.txt);
+      if(sc){ const sh=document.getElementById('wg-scoreH'),sa=document.getElementById('wg-scoreA'); if(sh)sh.textContent=sc.h; if(sa)sa.textContent=sc.a; }
+      const banner = document.getElementById('wg-banner'); if(banner) banner.textContent = '⏸ HALF TIME';
       UI._refreshCoachPanel();
     }
-    if(isFT){ UI._handleFullTime(myM); return; }
-    // Time-gap based delay: 1 game-minute = 7500ms at 1× speed
-    const nextEv = events[i+1];
-    const gapMins = nextEv ? Math.max(0.2, nextEv.min - ev.min) : 1;
-    const delay = Math.max(150, Math.round(gapMins * 7500 / (UI._watchSpeed||1)));
-    UI._watchTimeout = setTimeout(() => UI._revealFeedContinuous(events, i+1, myM), delay);
+
+    // FT
+    if(isFT){
+      UI._liveFtDone = true;
+      if(UI._liveIntervalId){ clearInterval(UI._liveIntervalId); UI._liveIntervalId = null; }
+      UI._handleFullTime(myM);
+      return;
+    }
+
+    UI._updatePossession(myM, ev);
   },
 
   _toggleWatchPause(){
     UI._watchPaused = !UI._watchPaused;
-    if(UI._watchTimeout) clearTimeout(UI._watchTimeout);
     const btn = document.getElementById('wg-pause-btn');
     if(btn) btn.textContent = UI._watchPaused ? '▶ Resume' : '⏸ Pause';
-    if(!UI._watchPaused && UI._watchEvents && UI._watchMyM)
-      UI._revealFeedContinuous(UI._watchEvents, UI._watchIdx||0, UI._watchMyM);
+    // Interval keeps running — pause flag prevents clock/event advances
   },
 
   _flushSubQueue(myM, atMin){
@@ -572,6 +958,7 @@ Object.assign(UI, {
   },
 
   _handleFullTime(myM){
+    if(UI._liveIntervalId){ clearInterval(UI._liveIntervalId); UI._liveIntervalId = null; }
     const won = myM.h===G.coach.teamId ? myM.hs>myM.as : myM.as>myM.hs;
     const drew = myM.hs===myM.as;
     const sh = document.getElementById('wg-scoreH');
@@ -595,6 +982,8 @@ Object.assign(UI, {
       G._lastPlayedMatch = myM;
       postMatch.style.display='';
       postMatch.innerHTML = `<h2 class="sec">Match Report</h2>${UI._buildMatchReportHtml(myM)}<div class="btnrow" style="margin-top:14px"><button class="btn primary" onclick="UI.go('match-report')">Full Analysis →</button></div>`;
+      // Queue press conference prompt after a short delay
+      setTimeout(() => UI._showPressConference(myM, won, drew), 600);
     }
     // Finalise the calendar day now the match is complete (split-match flow)
     if(typeof finaliseCalendarDayAfterWatch === 'function'){
@@ -726,6 +1115,92 @@ Object.assign(UI, {
     ${(myM.det.subs||[]).length?`<p style="font-size:12px;color:var(--muted);margin:4px 0 0"><b>Subs:</b> ${myM.det.subs.map(s=>{const pin=G.players[s.inId],pout=G.players[s.outId];return pin&&pout?`${esc(pin.name)} for ${esc(pout.name)} (${s.min}')`:''}).filter(Boolean).join(' · ')}</p>`:''}`;
   },
 
+  _showPressConference(myM, won, drew){
+    if(myM.pressConf) return; // already done
+
+    const myScore = myM.h === G.coach.teamId ? myM.hs : myM.as;
+    const oppScore = myM.h === G.coach.teamId ? myM.as : myM.hs;
+    const margin = Math.abs(myScore - oppScore);
+    const bigWin = won && margin >= 20;
+    const closeWin = won && margin < 10;
+    const closeLoss = !won && !drew && margin < 10;
+    const heavyLoss = !won && !drew && margin >= 20;
+
+    // Pick question based on result context
+    const question = bigWin ? `Your side dominated with a ${margin}-point win. What's the key takeaway for the group?`
+      : closeWin ? `A tight one — you got there in the end. How did the team manage the pressure?`
+      : drew ? `A draw today. Are you satisfied with how the team competed?`
+      : closeLoss ? `Unlucky not to get the points. What do you put the defeat down to?`
+      : heavyLoss ? `A difficult afternoon — down by ${margin}. Where did it fall apart today?`
+      : won ? `A solid ${margin}-point victory. What pleased you most?`
+      : `A tough loss. What's your message to the playing group?`;
+
+    // Result-appropriate response options
+    const OPTIONS = won ? [
+      { key: 'credit', label: 'Credit the opponent', desc: 'Show respect for the opposition.', confD: 3, morD: 0, cohD: 3, tone: 'blue' },
+      { key: 'process', label: 'Back the process', desc: 'Trust the system and the week of preparation.', confD: 4, morD: 3, cohD: 2, tone: 'green' },
+      { key: 'standards', label: 'Demand higher standards', desc: 'Not satisfied — expect more from the group.', confD: 2, morD: -2, cohD: 0, tone: 'orange' },
+      { key: 'enjoy', label: 'Let them enjoy it', desc: 'A good win deserves celebrating.', confD: 2, morD: 5, cohD: 2, tone: 'yellow' },
+    ] : drew ? [
+      { key: 'positives', label: 'Take the positives', desc: 'A point is a point — focus on what worked.', confD: 2, morD: 2, cohD: 2, tone: 'blue' },
+      { key: 'better', label: 'We can do better', desc: 'A draw isn\'t good enough — respond next week.', confD: 3, morD: -1, cohD: 0, tone: 'orange' },
+      { key: 'together', label: 'Stick together', desc: 'Tight group wins you games when form wobbles.', confD: 2, morD: 3, cohD: 4, tone: 'green' },
+    ] : [
+      { key: 'respond', label: 'We will respond', desc: 'Losing breeds hunger — bounce back next week.', confD: 1, morD: 4, cohD: 3, tone: 'green' },
+      { key: 'honest', label: 'Honest review needed', desc: 'Call it out — the group needs accountability.', confD: 3, morD: -2, cohD: -1, tone: 'orange' },
+      { key: 'believe', label: 'Back the playing group', desc: 'Public confidence in the squad despite the result.', confD: 0, morD: 5, cohD: 2, tone: 'blue' },
+      { key: 'process', label: 'Trust the process', desc: 'Losses happen — stay the course.', confD: 2, morD: 2, cohD: 1, tone: 'yellow' },
+    ];
+
+    const toneColor = { blue: 'var(--blue,#5b9bd5)', green: 'var(--green)', orange: 'var(--orange,#e08a30)', yellow: 'var(--accent)', red: 'var(--red)' };
+
+    const optCards = OPTIONS.map(o => `
+      <div onclick="UI._doPressConf(${JSON.stringify(o).replace(/"/g,'&quot;')},${myM.h},${myM.a},${myM.hs},${myM.as})"
+        style="cursor:pointer;padding:12px 14px;border-radius:8px;border:1px solid var(--line);background:var(--hover);display:flex;gap:10px;align-items:flex-start;transition:border-color .15s"
+        onmouseover="this.style.borderColor='${toneColor[o.tone]||'var(--accent)'}'"
+        onmouseout="this.style.borderColor='var(--line)'">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:13px;color:${toneColor[o.tone]||'var(--ink)'}">${esc(o.label)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(o.desc)}</div>
+        </div>
+      </div>`).join('');
+
+    UI.modal(`
+      <h3 style="margin-bottom:4px">Post-Match Press Conference</h3>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">${esc(question)}</p>
+      <div style="display:flex;flex-direction:column;gap:8px">${optCards}</div>
+      <p style="font-size:11px;color:var(--dim);margin-top:14px;text-align:center">Your response shapes board confidence and player morale.</p>
+    `);
+  },
+
+  _doPressConf(opt, mh, ma, hs, as){
+    const myM = G.fixtures.flat().find(m => m.h === mh && m.a === ma && m.hs === hs && m.as === as);
+    if(!myM) return UI.closeModal();
+    myM.pressConf = true;
+
+    const t = G.teams.find(t => t.id === G.coach.teamId);
+    if(opt.confD && G.coach) G.coach.conf = Math.max(0, Math.min(100, (G.coach.conf || 50) + opt.confD));
+    if(t && opt.cohD) t.cohesion = Math.max(0, Math.min(100, (t.cohesion || 50) + opt.cohD));
+    if(t && opt.morD){
+      (t.lineup || []).slice(0, 17).forEach(id => {
+        const p = G.players[id];
+        if(p) p.morale = Math.max(5, Math.min(99, (p.morale || 50) + opt.morD));
+      });
+    }
+
+    const effects = [];
+    if(opt.confD > 0) effects.push(`Board confidence +${opt.confD}`);
+    else if(opt.confD < 0) effects.push(`Board confidence ${opt.confD}`);
+    if(opt.morD > 0) effects.push(`Player morale +${opt.morD}`);
+    else if(opt.morD < 0) effects.push(`Player morale ${opt.morD}`);
+    if(opt.cohD > 0) effects.push(`Team cohesion +${opt.cohD}`);
+    else if(opt.cohD < 0) effects.push(`Team cohesion ${opt.cohD}`);
+
+    autoSave();
+    UI.closeModal();
+    if(effects.length) UI.toast(`Press conf: "${opt.label}" — ${effects.join(', ')}.`);
+  },
+
   showMatchFeed(games, title){
     const myM = games.find(m=>m.h===G.coach.teamId || m.a===G.coach.teamId);
     if(!myM) return UI.showRoundResults(games, title);
@@ -815,36 +1290,38 @@ Object.assign(UI, {
     const all = [];
     all.push({min:0, txt:`Kick off at ${m.det.venue||'the stadium'}. ${m.det.weather||'Clear'} conditions, crowd of ${(m.det.crowd||15000).toLocaleString()}.`});
 
-    // Build try/conversion events with running score
+    // Merge tries + penalties chronologically so running score is always correct
     let sH=0, sA=0;
-    for(const ev of tryEvs){
-      const team = ev.side==='h' ? h : a;
-      const scorer = G.players[ev.scorerId]; if(!scorer) continue;
-      const assist = ev.assistId ? G.players[ev.assistId] : null;
-      const kicker = ev.kickerId ? G.players[ev.kickerId] : null;
-      if(ev.side==='h'){ sH += 4+(ev.converted?2:0); } else { sA += 4+(ev.converted?2:0); }
-      const assistTxt = assist ? ` ${pick(ASSIST_VERBS)} ${assist.name},` : '';
-      const convTxt = ev.converted
-        ? (kicker && kicker.id!==scorer.id ? ` ${kicker.name} converts.` : ' Conversion good.')
-        : ' Conversion missed.';
-      // Cap try minute to before the scorer's injury so the player doesn't score after leaving the field
-      const sInjMin = playerInjMin(ev.scorerId, ev.side);
-      const tryMin = sInjMin ? Math.min(ev.min, Math.max(1, sInjMin - 1)) : ev.min;
-      all.push({min:tryMin, txt:`TRY — ${team.nick}:${assistTxt} ${scorer.name} ${tryDesc(scorer.pos)}.${convTxt} (${sH}–${sA})`});
-    }
-
-    // Penalty goal events with running score
-    for(const ev of penEvs){
-      const team = ev.side==='h' ? h : a;
-      const kicker = G.players[ev.kickerId]; if(!kicker) continue;
-      if(ev.made){
-        if(ev.side==='h') sH+=2; else sA+=2;
-        all.push({min:ev.min, txt:`${kicker.name} (${team.nick}) slots a penalty goal. (${sH}–${sA})`});
+    const allScoring = [
+      ...tryEvs.map(e => ({...e, _st:'try'})),
+      ...penEvs.map(e => ({...e, _st:'pen'}))
+    ].sort((a,b) => a.min - b.min);
+    for(const ev of allScoring){
+      if(ev._st === 'try'){
+        const team = ev.side==='h' ? h : a;
+        const scorer = G.players[ev.scorerId]; if(!scorer) continue;
+        const assist = ev.assistId ? G.players[ev.assistId] : null;
+        const kicker = ev.kickerId ? G.players[ev.kickerId] : null;
+        if(ev.side==='h'){ sH += 4+(ev.converted?2:0); } else { sA += 4+(ev.converted?2:0); }
+        const assistTxt = assist ? ` ${pick(ASSIST_VERBS)} ${assist.name},` : '';
+        const convTxt = ev.converted
+          ? (kicker && kicker.id!==scorer.id ? ` ${kicker.name} converts.` : ' Conversion good.')
+          : ' Conversion missed.';
+        const sInjMin = playerInjMin(ev.scorerId, ev.side);
+        const tryMin = sInjMin ? Math.min(ev.min, Math.max(1, sInjMin - 1)) : ev.min;
+        all.push({min:tryMin, txt:`TRY — ${team.nick}:${assistTxt} ${scorer.name} ${tryDesc(scorer.pos)}.${convTxt} (${sH}–${sA})`});
       } else {
-        all.push({min:ev.min, txt:`${kicker.name} (${team.nick}) misses the penalty attempt.`});
+        // Penalty goal events with running score — processed in chronological order
+        const team = ev.side==='h' ? h : a;
+        const kicker = G.players[ev.kickerId]; if(!kicker) continue;
+        if(ev.made){
+          if(ev.side==='h') sH+=2; else sA+=2;
+          all.push({min:ev.min, txt:`${kicker.name} (${team.nick}) slots a penalty goal. (${sH}–${sA})`});
+        } else {
+          all.push({min:ev.min, txt:`${kicker.name} (${team.nick}) misses the penalty attempt.`});
+        }
       }
     }
-
     // Field goals, infringements and other det.events
     for(const ev of (m.det.events||[])){
       all.push(ev);

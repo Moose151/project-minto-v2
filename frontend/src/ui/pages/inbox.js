@@ -32,7 +32,9 @@ Object.assign(UI, {
       scouting:      `<button class="btn sm primary" onclick="UI.go('scouting')">Scouting</button>`,
       recruitment:   `<button class="btn sm primary" onclick="UI.go('recruitment')">Recruitment</button>`,
       form:          `<button class="btn sm primary" onclick="UI.go('squad')">Squad</button>`,
-      player:        `<button class="btn sm primary" onclick="UI.go('squad')">Squad</button>`,
+      player:        n.playerId && G.players[n.playerId] && (G.players[n.playerId].morale||50) < 50
+        ? `<button class="btn sm primary" onclick="UI.playerMeeting(${n.playerId})">One-on-one meeting</button>`
+        : `<button class="btn sm primary" onclick="UI.go('squad')">Squad</button>`,
       board:         `<button class="btn sm primary" onclick="UI.go('club-management')">Club Management</button>`,
       finance:       `<button class="btn sm primary" onclick="UI.go('club-management')">Club Management</button>`,
       milestone:     `<button class="btn sm primary" onclick="UI.go('squad')">Squad</button>`,

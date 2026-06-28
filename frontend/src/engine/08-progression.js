@@ -200,6 +200,36 @@ export function completeRound(roundIdx){
   simOriginIfDue(roundIdx);
   G.round = Math.max(G.round, roundIdx + 1);
   if(G.round >= G.fixtures.length){ startFinals(); }
+  // Mid-season board review at halfway point
+  const totalRounds = G.fixtures.length;
+  const halfwayRound = Math.floor(totalRounds / 2);
+  if(roundIdx + 1 === halfwayRound && !G._midSeasonReviewDone){
+    G._midSeasonReviewDone = true;
+    const lad = ladder();
+    const myPos = lad.findIndex(r=>r.id===G.coach.teamId)+1;
+    const expect = G.coach.expect || {};
+    const mt = myTeam();
+    let tone, title, body, confD;
+    if(myPos <= 2){
+      tone = 'good'; title = 'Board Mid-Season Report';
+      body = `Halfway mark reached. The board is impressed — ${mt.nick} are sitting ${ord(myPos)}. Keep the momentum going into the second half.`;
+      confD = 4;
+    } else if(myPos <= (expect.minPos || 8)){
+      tone = 'good'; title = 'Board Mid-Season Report';
+      body = `Halfway point assessment: ${mt.nick} at ${ord(myPos)} puts the club on track for the target. The board is satisfied with the effort so far.`;
+      confD = 2;
+    } else if(myPos <= (expect.minPos || 8) + 2){
+      tone = 'neutral'; title = 'Board Mid-Season Report';
+      body = `Halfway check-in: ${mt.nick} sitting ${ord(myPos)} — just outside expectations. The second half needs to deliver improvement or the season will fall short.`;
+      confD = -2;
+    } else {
+      tone = 'bad'; title = 'Board Mid-Season Warning';
+      body = `The board is concerned. At the halfway mark ${mt.nick} are ${ord(myPos)} — well below the target of ${ord(expect.minPos||8)}. Significant improvement is required in the second half.`;
+      confD = -6;
+    }
+    G.coach.conf = clamp((G.coach.conf||50) + confD, 0, 100);
+    addNews(body, {title, type:'board', tone, tag:'Board', teamId:G.coach.teamId, r:halfwayRound, y:G.year});
+  }
   return {type:'round', round, roundIdx, myM, onBye};
 }
 export function completeRoundIfReady(roundIdx){
@@ -481,6 +511,9 @@ export function weeklyRecoveryAndDev(){
   for(const t of G.teams){
     const isMine = t.id === G.coach.teamId;
     const fitnessBonus = (isMine && G.coach.attrs) ? G.coach.attrs.fitness / 300 : 0;
+    const mmBonus = (isMine && G.coach.attrs) ? G.coach.attrs.manMgmt : 40;
+    const lineup17 = new Set((t.lineup || []).slice(0, 17));
+    const lineup13 = new Set((t.lineup || []).slice(0, 13));
     for(const id of t.players){
       const p = G.players[id];
       const facilityRecovery = (teamFacilityLevel(t, 'gym') - 1) * 1.4;
@@ -498,6 +531,35 @@ export function weeklyRecoveryAndDev(){
         if(p.injury.weeks<=0){ p.injury=null; p.playInjured=false; p.cond=Math.min(p.cond,80); }
       }
       if(p.suspended && p.suspended.weeks > 0){ p.suspended.weeks--; if(p.suspended.weeks<=0) p.suspended=null; }
+
+      // Rotation morale: track consecutive weeks in/out of the 17 for top-squad players
+      if(p.squad === 'top' && G.phase === 'regular'){
+        if(!p.injury && !p.suspended){
+          if(lineup17.has(id)){
+            p.weeksDropped = 0;
+            // Consistent starter morale boost (starting 13 only, every 3 weeks)
+            if(lineup13.has(id)){
+              p.weeksStarting = (p.weeksStarting || 0) + 1;
+              if(p.weeksStarting % 3 === 0){
+                const boost = Math.round(1 + mmBonus / 80);
+                p.morale = clamp((p.morale || 50) + boost, 5, 99);
+              }
+            } else {
+              p.weeksStarting = 0;
+            }
+          } else {
+            p.weeksStarting = 0;
+            p.weeksDropped = (p.weeksDropped || 0) + 1;
+            // Morale erosion scales with how long they've been out
+            if(p.weeksDropped >= 2){
+              const penalty = p.weeksDropped >= 5 ? 3 : p.weeksDropped >= 3 ? 2 : 1;
+              const mmMitigate = Math.round(mmBonus / 60); // good man mgmt partially offsets
+              p.morale = clamp((p.morale || 50) - Math.max(1, penalty - mmMitigate), 5, 99);
+            }
+          }
+        }
+      }
+
       developPlayer(p, t);
     }
     if(!isMine) autoPick(t);
@@ -587,10 +649,18 @@ export function developPlayer(p, t){
   const ovrBefore = p.ovr;
   const growGains = Math.min(poisson(growExpected), 3);
   for(let _g = 0; _g < growGains && p.ovr < p.pot; _g++){
-    // 72% chance to target position key attributes (high OVR weight), else use focus/random pool
-    const pool = (keyAttrs.length && rnd() < 0.72) ? keyAttrs
-               : (focusBoost.length && rnd() < 0.55) ? focusBoost : ATTRS;
-    const a = pick(pool);
+    // Attribute target: if coach has set a specific target, 65% of gains go there
+    let a;
+    if(isMine && p.attrTarget && ATTRS.includes(p.attrTarget) && (p.attrs[p.attrTarget]||0) < 99){
+      a = rnd() < 0.65 ? p.attrTarget
+        : (keyAttrs.length && rnd() < 0.72) ? pick(keyAttrs)
+        : (focusBoost.length && rnd() < 0.55) ? pick(focusBoost) : pick(ATTRS);
+    } else {
+      // 72% chance to target position key attributes (high OVR weight), else use focus/random pool
+      const pool = (keyAttrs.length && rnd() < 0.72) ? keyAttrs
+                 : (focusBoost.length && rnd() < 0.55) ? focusBoost : ATTRS;
+      a = pick(pool);
+    }
     const staffBonus = isMine ? staffMultiplier(a, p.pos) : 1;
     const gain = staffBonus > 1.15 && rnd() < (staffBonus - 1) ? 2 : 1;
     p.attrs[a] = clamp(p.attrs[a]+gain, 20, 99);

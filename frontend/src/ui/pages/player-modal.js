@@ -30,6 +30,8 @@ Object.assign(UI, {
       ? 'Youth squad'
       : p.squad === 'trial'
         ? `T&T ${trialGamesUsed(p)}/${TRIAL_GAME_CAP}g`
+        : (p.weeksDropped >= 3) ? `Out of 17 · ${p.weeksDropped}w`
+        : (p.weeksStarting >= 3) ? `Regular starter · ${p.weeksStarting}w`
         : 'Main squad';
 
     // Quality tier
@@ -356,5 +358,93 @@ Object.assign(UI, {
     p.face = genPlayerFace(p);
     UI.toast(`${p.name}'s face randomised.`);
     UI.playerEditModal(id);
+  },
+
+  playerMeeting(id){
+    const p = G.players[id]; if(!p) return;
+    const morale = p.morale || 50;
+    const dropped = p.weeksDropped || 0;
+    const mm = (G.coach.attrs && G.coach.attrs.manMgmt) || 40;
+
+    // Context-specific prompt
+    const reason = dropped >= 3 ? `${p.name.split(' ').slice(-1)[0]} has been out of the squad for ${dropped} weeks and his morale has dropped to ${Math.round(morale)}.`
+      : morale < 30 ? `${p.name.split(' ').slice(-1)[0]}'s morale is critically low at ${Math.round(morale)} — he's disengaged and frustrated.`
+      : `${p.name.split(' ').slice(-1)[0]}'s morale has been declining. He wants clarity on his role.`;
+
+    // Man management determines effectiveness multiplier
+    const mmMult = 0.7 + (mm / 99) * 0.8; // 0.7 at 0, 1.5 at 99
+
+    const RESPONSES = [
+      {
+        key: 'game_time', label: 'Promise him game time',
+        desc: 'Commit to starting him next week. Big morale lift but locks your selection.',
+        morD: Math.round(12 * mmMult),
+        cohD: 1,
+        sideEffect: 'promise',
+      },
+      {
+        key: 'role', label: 'Clarify his role',
+        desc: 'Honest conversation about where he fits — no promises, but respect shown.',
+        morD: Math.round(6 * mmMult),
+        cohD: 2,
+        sideEffect: null,
+      },
+      {
+        key: 'challenge', label: 'Challenge him to earn it',
+        desc: 'Tell him selection is on merit and he needs to perform in training.',
+        morD: Math.round(2 * mmMult),
+        cohD: -1,
+        sideEffect: 'training_boost',
+      },
+      {
+        key: 'listen', label: 'Just listen',
+        desc: 'Give him space to vent. Low effort — modest lift from being heard.',
+        morD: Math.round(4 * mmMult),
+        cohD: 1,
+        sideEffect: null,
+      },
+    ];
+
+    const optCards = RESPONSES.map(r => `
+      <div onclick="UI._doPlayerMeeting(${id},'${r.key}',${r.morD},${r.cohD},'${r.sideEffect||''}')"
+        style="cursor:pointer;padding:12px 14px;border-radius:8px;border:1px solid var(--line);background:var(--hover);display:flex;gap:10px;align-items:flex-start"
+        onmouseover="this.style.borderColor='var(--accent)'" onmouseout="this.style.borderColor='var(--line)'">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:13px">${esc(r.label)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px">${esc(r.desc)}</div>
+          <div style="font-size:11px;color:var(--accent);margin-top:4px">Morale +${r.morD}${r.cohD !== 0 ? ` · Cohesion ${r.cohD > 0 ? '+' : ''}${r.cohD}` : ''}</div>
+        </div>
+      </div>`).join('');
+
+    UI.modal(`
+      <h3 style="margin-bottom:4px">One-on-one Meeting</h3>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px">
+        ${playerAvatar(p, 40)}
+        <div>
+          <b style="font-size:14px">${esc(p.name)}</b>
+          <div style="font-size:12px;color:var(--muted)">${p.pos} · Morale ${Math.round(morale)}%${dropped >= 2 ? ` · ${dropped} weeks out of squad` : ''}</div>
+        </div>
+      </div>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:14px">${esc(reason)}</p>
+      <div style="display:flex;flex-direction:column;gap:8px">${optCards}</div>
+      <p style="font-size:10px;color:var(--dim);margin-top:12px;text-align:center">Your Man Management (${mm}) affects how much each approach helps.</p>
+    `);
+  },
+
+  _doPlayerMeeting(id, key, morD, cohD, sideEffect){
+    const p = G.players[id]; if(!p) return;
+    const t = G.teams.find(t => t.id === G.coach.teamId);
+    p.morale = clamp((p.morale || 50) + morD, 5, 99);
+    if(t && cohD) t.cohesion = clamp((t.cohesion || 50) + cohD, 0, 100);
+    if(sideEffect === 'promise'){
+      p.promisedGameTime = true;
+      p.promiseConcern = 0;
+    }
+    if(sideEffect === 'training_boost'){
+      p.form = clamp((p.form || 50) + 4, 0, 100);
+    }
+    UI.closeModal();
+    UI.toast(`Met with ${p.name} — morale +${morD}.`);
+    autoSave();
   },
 });

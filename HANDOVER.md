@@ -4,213 +4,184 @@ _Updated every session._
 
 ## ⏸️ Session Pause Note (for the next assistant)
 
-**Latest session work — match report grades, opponent form guide, richer watch-game feed:**
+**Latest session work — morale system, board relationship, man management depth:**
 
-1. **Match grade column** added to the full match report player table (`match-report.js`).
-   Uses the existing `l.r` (1–10 rating computed in `simTeamStats`) and converts to
-   letter grades: A+/A/B+/B/C/D. Sorted by grade descending (highest-rated player first).
+### 1. Rotation-based morale (`08-progression.js` — `weeklyRecoveryAndDev`)
+- Top-squad players consistently dropped from the 17 lose morale each week: −1 after 2w out, −2 after 3w, −3 after 5w+
+- Good Man Management (`G.coach.attrs.manMgmt`) partially mitigates the penalty
+- Regular starters (in the starting 13) get a small morale boost every 3 weeks
+- `p.weeksDropped` and `p.weeksStarting` track consecutive weeks in/out; both reset at offseason
+- Only applies during `G.phase === 'regular'` and only for `squad === 'top'` players
 
-2. **Opponent recent form guide** on the matchday page (`matchday.js`). Shows the
-   opposition's last 4 completed match results (W/L/D, score, opponent, round number)
-   in a compact strip below the head-to-head record.
+### 2. Squad mood panel (training page — `training.js`)
+- New section injected between Load Management and Development Pipeline
+- Shows squad average morale with colour-coded bar and mood label (Buoyant / Positive / Stable / Unsettled / Low)
+- "Low morale players" section — any top-squad player under 40 morale, showing weeks dropped
+- "Rotation risk" section — players 3+ weeks out of the squad who are losing morale
+
+### 3. Coach page overhaul (`coach.js`)
+- Old: three small stat cards. New: a prominent Board Objectives card plus cleaned-up rep/record cards
+- Board Objectives card shows: season target (ladder position required), current position vs target, trajectory label ("Exceeding expectations" / "On track" / "Pressure building" / "Below expectations"), projected season-end outcome with board confidence impact, confidence meter with descriptive text, and contract security indicator (Secure / Stable / Final year / Expired)
+- Man Management attribute description updated to mention rotation morale effects
+
+### 4. Dashboard alerts enhanced (`dashboard.js`)
+- Low squad morale (avg < 40): "Squad morale low" alert → links to Training page
+- Rotation discontent (3+ players 4+ weeks out of 17): "Rotation discontent" neutral alert → links to Training
+- Board pressure alert now links to Coach page instead of Ladder
+
+### 5. Player modal context (`player-modal.js`)
+- Squad label now shows "Out of 17 · Xw" or "Regular starter · Xw" when `weeksDropped >= 3` or `weeksStarting >= 3`
+
+### 6. Inbox one-on-one meeting (`inbox.js` + `player-modal.js`)
+- Player messages with morale < 50 show "One-on-one meeting" button instead of "Squad"
+- `UI.playerMeeting(id)` modal: context-aware prompt (dropped X weeks / critically low / declining)
+- 4 response options: Promise game time / Clarify his role / Challenge him / Just listen
+- Man Management scales each option's effectiveness (0.7× at mm=0, 1.5× at mm=99)
+- "Promise game time" sets `p.promisedGameTime = true` (hooks into existing promise concern system)
+- `UI._doPlayerMeeting()` applies morale, cohesion, and optional form boost; auto-saves
+
+### 7. Team talk — Man Management scaling (`matchday.js`)
+- `doTeamTalk()` now applies a Man Management multiplier: `0.84 + (mm/99) * 0.66` (≈0.84× at mm=0, ≈1.5× at mm=99)
+- Effective moraleD and cohD calculated at click time and shown on the buttons pre-click
+- Man Management label shown above the button grid ("low / average / high impact")
+- Stored `m.teamTalk` now reflects the actual effective values (not the base values)
+
+### 8. Mid-season board review (`08-progression.js` — `completeRound`)
+- Fires once per season at the halfway round (round = `Math.floor(totalRounds / 2)`)
+- Compares current ladder position to `G.coach.expect.minPos`
+- Generates an inbox Board message and adjusts `G.coach.conf` (+4 / +2 / −2 / −6 depending on trajectory)
+- `G._midSeasonReviewDone` flag prevents double-firing; reset to `false` at season start in `11-offseason.js`
+
+---
+
+**Previous session work — UI page rewrites + matchday systems:**
+
+### 1. Training page — full rewrite (`training.js`)
+- Development pipeline section: visual OVR→potential bars for the top 12 developing players
+- Per-player **Attribute Target** dropdown (grouped Offensive / Defensive / Physical / Mental, ★ marks key attrs)
+- Key attributes badges column showing the top 5 position-relevant attrs with current values
+- `setAttrTarget(id, val)` method wires directly to `p.attrTarget` on the player object
+- `developPlayer()` in `08-progression.js` was updated to honour `p.attrTarget`: 65% of weekly gains go to the target attr; if capped at 99 or target is clear, falls back to normal key-attr distribution
+
+### 2. Season Leaders page — full rewrite (`season-leaders.js`)
+- 5-tab layout: Attack / Defence / Kicking / Scoring / General
+- Prominent top-3 leader cards with large value display, team colour bar, gold/silver/bronze rank colour
+- Full top-10 table per category with a per-80-min column for counting stats
+- Kicking % section with minimum-games guard
+
+### 3. Achievements page — full rewrite (`achievements.js`)
+- Gold / Silver / Bronze tier system with matching colour, background, and border per card
+- Categories: Season Success / Match Feats / Club Milestones / Player Talent
+- Progress hints for trackable locked achievements (season count, funds vs $5M, consecutive prems)
+- 2-column grid layout; tier summary strip at the top (earned vs total per tier)
+
+### 4. Ladder page — rewrite (`ladder.js`)
+- Standings tab: added Win% column (coloured green ≥60%, red <40%)
+- New **Home/Away** tab: computes `hw/hl/hd/aw/al/ad` by iterating `G.fixtures` directly (no engine change needed); two-level header, home Win% and away Win% colour-coded
+
+### 5. Fantasy page — full rewrite (`fantasy.js`)
+- **Team of the Round** tab: 13-slot pitch layout mirroring real positions (FB / WG WG / CE CE / FE HB / PR HK PR / SR SR / LK); greedy best-per-slot allocation from round scores; 88px chips with FP badge colour-coded (≥70 green, ≥50 accent)
+- **Round Scores** tab: full top-20 table with all stat columns and FP
+- **Season Ladder** tab: original leaderboard with position filter + sort; preserved
+
+### 6. Matchday — pre-match team talk system (`matchday.js`)
+- 5 team talk options (Fire them up / Stay composed / Back yourselves / Put them under / Enjoy the moment)
+- Each applies `moraleD` to the starting 13 and `cohD` to team cohesion — both feed directly into `squadStrength()` in `07-match.js`
+- Shows as button-cards before kick-off; collapses to a summary card once chosen
+- `m.teamTalk` flag prevents re-selection
+
+### 7. Matchday — post-match press conference (`matchday.js`)
+- Triggers 600ms after full time via `_showPressConference(myM, won, drew)`
+- Context-sensitive question (big win / close win / draw / close loss / heavy loss)
+- Win: 4 options (Credit opponent / Back the process / Demand higher standards / Let them enjoy it)
+- Draw: 3 options (Take the positives / We can do better / Stick together)
+- Loss: 4 options (We will respond / Honest review needed / Back the playing group / Trust the process)
+- Each option applies `confD` to `G.coach.conf`, `morD` to all 17 squad players, `cohD` to team cohesion
+- `myM.pressConf = true` prevents re-triggering; auto-saves after selection; toast shows effects applied
+
+---
+
+**Previous session work — match report grades, opponent form guide, richer watch-game feed:**
+
+1. **Match grade column** in the full match report player table (`match-report.js`). Uses `l.r` (1–10 rating) → letter grades A+/A/B+/B/C/D. Sorted by grade descending.
+
+2. **Opponent recent form guide** on the matchday page. Shows the opposition's last 4 completed match results (W/L/D, score, opponent, round) in a compact strip below the H2H record.
 
 3. **Richer watch-game narrative** (`_buildHalfFeedEvents` in `07-match.js`):
    - Second line-break event if a player has 3+ LBs in the match
    - Kicking duel commentary naming the halfback/five-eighth
    - Late-game fatigue event (63–78 min) naming a forward still working hard
-   - Scoreline context: "This is a real contest" (close) or "looking comfortable now" (big lead)
-   All existing tactic-aware events preserved.
+   - Scoreline context ("This is a real contest" / "looking comfortable now")
 
-4. **Advance bug defensive fixes** (committed previously):
-   - `advance()` intercepts match days, routes to matchday instead of auto-simming
-   - try-catch around `advanceCalendarDay()` surfaces JS errors as toasts
-   - Stale `_htPending`/`_60Pending` flags cleared in `buildMatchEventStream` and `simGamesForDow`
+4. **Split second half into 40–60 and 60–80 chunks** with a persistent coaching panel that stays visible across both halves.
 
-Build clean: 54 modules, 592 kB, no errors.
+---
 
-**Previous session work — continuous watch-game rewrite (complete):**
+**Earlier session work — continuous watch-game rewrite (complete):**
 
-Replaced the old three-phase split-match system (0–40 / HT team-talk / 40–60 / 60–80) with a
-fully continuous event stream. Subs and tactical changes can now happen at any point.
+Replaced the old three-phase split-match system with a fully continuous event stream. Subs and tactical changes can now happen at any point.
 
 Key changes across `07-match.js` and `matchday.js`:
 
-1. **`buildMatchEventStream(m, isFinal)`** added to `07-match.js`. Calls `simMatch` once at
-   kick-off, tags all events with `evType` and `stoppage:bool`, inserts kickoff / halftime /
-   fulltime markers, and returns a sorted flat list. No mid-game re-simulation.
+1. **`buildMatchEventStream(m, isFinal)`** — calls `simMatch` once at kick-off, tags all events with `evType` and `stoppage:bool`, inserts kickoff / halftime / fulltime markers, returns a sorted flat list.
 
-2. **`_revealFeedContinuous(events, i, myM)`** — new streaming function. Time-gap-based delays:
-   `delay = Math.max(150, round(gapMins × 7500 / watchSpeed))` → 80 min ≈ 10 real min at 1×.
-   Flushes `_subQueue` at every `stoppage:true` event (never at half-time).
+2. **`_revealFeedContinuous(events, i, myM)`** — time-gap-based delays: `delay = Math.max(150, round(gapMins × 7500 / watchSpeed))` → 80 min ≈ 10 real min at 1×.
 
-3. **`_toggleWatchPause()`** — pause/resume. Saves index, clears timeout, resumes from same point.
+3. **`_toggleWatchPause()`** — pause/resume; saves index, clears timeout, resumes from same point.
 
-4. **`_flushSubQueue(myM, atMin)`** — applies queued subs, swaps lineup slots, writes to
-   `myM.det.subs`, emits sub events spliced in after the current stoppage.
+4. **`_flushSubQueue(myM, atMin)`** — applies queued subs, swaps lineup slots, writes to `myM.det.subs`, splices sub events in after the current stoppage.
 
 5. **`_addSubToQueue()` / `_removeSubFromQueue(qi)`** — add from dropdowns, remove by index.
 
-6. **`_buildCoachingPanel(myM)`** — rebuilt without `phase` parameter. Sub queue UI replaces old
-   `_coachSubPlans` selectors. Live "Queue" button + pending list with remove buttons.
-   All existing tactic controls (attack focus, game intent, offloads, defence, pressure target,
-   penalty, game plan) preserved.
+6. **`_buildCoachingPanel(myM)`** — rebuilt without `phase` parameter. Sub queue UI. All existing tactic controls preserved.
 
-7. **`p_watchgame()`** rewritten: speed slider (0.25–16×, range input), pause button, lineups +
-   feed + coaching panel in a 3-col grid. Score initialises to "0", not "–".
+7. **`p_watchgame()`** rewritten: speed slider (0.25–16×), pause button, lineups + feed + coaching panel in 3-col grid.
 
-8. **Old functions removed:** `_revealFeedPage`, `_revealFeedPageList`, `_buildTeamTalkHtml`,
-   `_setCoachSubPlan`, `_applyHtSubs`, `_applyTeamTalk`, `_applyQueuedSubs`.
+---
 
-Build clean: 54 modules, 588 kB, no errors.
+**Earlier session work — in-match management + tactical engine:**
+
+1. Sub plan consolidation: single `UI._coachSubPlans` shared between HT modal and coaching panel sidebar.
+2. Coaching panel: attack focus, game intent (Chase/Normal/Protect), offloads (Low/Normal/High), defence (Structured/Aggressive), pressure target (specific opponent player), penalty preference, game plan.
+3. **Game intent wired into engine:** chase = +8%/+6% tries; protect = -7%/-5%.
+4. **Offload risk wired in:** modifies error chance (±9%) and line breaks (±12%).
+5. **Defensive style wired in:** aggressive increases own missed tackles (+18%); opponent aggressive defence increases attacker line breaks (+8%).
+6. **Pressure target:** reduces target's runs (−20%), metres (−25%), raises error chance (+20%).
+7. **Combination chemistry wired into match execution:** `chemRating` from `t.combinations` adjusts error chance (~±8%) and line breaks (~±12%).
+8. **AI tactical variety:** `autoSetAIMatchPrefs` assigns random weighted tactics at match start for all non-coached teams.
+9. **Tactics page expanded** with match settings card and quick-apply buttons.
+10. **Match Day focusCard expanded** to include game intent, offloads, defensive style pre-kick-off.
+11. Line breaks added to match report (LB column + team stat row).
+
+---
+
+**Earlier session work — tactical intelligence / opponent reports:**
+
+1. Wednesday pre-match preview is a staff/scout opponent report with imperfect confidence based on attack coach, defence coach, scout, and coach tactics ratings.
+2. Report includes expected XIII, how the opponent scores, key playmaker/strike runner/yardage threat, vulnerable channel, selection notes, and concrete recommendation.
+3. Structured report data stored in `G.matchIntel` and on the inbox news item.
+4. Tactics page shows latest opponent report; quick-apply buttons for recommended attacking focus.
+5. `myTeam().matchPrefs.attackFocus` wired into the match engine: balanced, middle, left, right, territory each affect run distribution, metres, line-break chance, kicking volume, error risk.
+6. Match Day exposes attacking focus controls and links to the staff report.
+7. League-context analyst notes added (channel rankings, key player stat comparisons).
+8. Inbox uses mail-style layout (messages left, reading pane right); opponent reports sectioned (Summary / Staff read / League context / Expected XIII / Key threats / Plan).
+
+---
+
+**Earlier session work — team diagnostics + combination chemistry:**
+
+- Club modals show channel attack/defence ratings, channel production stats (tries, LBs, metres, runs, tackles/missed tackles, errors), and combination chemistry for: halves, hooker/halves, spine, edges, middle rotation, back three.
+- Match engine persists `t.combinations` after matches so repeated groups build chemistry over time.
+- New groupings project chemistry from role fit, position familiarity, decision making, composure, and team cohesion.
+
+---
 
 **Pending / known limitations:**
-- Match outcome is pre-generated at kick-off — mid-game tactical changes affect the coaching
-  panel copy and sub queue but cannot retroactively change the simulated result. Accepted as
-  Phase 1 limitation; deep set-by-set engine (Feature A) will fix this later.
-- Half-time is a non-stoppage event — no subs are applied there (by design, per user spec).
-- The "All results" button and post-match report still rely on `_handleFullTime` (unchanged).
+- Match outcome is pre-generated at kick-off — mid-game tactical changes affect the coaching panel copy and sub queue but cannot retroactively change the simulated result. Accepted as Phase 1 limitation; deep set-by-set engine (Feature A) will fix this later.
+- Half-time is a non-stoppage event — no subs applied there (by design).
+- Phase 3 Rust engine port not yet started — requires `cargo` on PATH.
 
-**Previous session work:**
-1. **Sub plan consolidation complete.** `_setHtSubPlan` → `_setCoachSubPlan`; `_applyHtSubs`
-   delegates to `_applyQueuedSubs(myM, 'ht')`. Single `UI._coachSubPlans` shared between HT
-   modal and coaching panel sidebar.
-2. **Coaching panel — full in-match control suite.** Panel now includes: bench sub selectors
-   (applied at HT or 60'); attack focus; game intent (Chase/Normal/Protect); offloads
-   (Low/Normal/High); defence (Structured/Aggressive); pressure target (select an opponent
-   player); penalty preference; game plan. Sticky, scrollable, always visible during watch game.
-3. **Game intent wired into engine.** `matchPrefs.gameIntent`: chase = +8%/+6% tries (both
-   teams), protect = -7%/-5%. Re-read at each chunk independently.
-4. **Offload risk and defensive style wired in.** `offloadRisk` modifies error chance (+/-9%)
-   and line breaks (+/-12%). `defStyle` aggressive increases own missed tackles (+18%);
-   opponent's aggressive defence increases the attacking team's line breaks (+8%).
-5. **Target player pressure.** Coaching panel shows a dropdown of key opponent players (HB,
-   FE, HK, WG, CE, FB, SR, LK). Targeting one reduces their runs (-20%), metres (-25%),
-   and increases their error chance (+20%). Passed via `opts.targetPlayerId` to simTeamStats.
-   `targetPlayerId` is cleared at match start in `autoSetAIMatchPrefs`.
-6. **Combination chemistry wired into match execution.** Per-player `chemRating` from
-   `t.combinations` adjusts error chance (~±8%) and line breaks (~±12%).
-7. **AI tactical variety.** `autoSetAIMatchPrefs` runs at `_matchSetup` for non-coached teams,
-   randomly assigning weighted attack focus, game intent, offload risk, and defensive style
-   each match. Makes the tactical system bidirectional.
-8. **Tactics page expanded.** "Match settings" card includes all 4 tactical controls with
-   radio-row selectors and effect descriptions. Quick-apply buttons now include aggressive
-   defence and offload suggestions based on the opponent report's attack/weakness analysis.
-9. **Match Day focusCard expanded.** Game intent, offloads, and defensive style are now
-   settable pre-kick-off alongside the existing attack focus.
-10. **Match report: line breaks added.** LB column in player stats table; "Line breaks" row
-    in team summary stats comparison (only shown if either team has LBs > 0).
-11. Build clean — 54 modules, ~584 kB, no errors.
-
-
-
-**Continuation session complete.** Frontend build clean: 54 modules, ~550 kB, no errors.
-
-- **Latest work after simulation-depth brief:** Implemented the first tactical
-  intelligence slice:
-  1. Wednesday pre-match preview is now a staff/scout opponent report with
-     imperfect confidence based on attack coach, defence coach, scout, and coach
-     tactics ratings.
-  2. Report includes expected XIII, how the opponent scores, key playmaker/strike
-     runner/yardage threat, vulnerable channel, selection notes, and a concrete
-     recommendation.
-  3. Structured report data is stored in `G.matchIntel` and on the inbox news item.
-  4. Inbox analysis items now link to Tactics.
-  5. Tactics page shows latest opponent report and has quick-apply buttons for the
-     recommended attacking focus.
-  6. Added `myTeam().matchPrefs.attackFocus` with real match-engine effects:
-     balanced, middle, left, right, territory. It changes run distribution, metres,
-     line-break chance, kicking volume, and error risk.
-  7. Attacking focus now also modifies expected tries by comparing the selected
-     attacking channel against the opponent's relevant defensive channel.
-  8. Match Day now exposes attacking focus controls and links to the staff report.
-  9. Verified syntax/build plus browser smoke test: generate career -> complete
-     preseason -> advance to Wednesday -> report appears -> Tactics shows report
-     -> tactical focus applies -> match sim completes.
-- **New design note from user:** add a team-page tactical diagnostics view showing
-  attack/defence by channel: middle, left edge, right edge, back three/backfield
-  (wingers + fullback), and spine (fullback + halves + hooker). Also add
-  **combination chemistry** ratings for player groups. "Combination" is the rugby
-  league term for player partnerships/groups; "chemistry" or "cohesion" is the
-  rating. Playing together should improve chemistry; low chemistry should create
-  timing errors/defensive misreads, high chemistry should improve execution.
-- **Latest work on that note:** implemented the first team-page diagnostics slice.
-  Club modals now show channel attack/defence ratings, channel production stats
-  (tries, line breaks, metres, runs, tackles/missed tackles, errors), and
-  combination chemistry for halves, hooker/halves, spine, edges, middle rotation,
-  and back three. The match engine now persists `t.combinations` after matches so
-  repeated groups build chemistry over time; new groupings project chemistry from
-  role fit, position familiarity, decision making, composure, and team cohesion.
-- **Inbox fix:** analysis/news items can now expand correctly. The bug was an
-  inbox key type mismatch: `createdAt` numbers were compared against the string
-  key stored by the click handler, so items marked read but never opened. Inbox
-  keys are now normalised to strings, and expanded reports preserve line breaks.
-- **Report style decision:** match and pre-match reports should read like real
-  staff/media reports, not expose game ratings. Latest change removes visible
-  player OVR/channel score language from the Wednesday opponent report, changes
-  Tactics report confidence from a percentage to a qualitative staff read, makes
-  post-match analysis describe performances in prose, and removes the `Rtg`
-  column from the full match report player table. Internal ratings can still
-  drive sorting/recommendations; do not print them in report copy.
-- **Latest report-depth addition:** Wednesday reports now add league-context
-  analyst notes such as where the opponent ranks for middle metres, edge tries,
-  staff-modelled tries-conceded risk on the weak channel, and whether an
-  opposition player is top five for tackle busts by the staff count. Current
-  channel attack rankings use existing player season stats by lineup slot;
-  defensive conceded-by-channel is still modelled from the lineup until the
-  deeper set-by-set/channel telemetry lands.
-- **Inbox/report readability update:** Inbox now uses a mail-style layout with
-  messages in a left column and the selected item in a central reading pane.
-  Opponent reports are sectioned (`Summary`, `Staff read`, `League context`,
-  `Expected XIII`, `Key threats`, `Plan`) and the recommendation now checks
-  combined evidence so the report does not call an area both vulnerable and
-  well-defended. Future enhancement: add charts/tables/graphics to the analysis
-  pane once channel telemetry is richer.
-- **User clarified desired simulation depth:** add a strong manager-impact loop:
-  Wednesday staff/scout pre-match analysis with accuracy based on staff ratings;
-  actionable opponent tendencies and vulnerabilities; and pre-match/in-match
-  tactical decisions that directly affect the match engine. Examples include
-  targeting a weak edge/middle, selecting a defensive centre to mark a strike
-  centre, rushing a key playmaker, tiring a halfback/five-eighth by forcing
-  tackles, changing tempo/risk/offload instructions, kicking to corners to
-  protect a lead, or chasing points with expansive play. This has been added to
-  `SCOPE.md` and `ROADMAP.md`.
-- **Latest continuation:** Picked up unfinished work from the previous session and fixed
-  the actual half-implemented issues:
-  1. Fixed `09-calendar.js` duplicate `myPos` declaration that broke `vite build`.
-  2. Routed new-game, slot-load, file-import, and "new career" state resets through
-     `setG()` so the ES-module state singleton and `window.G` stay in sync.
-  3. Removed the stale `05-offseason-view.js` import from `src/main.js`; it was
-     overriding the newer preseason offseason view and dumping users back to Dashboard.
-  4. Fixed the `match-report` route alias so full match reports no longer fall back to
-     Dashboard.
-  5. Added derived territory percentage (`terrH`/`terrA`) alongside possession and
-     surfaced it in both the compact and full match reports.
-  6. Verified via Chrome DevTools smoke test: wizard -> pick club -> complete preseason
-     -> sim match -> open full match report with Territory % visible.
-- **Previous feature depth session (Feature Track E + F):** Six game-feel improvements:
-  1. **Round Summary news** — after each round completes, a "Round X Wrap" item
-     appears in the inbox (leader, biggest win, top try scorer). In `08-progression.js`
-     `generateWeeklyMedia()`.
-  2. **Narrative match feed events** — line-break, big-tackle, and error commentary
-     events now appear in both `_buildFeed` (sim-to-result) and `_buildHalfFeedEvents`
-     (watch-game live feed). Uses `l.lb` line-break stat for triggers.
-  3. **Career milestones** — when a coached-team player hits 50/100/150/200/250/300
-     NRL games or 50/100/150/200 career tries, a 'milestone' news item is generated
-     in `07-match.js` inside `updatePlayerForm()`.
-  4. **Mid-week preview** — `generatePreMatchPreview()` in `09-calendar.js` fires
-     when the calendar advances to Wednesday (dow=2). Adds an 'analysis'/'Match Preview'
-     inbox item about the upcoming opponent (position, form, injuries, upset flags).
-     Guards against duplicate with `G.calendar.previewRound`.
-  5. **Team of the Week news** — `generateWeeklyMedia()` checks which coached-team
-     players received a ToTW award for the current round and generates a 'league'
-     news item.
-  6. **Inbox tabs** — added 'milestone' (Milestones) and 'league' (League News)
-     filter tabs to `inbox.js`; added action buttons for both new types.
-- **Previous session highlights (also done):** Team theming (alpha CSS vars), confetti
-  accent colour, advance button gate labels, match result news in inbox,
-  pre-match standings/H2H strip, board confidence feedback.
-- **Not yet started:** Phase 3 (Rust engine port) — requires `cargo` on PATH.
-  The technical track paused to do feature depth work instead.
+---
 
 ## How to run
 
@@ -232,23 +203,26 @@ npm run frontend:build  # builds to frontend/dist/
 Rust env: `. "$HOME/.cargo/env"` if `cargo` isn't on PATH in a fresh shell.
 Full prerequisites and troubleshooting in README.md.
 
+---
+
 ## Current state — what works
 
 - **Phase 1:** Tauri shell, save/load via Rust commands, Wayland fix — all intact.
 - **Phase 2 — Vite + ES modules:**
-  - `vite build` succeeds: 54 modules → single JS bundle (~550 kB).
+  - `vite build` succeeds: 54 modules → single JS bundle (~643 kB).
   - The 40-`<script>` chain is retired; `index.html` has one `<script type="module">`.
   - All 13 engine files are proper ES modules with named `export` declarations.
   - Engine files also assign their exports to `window` so UI pages use them as globals.
   - `00-state.js` manages the G singleton; `setG()` keeps `window.G` in sync.
-  - `03-players.js` now exports `resetPid()`, `setPid()`, `getPid()` for cross-module PID management.
+  - `03-players.js` exports `resetPid()`, `setPid()`, `getPid()` for cross-module PID management.
   - `01-core.js` exports `UI` and sets `window.UI`; all other UI files import `{ UI }`.
-  - All 29 UI page files have been given `import { UI } from '../01-core.js'` (minimal change).
+  - All 29 UI page files have `import { UI } from '../01-core.js'`.
   - `05-helpers.js` assigns helper functions (`teamLogo`, `ovrCls`, etc.) to `window`.
-  - Tauri config updated: `devUrl: "http://localhost:5173"`, `beforeDevCommand`, `beforeBuildCommand`.
-- **Frontend save shim** — `12-save.js` detects `window.__TAURI__` and routes save calls
-  to `invoke`; falls back to `/api/saves` HTTP API in a plain browser.
+  - Tauri config: `devUrl: "http://localhost:5173"`, `beforeDevCommand`, `beforeBuildCommand`.
+- **Frontend save shim** — `12-save.js` detects `window.__TAURI__` and routes save calls to `invoke`; falls back to `/api/saves` HTTP API in a plain browser.
 - Compiles cleanly (`vite build`); frontend UI is functional.
+
+---
 
 ## Project shape
 
@@ -273,16 +247,20 @@ cd frontend && node --check src/engine/*.js src/ui/*.js src/ui/pages/*.js
 cd frontend && npx vite build
 ```
 
+---
+
 ## Decisions Log
 
 | Question | Decision |
 |---|---|
-| Real NRL identity | **Real NRL names/logos for now** (personal use). Data-driven identity from day one — swappable config, not a rewrite. |
+| Real NRL identity | **Real NRL names/logos for now** (personal use). Data-driven identity — swappable config, not a rewrite. |
 | Match-sim depth ceiling | **Full FM-level tactical depth** (sets, tackles, field position, ruck, play-by-play, fatigue, HIA). |
-| Coach agency | **Manager decisions must directly affect results.** Staff reports expose imperfect tactical intelligence; lineup, role, pre-match, and in-match instructions should change odds through the match engine. |
+| Coach agency | **Manager decisions must directly affect results.** Staff reports expose imperfect tactical intelligence; lineup, role, pre-match, and in-match instructions change odds through the match engine. |
 | First priority after Phase 1 | **Rust engine port (foundation)** — RNG/players first, then match engine. |
 | V1 (HTML version) | **Frozen as reference.** No new features in V1; V2 is the sole dev line. |
-| Phase 2 ES module strategy | **Window globals shim** — engine files export + assign to window; UI page files use globals; clean border is the engine's named-export API. UI pages will be fully modularised incrementally during Phase 3+ work. |
+| Phase 2 ES module strategy | **Window globals shim** — engine files export + assign to window; UI page files use globals. Clean border is the engine's named-export API. |
+
+---
 
 ## Reference docs
 
@@ -290,41 +268,27 @@ cd frontend && npx vite build
 - `ROADMAP.md` — technical track (Phases 1–5) + feature track (A–F).
 - `README.md` — prerequisites, launch, saves, troubleshooting.
 
+---
+
 ## Suggested next steps
 
-### Technical track (Phase 3)
-1. **Phase 3 step 1** — port `01-rng.js` + `03-players.js` to a Rust crate.
-   - Start with the RNG (a seedable LCG — trivial in Rust).
-   - Validate output parity: run the same seed through both JS and Rust and compare.
-   - Expose via a Tauri command: `generate_players(cfg)` → JSON.
-   - **Requires `cargo` on PATH**: `. "$HOME/.cargo/env"` in the terminal first.
-2. Test a full play-through via `npm run dev` in a terminal with Cargo on PATH.
-3. Begin Phase 3 step 2: teams, fixtures, selection in Rust.
+### Feature ideas (roughly prioritised)
 
-### Feature track (if doing another feature session)
-- **Match engine depth (Feature A)**: Set-by-set possession and territory tracking in
-  `07-match.js`. The `simMatchHalf` function is the right entry point. Add a possession
-  counter per set and track territory zones (own-20, own-40, mid, opp-40, opp-20).
-  Surface in the match report as "possession %" and "territory %".
-  - First slice now done: derived possession/territory percentages exist and are visible.
-    Remaining work is the deeper set-by-set possession/territory model.
-- **Tactical intelligence / pre-match analysis:** Build Wednesday staff reports with
-  imperfect accuracy based on coaching/scouting ratings. Reports should identify
-  opponent lineup, key players, scoring channels, and vulnerabilities, then link to
-  actionable tactical changes.
-  - First slice done: report generation, inbox item, Tactics-page display, and
-    quick-apply attack focus. Match Day also exposes the focus before kick-off.
-- **Team-page tactical diagnostics:** First slice done on club modals. It shows
-  channel ratings/stat output and persisted combination chemistry. Remaining work:
-  feed the chemistry rating directly into timing errors, defensive misreads,
-  attacking execution, and richer channel stats as the set-by-set engine lands.
-- **In-match management (Feature B)**: ✅ Complete. The coaching panel has:
-  attack focus, game intent (chase/normal/protect), offloads (low/normal/high), defence
-  (structured/aggressive), pressure target (specific opponent player), subs, penalty, game
-  plan. All wired into the match engine with meaningful per-chunk effects. AI teams also
-  receive random tactical settings each match. The Tactics page and Match Day page both
-  expose these pre-match. Tactic-aware narrative events now fire in both the split watch-game
-  and sim-to-result feeds, reflecting offloads, territory focus, chase/protect intent,
-  aggressive defence, and pressure targeting by name.
-- **Replace placeholder app icons** with real branding.
-- **Onboarding** (Feature E): A clearer "what to do first" overlay for new saves.
+1. **Transfer/recruitment window** — currently no in-season player movement. A mid-season loan/trade system or end-of-season free agency would give the squad management loop real decisions. Player `weeksDropped` and low morale now provide a natural trigger for "player wants out" storylines.
+
+2. **Win/loss streak morale** — a team on a 4+ game winning streak should see a collective squad morale lift. A losing streak should compound pressure on top of the existing per-match penalties. Streak tracking already exists in `ladder()` form data.
+
+3. **Board season briefing inbox item** — at the start of each season, generate a "Board Briefing" inbox message with the target, contract situation, and one key objective. Would make the season open with clearer stakes.
+
+4. **Form indicators on teamsheet** — player form is tracked (`p.form`) but only shown on squad/modal pages. Surfacing hot/cold indicators directly on the teamsheet would make it influence lineup decisions more visibly.
+
+5. **Deeper set-by-set match engine (Feature A)** — the big remaining sim-depth item. `simMatchHalf` is the entry point. Add possession counter per set, track territory zones (own-20, own-40, mid, opp-40, opp-20). Surface as live territory shift in the watch-game feed.
+
+6. **Onboarding** (Feature E) — a clearer "what to do first" overlay for new saves.
+
+7. **Replace placeholder app icons** with real branding.
+
+### Technical track (Phase 3)
+1. Port `01-rng.js` + `03-players.js` to a Rust crate; validate parity via same-seed comparison.
+2. Expose via Tauri command: `generate_players(cfg)` → JSON.
+3. **Requires `cargo` on PATH**: `. "$HOME/.cargo/env"` in the terminal first.

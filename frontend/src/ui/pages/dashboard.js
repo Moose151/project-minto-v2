@@ -24,7 +24,12 @@ Object.assign(UI, {
     if(expiring.length >= 5) alerts.push({tone:'neutral', title:'Contract queue', body:`${expiring.length} top-squad players have one year or less remaining.`, action:`<button class="btn sm" onclick="UI.go('contracts')">Contracts</button>`});
     if(slTargets.length) alerts.push({tone:'neutral', title:'Recruitment watch', body:`${slTargets.length} shortlisted target${slTargets.length===1?' is':'s are'} approachable now or this off-season.`, action:`<button class="btn sm" onclick="UI.go('recruitment')">Recruitment</button>`});
     if((t.cohesion||50) < 35) alerts.push({tone:'bad', title:'Cohesion low', body:'Lineup churn is hurting match-day rhythm. A settled 13 will lift cohesion over time.', action:`<button class="btn sm" onclick="UI.go('teamsheet')">Settle side</button>`});
-    if(G.coach.conf < 30) alerts.push({tone:'bad', title:'Board pressure', body:`Board confidence is down to ${Math.round(G.coach.conf)}%. Results matter from here.`, action:`<button class="btn sm" onclick="UI.go('ladder')">View ladder</button>`});
+    if(G.coach.conf < 30) alerts.push({tone:'bad', title:'Board pressure', body:`Board confidence is down to ${Math.round(G.coach.conf)}%. Results matter from here.`, action:`<button class="btn sm" onclick="UI.go('coach')">Board view</button>`});
+    const topSquad = t.players.map(id=>G.players[id]).filter(p=>p && p.squad==='top');
+    const avgMorale = topSquad.length ? Math.round(topSquad.reduce((s,p)=>s+(p.morale||50),0)/topSquad.length) : 50;
+    const droppedRisk = topSquad.filter(p=>(p.weeksDropped||0)>=4 && !p.injury).length;
+    if(avgMorale < 40) alerts.push({tone:'bad', title:'Squad morale low', body:`Average squad morale is ${avgMorale}. Team talks, positive results, and consistent selection will help.`, action:`<button class="btn sm" onclick="UI.go('training')">Squad mood</button>`});
+    else if(droppedRisk >= 3) alerts.push({tone:'neutral', title:'Rotation discontent', body:`${droppedRisk} top-squad players have been out of the 17 for 4+ weeks and are losing morale.`, action:`<button class="btn sm" onclick="UI.go('training')">Review</button>`});
     if(!alerts.length && G.phase==='regular') alerts.push({tone:'good', title:'Week in hand', body:`The club is ${ord(pos)} and ready for the next round. Review training or play on.`, action:`<button class="btn sm" onclick="UI.go('training')">Training</button>`});
     return alerts.slice(0,4).map(a=>`<div class="alert-card ${a.tone}">
       <div><b>${esc(a.title)}</b><p>${esc(a.body)}</p></div>${a.action||''}

@@ -1,6 +1,6 @@
 # Project Minto V2 — Roadmap
 
-_Last updated: 2026-06-27_
+_Last updated: 2026-06-28 (session 2)_
 
 Two tracks run in parallel: a **technical track** (the Tauri/Rust migration)
 and a **feature track** (deepening the game). The agreed priority is to lay the
@@ -19,11 +19,12 @@ Each phase keeps the game fully playable.
 - Frontend auto-detects Tauri; falls back to the HTTP API in a browser.
 - Wayland rendering crash fixed at startup.
 
-### Phase 2 — Modern build
-- Introduce **Vite** + ES modules; retire the hand-ordered 40-`<script>` chain.
-- Establish a clean module boundary between **engine** and **UI**.
-- (Optional, incremental) begin adopting **TypeScript** with `allowJs`, typing
-  the `G` game-state shape first.
+### Phase 2 — Modern build ✅ DONE
+- Introduced **Vite** + ES modules; retired the hand-ordered 40-`<script>` chain.
+- Established a clean module boundary between **engine** and **UI**.
+- All 13 engine files are ES modules that also assign exports to `window` for UI globals.
+- 54 modules → single JS bundle (~643 kB). `vite build` clean.
+- (TypeScript migration deferred — not yet started.)
 
 ### Phase 3 — Rust simulation core ← **first priority after Phase 1**
 Port the engine into a Rust crate, one self-contained system at a time, each
@@ -83,18 +84,20 @@ Target: **full FM-level tactical depth**.
   assessment, return if cleared).
 - Live feed surfaces tackle count, field position, possession, sub events.
 
-### B. In-match management
-- Mid-game pause to make substitutions/tactical changes during the second half
-  (V1 already does half-time decisions; extend to live).
-- Richer in-game tactical responses to momentum, score, weather, fatigue.
-- Live tactical switches: middle/left/right attacking focus, tempo, offload
-  risk, field-position kicking, expansive own-half play, defensive aggression,
-  rush pressure on a key playmaker, and targeted big-hit pressure.
-- Late-game intent presets: protect lead, manage territory, chase points,
-  field-goal setup, or controlled possession.
-- First tactical switch is live: attacking focus can be set pre-match from the
-  Tactics page or Match Day, and it influences expected tries, run distribution,
-  metres, line-break chance, kicking volume, and error risk.
+### B. In-match management ✅ SUBSTANTIALLY COMPLETE
+- Continuous event-stream watch-game replaces the old split-phase system; subs and
+  tactical changes can happen at any point.
+- Coaching panel: attack focus, game intent (Chase/Normal/Protect), offloads
+  (Low/Normal/High), defence (Structured/Aggressive), pressure target (specific opponent
+  player), penalty preference, game plan — all wired into the match engine with real effects.
+- **Pre-match team talk** (5 options): applies morale and cohesion boosts that feed
+  directly into `squadStrength()` before kick-off.
+- **Post-match press conference** (context-sensitive question + 3–4 choices): applies
+  board confidence, player morale, and team cohesion effects after full time.
+- AI teams receive random tactical settings each match (`autoSetAIMatchPrefs`).
+- Speed slider (0.25–16×), pause/resume, sub queue with add/remove.
+- Remaining: deeper real-time score/event reactivity; mid-game momentum swings tied to
+  in-match tactical changes retroactively shifting outcome (currently pre-simmed).
 
 ### C. Tactical intelligence and pre-match analysis
 - Wednesday staff report for the upcoming opponent, generated from coaching and
@@ -141,18 +144,24 @@ Target: **full FM-level tactical depth**.
 - Coach representative-job offers and dual-role management.
 
 ### E. Management breadth
+- ✅ **Board relationship system**: board confidence (`G.coach.conf`) affects contract renewal/sacking at season end. Press conference, team talks, and match results all move confidence. Mid-season board review fires at the halfway round. Coach page shows season target, trajectory, and projected outcome.
+- ✅ **Player morale system**: rotation-based morale (dropped players lose morale each week; regular starters gain it). Squad mood visible on training page. One-on-one meetings from inbox. Man Management attribute now meaningfully scales team talk and meeting effectiveness.
 - **Lower leagues & expansion:** second-tier competition, promotion/relegation,
   club merger/dissolution, loan system.
 - Deeper **youth academy** pathway and youth-grade competition.
-- Deeper **board/finance**: expectations, transfer/loan budgets, stadium
-  expansion projects, sponsorship negotiation.
+- **Transfer/loan window**: mid-season player movement. Low-morale dropped players provide natural hook for transfer requests.
+- Deeper **board/finance**: transfer/loan budgets, stadium expansion projects, sponsorship negotiation.
 - Better **bye/draw** handling: forced even-team byes, Origin-round blocks,
   multi-bye distribution.
 
 ### F. Game feel & UX
-- Smoother navigation, transitions, and match-view presentation.
-- Reworked/simplified player avatars (current SVG is heavy at small sizes).
-- Onboarding for new managers; clearer surfacing of how decisions affect results.
+- ✅ Training page rewritten — development pipeline, attribute target dropdowns, key attr badges.
+- ✅ Season Leaders page rewritten — 5 tabs, prominent top-3 leader cards, per-80-min column.
+- ✅ Achievements page rewritten — gold/silver/bronze tiers, category grouping, progress hints.
+- ✅ Ladder page rewritten — Win% column, Home/Away split tab with per-team records.
+- ✅ Fantasy page rewritten — Team of the Round pitch layout, round scores table, season ladder.
+- ✅ Match report grades (A+/A/B+/B/C/D), opponent recent form guide, richer watch-game narrative.
+- Remaining: Smoother navigation/transitions; reworked player avatars (current SVG heavy at small sizes); onboarding for new managers.
 
 ### G. World simulation realism
 - AI clubs making smarter squad/tactical/transfer decisions.
@@ -163,15 +172,20 @@ Target: **full FM-level tactical depth**.
 
 ## Suggested near-term order
 
-1. **Phase 2** (Vite + module boundary) — makes the Rust port tractable.
-2. **Phase 3 step 1** (RNG + player gen in Rust) — learn Rust on a safe slice.
-3. **Phase 3 step 3 + Feature A** (match engine port *with* added depth) — the
-   payoff: a deeper, faster, Rust-powered match engine where decisions matter.
-4. **Feature C foundation** — staff-generated Wednesday opponent reports,
-   backed by real match tendencies and imperfect staff accuracy.
-5. **Feature B tactical controls** — make the report actionable before and
-   during matches with visible trade-offs.
-6. Iterate outward through the feature track, with SQLite (Phase 4) once state
-   ownership has moved to Rust.
+> Phases 1 and 2 are complete. Features B, C, and F have substantial progress.
+
+1. **Board/contract system** — `G.coach.conf` exists and the press conference writes to it.
+   Surface confidence on the dashboard; wire it to end-of-season renewal/firing; add board
+   objectives at season start.
+2. **Player morale depth** — expand morale sources (rotation, contract, media, minutes played)
+   beyond team talk + press conference. Consider a "squad mood" summary on the training page.
+3. **Transfer/recruitment window** — mid-season loan/trade or end-of-season free agency to give
+   squad management real in-season decisions.
+4. **Phase 3 step 1** (RNG + player gen in Rust) — learn Rust on a safe slice. Requires
+   `cargo` on PATH: `. "$HOME/.cargo/env"`.
+5. **Phase 3 step 3 + Feature A** (match engine port *with* added depth) — set-by-set possession
+   and territory; the payoff of the Rust foundation.
+6. Iterate outward through the feature track, with SQLite (Phase 4) once state ownership has
+   moved to Rust.
 
 > This roadmap is a living document — re-prioritise per session in HANDOVER.md.

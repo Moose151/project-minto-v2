@@ -1,5 +1,5 @@
 :root{
-  --bg:#14171C; --panel:#1C2026; --panel2:#23282F; --line:#2C313A; --line2:#373D48;
+  --bg:#14171C; --panel:#1C2026; --card:#1C2026; --hover:#23282F; --panel2:#23282F; --line:#2C313A; --line2:#373D48;
   --ink:#EAE7DE; --muted:#9097A2; --dim:#6B7280;
   --brass:#D2A53E; --brass-d:#A87F25; --green:#4CAF7D; --red:#C85A4F; --blue:#5B9BD5;
   --accent:#D2A53E; --accent-d:#A87F25;
@@ -236,6 +236,7 @@ td.num,th.num{text-align:right}
 
 /* ---------- forms ---------- */
 input[type=text],input[type=number],select{background:#15181D; border:1px solid var(--line2); color:var(--ink); border-radius:6px; padding:8px 10px; font-size:14px; width:100%}
+select option{background:#15181D; color:var(--ink)}
 input:focus,select:focus,button:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
 .field{margin-bottom:14px}
 .field label{display:block; font-size:11px; text-transform:uppercase; letter-spacing:.1em; color:var(--muted); margin-bottom:5px}

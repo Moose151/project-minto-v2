@@ -224,19 +224,25 @@ export function _buildHalfFeedEvents(det_h, det_a, th, ta, finalScoreH, finalSco
   let sH = (opts && opts.startH) || 0;
   let sA = (opts && opts.startA) || 0;
   const all = [];
-  for(const ev of tryEvs){
-    const team=ev.side==='h'?th:ta, scorer=G.players[ev.scorerId], assist=ev.assistId?G.players[ev.assistId]:null, kicker=ev.kickerId?G.players[ev.kickerId]:null;
-    if(!scorer) continue;
-    if(ev.side==='h'){sH+=4+(ev.converted?2:0);}else{sA+=4+(ev.converted?2:0);}
-    const sInjMin=injMins[(ev.side)+':'+ev.scorerId]; const tryMin=sInjMin?Math.min(ev.min,Math.max(1,sInjMin-1)):ev.min;
-    const assistTxt=assist?` ${pick(ASSIST_VERBS)} ${assist.name},`:'';
-    const convTxt=ev.converted?(kicker&&kicker.id!==scorer.id?` ${kicker.name} converts.`:' Conversion good.'):' Conversion missed.';
-    all.push({min:tryMin, txt:`TRY — ${team.nick}:${assistTxt} ${scorer.name} ${tryDesc(scorer.pos)}.${convTxt} (${sH}–${sA})`});
-  }
-  for(const ev of penEvs){
-    const team=ev.side==='h'?th:ta, kicker=G.players[ev.kickerId]; if(!kicker) continue;
-    if(ev.made){if(ev.side==='h')sH+=2;else sA+=2; all.push({min:ev.min,txt:`${kicker.name} (${team.nick}) slots a penalty goal. (${sH}–${sA})`});}
-    else all.push({min:ev.min,txt:`${kicker.name} (${team.nick}) misses the penalty attempt.`});
+  // Merge tries and penalty goals in chronological order so running score is always correct
+  const allScoring = [
+    ...tryEvs.map(e => ({...e, _st: 'try'})),
+    ...penEvs.map(e => ({...e, _st: 'pen'}))
+  ].sort((a, b) => a.min - b.min);
+  for(const ev of allScoring){
+    if(ev._st === 'try'){
+      const team=ev.side==='h'?th:ta, scorer=G.players[ev.scorerId], assist=ev.assistId?G.players[ev.assistId]:null, kicker=ev.kickerId?G.players[ev.kickerId]:null;
+      if(!scorer) continue;
+      if(ev.side==='h'){sH+=4+(ev.converted?2:0);}else{sA+=4+(ev.converted?2:0);}
+      const sInjMin=injMins[(ev.side)+':'+ev.scorerId]; const tryMin=sInjMin?Math.min(ev.min,Math.max(1,sInjMin-1)):ev.min;
+      const assistTxt=assist?` ${pick(ASSIST_VERBS)} ${assist.name},`:'';
+      const convTxt=ev.converted?(kicker&&kicker.id!==scorer.id?` ${kicker.name} converts.`:' Conversion good.'):' Conversion missed.';
+      all.push({min:tryMin, txt:`TRY — ${team.nick}:${assistTxt} ${scorer.name} ${tryDesc(scorer.pos)}.${convTxt} (${sH}–${sA})`});
+    } else {
+      const team=ev.side==='h'?th:ta, kicker=G.players[ev.kickerId]; if(!kicker) continue;
+      if(ev.made){if(ev.side==='h')sH+=2;else sA+=2; all.push({min:ev.min,txt:`${kicker.name} (${team.nick}) slots a penalty goal. (${sH}–${sA})`});}
+      else all.push({min:ev.min,txt:`${kicker.name} (${team.nick}) misses the penalty attempt.`});
+    }
   }
   for(const [side,det,team] of [['h',det_h,th],['a',det_a,ta]]){
     for(const [id,l] of Object.entries(det)){
@@ -611,6 +617,11 @@ function setDerivedMatchStats(det, triesH, triesA){
   det.possA = 100 - det.possH;
   det.complH = h.runs > 0 ? Math.round(Math.max(0, h.runs - h.err) / h.runs * 100) : 70;
   det.complA = a.runs > 0 ? Math.round(Math.max(0, a.runs - a.err) / a.runs * 100) : 70;
+  // Sets-based completion: sets ≈ runs/5 (NRL avg ~5 carries per set once errors accounted for)
+  det.setsH = Math.max(1, Math.round(h.runs / 5));
+  det.setsA = Math.max(1, Math.round(a.runs / 5));
+  det.complSetsH = Math.max(0, det.setsH - (h.err || 0));
+  det.complSetsA = Math.max(0, det.setsA - (a.err || 0));
   const territoryScoreH = Math.max(1, h.m + h.km * 0.22 + h.k4020 * 80 + h.fdo * 45 + triesH * 20 - h.err * 22);
   const territoryScoreA = Math.max(1, a.m + a.km * 0.22 + a.k4020 * 80 + a.fdo * 45 + triesA * 20 - a.err * 22);
   det.terrH = pctShare(territoryScoreH, territoryScoreA, 28, 72);
@@ -732,19 +743,6 @@ export function simTeamStats(t, tries, out, kickSkill, weatherCtx, opts){
     const pressureErrMod  = isTargeted ? 1.20 : 1;
     line.runs = Math.max(0, Math.round(line.runs * pressureRunMod));
     line.m    = Math.max(0, Math.round(line.m    * (isTargeted ? 0.75 : 1)));
-    const errChance = (1 - (x.p.attrs.ballSecurity*.55+x.p.attrs.catching*.25+x.p.attrs.composure*.20)/130) * clamp(1 - formAdj*.55, .72, 1.28) * handlingMod * focusErrMod * chemErrMod * offErrMod * pressureErrMod;
-    line.err = rnd() < errChance ? ri(1, weatherEffects.handling >= 1.45 && rnd() < .22 ? 3 : 2) : 0;
-    const mtRate = clamp((90 - (x.p.attrs.tackling*0.55 + x.p.attrs.markerDef*0.35 + x.p.attrs.workRate*0.10)) / 120, 0.04, 0.35);
-    line.mt = Math.max(0, Math.round(line.tk * mtRate * rf(0.5, 1.5) * ownDefMtMod));
-    const footwork = x.p.attrs.stepSkill != null ? x.p.attrs.stepSkill : (x.p.attrs.agility*.65 + x.p.attrs.ballRunning*.35);
-    const lbSkill = (x.p.attrs.speed*0.35 + x.p.attrs.acceleration*0.30 + footwork*0.35);
-    const lbRate = clamp((lbSkill - 48) / 500, 0.003, 0.10);
-    line.lb = Math.max(0, Math.round(line.runs * lbRate * rf(0.4, 1.8) * focusLbMod * chemLbMod * offLbMod * oppDefLbMod));
-    if(['FE','HB','HK','FB'].includes(x.p.pos)){
-      const lbaBase = {HB:2.2, FE:1.8, HK:1.5, FB:0.8}[x.p.pos] || 0.8;
-      const lbaSkill = (x.p.attrs.vision + x.p.attrs.shortPass + x.p.attrs.playmaking) / 195;
-      line.lba = Math.max(0, Math.round(lbaBase * lbaSkill * rf(0.3, 1.8)));
-    }
     // Combination chemistry: high rating reduces errors and improves line breaks
     // Chemistry is group-based; neutral is ~50, max 95, min 25
     const combs = t.combinations || {};
@@ -765,9 +763,22 @@ export function simTeamStats(t, tries, out, kickSkill, weatherCtx, opts){
     const oppDefLbMod = oppDefStyle === 'aggressive' ? 1.08 : 1;
     // Own aggressive defence: over-committed, higher missed tackle risk
     const ownDefMtMod = ownDefStyle === 'aggressive' ? 1.18 : 1;
+    const errChance = (1 - (x.p.attrs.ballSecurity*.55+x.p.attrs.catching*.25+x.p.attrs.composure*.20)/130) * clamp(1 - formAdj*.55, .72, 1.28) * handlingMod * focusErrMod * chemErrMod * offErrMod * pressureErrMod;
+    line.err = rnd() < errChance ? ri(1, weatherEffects.handling >= 1.45 && rnd() < .22 ? 3 : 2) : 0;
+    const mtRate = clamp((90 - (x.p.attrs.tackling*0.55 + x.p.attrs.markerDef*0.35 + x.p.attrs.workRate*0.10)) / 120, 0.04, 0.35);
+    line.mt = Math.max(0, Math.round(line.tk * mtRate * rf(0.5, 1.5) * ownDefMtMod));
+    const footwork = x.p.attrs.stepSkill != null ? x.p.attrs.stepSkill : (x.p.attrs.agility*.65 + x.p.attrs.ballRunning*.35);
+    const lbSkill = (x.p.attrs.speed*0.35 + x.p.attrs.acceleration*0.30 + footwork*0.35);
+    const lbRate = clamp((lbSkill - 48) / 500, 0.003, 0.10);
+    line.lb = Math.max(0, Math.round(line.runs * lbRate * rf(0.4, 1.8) * focusLbMod * chemLbMod * offLbMod * oppDefLbMod));
+    if(['FE','HB','HK','FB'].includes(x.p.pos)){
+      const lbaBase = {HB:2.2, FE:1.8, HK:1.5, FB:0.8}[x.p.pos] || 0.8;
+      const lbaSkill = (x.p.attrs.vision + x.p.attrs.shortPass + x.p.attrs.playmaking) / 195;
+      line.lba = Math.max(0, Math.round(lbaBase * lbaSkill * rf(0.3, 1.8)));
+    }
     const isPrimaryKicker = kicker && kicker.id === x.p.id;
-    const ksBase = {half: isPrimaryKicker ? 22 : 14, hk: 4, back: 2, fwd: 1}[grp] || 1;
-    line.ks = Math.max(0, Math.round(ksBase * rf(0.6, 1.4) * focusKickMod));
+    const ksBase = {half: isPrimaryKicker ? 22 : 5, hk: 2, back: 0.6, fwd: 0.3}[grp] || 0.3;
+    line.ks = Math.max(0, Math.round(ksBase * (mins / 80) * rf(0.6, 1.4) * focusKickMod));
     const kickMeterMod = weatherEffects.kickMeters * (weatherCtx && weatherCtx.conservative ? 1.02 : 1);
     const avgKickM = clamp((30 + (x.p.attrs.kickPower*0.25 + x.p.attrs.kickAccuracy*0.15)) * kickMeterMod * focusKickMod, 25, 75);
     line.km = Math.max(0, Math.round(line.ks * avgKickM * rf(0.8, 1.2)));
