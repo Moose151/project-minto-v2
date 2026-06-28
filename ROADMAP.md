@@ -155,6 +155,7 @@ Target: **full FM-level tactical depth**.
 - **Lower leagues & expansion:** second-tier competition, promotion/relegation,
   club merger/dissolution, loan system.
 - Deeper **youth academy** pathway and youth-grade competition.
+- ✅ **Rival club poaching** (offseason): when your quality expiring players (OVR 60+) go unsigned, AI clubs make specific offers with named rival + salary + years. The contracts screen shows "⚠️ Rival Interest" alerts — match the offer or release the player. Fires a news item for each outcome.
 - **Free agent signings** (NRL-accurate): clubs can sign free agents at any time for injury cover; no formal mid-season window. Transfer requests result in release-with-payout or resolution. Build a free agent market page where out-of-contract players are listed and can be approached.
 - Deeper **board/finance**: transfer/loan budgets, stadium expansion projects, sponsorship negotiation.
 - Better **bye/draw** handling: forced even-team byes, Origin-round blocks,

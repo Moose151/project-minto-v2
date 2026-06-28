@@ -6,6 +6,14 @@ _Updated every session._
 
 **Latest session work — Sin bin/send-off system, golden point, milestones, farewell, rival interest, live stats:**
 
+### 13. Rival club poaching in offseason (`11-offseason.js`, `04-offseason-view.js`)
+- On offseason start, AI clubs make specific offers to your expiring OVR 60+ players (55% chance per rival per player)
+- Stored in `G.offseason.poachOffers = [{playerId, rivalId, salary, years}]`
+- Offseason contracts screen shows a red "⚠️ Rival Interest" section with one card per target: rival name, offer amount, cap impact
+- Two actions: "Match offer" (re-signs at rival's salary) or "Let him go" (releases player who joins rival)
+- On match: fires "Re-Signed" news item; on release: fires "Player Departs" news item
+- Adds urgency to the offseason — your best expiring players need attention before they walk
+
 ### 12. Coach attribute development from season results (`11-offseason.js`)
 - At end of each season in `startOffseason()`, coach attrs grow based on performance
 - Tactics: +1 if top 4, +2 if premiership

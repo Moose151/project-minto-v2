@@ -174,8 +174,36 @@ Object.assign(UI, {
         ${kind==='exp'?`<button class="btn sm danger" onclick="releasePlayer(myTeam(),${p.id});UI.toast('Released to the open market.');UI.render()">Let go</button>`:''}
       </div></td></tr>`;
     };
+    const poachOffers = (O.poachOffers||[]).filter(po=>O.expiring.includes(po.playerId) && G.players[po.playerId]);
+    const poachHtml = poachOffers.length ? `<h2 class="sec" style="color:var(--red)">⚠️ Rival interest in your players</h2>
+    <p class="page-sub">Act now — these players will walk to rivals if you don't match or release them.</p>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">
+    ${poachOffers.map(po=>{
+      const p = G.players[po.playerId];
+      const rival = G.teams[po.rivalId];
+      if(!p||!rival) return '';
+      const capHit = po.salary;
+      const roomAfter = room - capHit;
+      return `<div class="card" style="border-left:3px solid var(--red);padding:12px 16px">
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          <div style="flex:1;min-width:180px">
+            <div style="font-weight:700;font-size:15px">${esc(p.name)} <span class="pos-tag">${p.pos}</span> <span class="ovr ${ovrCls(p.ovr)}">${p.ovr}</span></div>
+            <div style="font-size:12px;color:var(--muted);margin-top:3px">
+              <b style="color:var(--ink)">${esc(rival.nick)}</b> have tabled <b style="color:var(--ink)">${money(po.salary)}/yr</b> for <b style="color:var(--ink)">${po.years} year${po.years>1?'s':''}</b>
+            </div>
+            <div style="font-size:11px;color:${roomAfter<0?'var(--red)':'var(--muted)'};margin-top:2px">Cap room after match: ${money(roomAfter)}</div>
+          </div>
+          <div class="btnrow" style="margin:0">
+            <button class="btn sm primary" onclick="UI.matchPoachOffer(${po.playerId},${po.salary},${po.years})">Match offer</button>
+            <button class="btn sm danger" onclick="UI.dismissPoachOffer(${po.playerId})">Let him go</button>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}</div>` : '';
+
     return `<h1 class="page">Off-Season — Contracts</h1>
     <p class="page-sub">Payroll ${money(totalSal)} · cap ${money(G.config.cap)} · <span style="color:${room<0?'var(--red)':'var(--green)'}">${money(Math.abs(room))} ${room<0?'OVER':'free'}</span> · main squad ${squadCount(t, 'top')}/${TOP_SQUAD_CAP}</p>
+    ${poachHtml}
     <h2 class="sec">Your off-contract players</h2>
     <div class="card" style="padding:6px"><table><thead><tr><th class="noclick">Player</th><th class="noclick num">Age</th><th class="noclick num">OVR</th><th class="noclick num">Est. POT</th><th class="noclick num">Demand</th><th class="noclick"></th></tr></thead><tbody>
     ${exp.map(p=>row(p,'exp')).join('')||'<tr><td colspan="6" style="color:var(--muted)">Everyone is signed.</td></tr>'}</tbody></table></div>
@@ -249,6 +277,40 @@ Object.assign(UI, {
       UI.toast(`${p.name.split(' ')[1]||p.name} knocked it back — wants closer to ${money(res.demand)}.`);
       UI.renderOffer(res.demand);
     }
+  },
+  matchPoachOffer(playerId, salary, years){
+    const p = G.players[playerId];
+    const t = myTeam();
+    if(!p) return;
+    const firstYear = salary;
+    const existingSal = salaryCountsForCap(p) ? currentSalary(p) : 0;
+    const room2 = G.config.cap - teamSalary(t) + existingSal;
+    if(firstYear > room2){ UI.toast(`Matching that offer would bust the cap by ${money(firstYear - room2)}.`); return; }
+    setPlayerContract(p, salary, years, p.contractType || 'flat');
+    p.squad = 'top'; p.everTopSquad = true;
+    G.offseason.expiring = G.offseason.expiring.filter(id=>id!==playerId);
+    G.offseason.poachOffers = (G.offseason.poachOffers||[]).filter(po=>po.playerId!==playerId);
+    const rival = G.offseason.poachOffers && G.teams[((G.offseason.poachOffers||[]).find(po=>po.playerId===playerId)||{}).rivalId];
+    addNews(`${p.name} re-signs with the ${t.nick} on a ${years}-year deal at ${money(salary)}/yr, snubbing interest from rival clubs.`,
+      {title:'Re-Signed', type:'contract', tone:'good', playerId, teamId:t.id, tag:'Contracts'});
+    UI.toast(`${p.name} re-signed.`);
+    UI.render();
+  },
+  dismissPoachOffer(playerId){
+    const p = G.players[playerId];
+    const t = myTeam();
+    const po = (G.offseason.poachOffers||[]).find(x=>x.playerId===playerId);
+    const rival = po ? G.teams[po.rivalId] : null;
+    G.offseason.poachOffers = (G.offseason.poachOffers||[]).filter(x=>x.playerId!==playerId);
+    G.offseason.expiring = G.offseason.expiring.filter(id=>id!==playerId);
+    // Release player immediately to free agency
+    releasePlayer(t, playerId);
+    if(rival && p){
+      addNews(`${p.name} leaves the ${t.nick} and is expected to sign with ${rival.nick}.`,
+        {title:'Player Departs', type:'contract', tone:'bad', playerId, teamId:t.id, tag:'Contracts'});
+    }
+    UI.toast(p ? `${p.name} released.` : 'Player released.');
+    UI.render();
   },
   finishOffseason(){
     const t = myTeam();

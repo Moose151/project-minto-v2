@@ -138,6 +138,18 @@ export function startOffseason(){
   // expiring at my club
   const mt = myTeam();
   G.offseason.expiring = mt.players.filter(id=>G.players[id].years<=0);
+  // Rival clubs poach your best expiring players — generates an alert per target
+  G.offseason.poachOffers = [];
+  for(const id of G.offseason.expiring){
+    const p = G.players[id];
+    if(!p || p.ovr < 60 || p.age > 34) continue;
+    const rivals = G.teams.filter(t => t.id !== G.coach.teamId && rnd() < 0.55);
+    if(!rivals.length) continue;
+    const rival = rivals[Math.floor(rnd()*rivals.length)];
+    const demand = salaryFor(p);
+    const offer = Math.round(demand * rf(0.98, 1.18) / 5000) * 5000;
+    G.offseason.poachOffers.push({playerId:id, rivalId:rival.id, salary:offer, years:ri(2,3)});
+  }
   // AI coach rotation — poor results can get a coach fired
   for(const t of G.teams){
     if(t.id === G.coach.teamId) continue;
