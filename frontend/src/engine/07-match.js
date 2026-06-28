@@ -470,8 +470,14 @@ export function lineupPower(t){
   const planMod = {attacking:{a:1.07,d:.94}, balanced:{a:1,d:1}, grinding:{a:.93,d:1.07}}[t.plan||'balanced'];
   const cohMod = 0.97 + 0.06*((t.cohesion||50)/100);
   const tacMod = (t.id===G.coach.teamId && G.coach.attrs) ? (1 + 0.03*(G.coach.attrs.tactics/100)) : 1;
+  // Team form momentum: win/loss streaks give a small compound confidence modifier
+  const ladRow = typeof ladder === 'function' ? ladder().find(r=>r.id===t.id) : null;
+  const recentForm = ladRow ? (ladRow.form||[]).slice(-5).reverse() : [];
+  let streak = 0; for(const f of recentForm){ if(f===recentForm[0]) streak++; else break; }
+  const momentumBoost = recentForm[0]==='W' ? Math.min(streak*0.008,0.03) : recentForm[0]==='L' ? -Math.min(streak*0.006,0.02) : 0;
+  const formMod = 1 + momentumBoost;
   const zone = zoneTacticsMod(t);
-  return { atk: (atk/n)*planMod.a*cohMod*tacMod*capMod*zone.a, def: (def/n)*planMod.d*cohMod*tacMod*capMod*zone.d, kick: kick*zone.k };
+  return { atk: (atk/n)*planMod.a*cohMod*tacMod*capMod*zone.a*formMod, def: (def/n)*planMod.d*cohMod*tacMod*capMod*zone.d*formMod, kick: kick*zone.k };
 }
 export function positionRoleFit(p, pos, role){
   if(!role || role==='balanced') return {a:1,d:1};

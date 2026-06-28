@@ -230,7 +230,7 @@ Object.assign(UI, {
         return `<div class="sheet-row fit-${level.level}" onclick="UI.assignSlot(${slotIdx},${p.id})">
           <span class="pos-tag">${p.pos}</span>
           <span class="pname">${esc(p.name)}</span>
-          <span class="pmeta"><span class="fit-pill fit-${level.level}">${level.label}</span> · OVR <span class="ovr ${ovrCls(p.ovr)}" style="font-size:13px">${p.ovr}</span> → eff. <b>${effOvr}</b> (${deltaStr})${vsStr} · ${specialistLabel(p)} · cond ${Math.round(p.cond)}${inIdx>=0?` · #${SLOTS[inIdx].n}`:''}</span>
+          <span class="pmeta"><span class="fit-pill fit-${level.level}">${level.label}</span> · OVR <span class="ovr ${ovrCls(p.ovr)}" style="font-size:13px">${p.ovr}</span> → eff. <b>${effOvr}</b> (${deltaStr})${vsStr} · ${specialistLabel(p)} · cond ${Math.round(p.cond)} · form ${formHtml(p)}${inIdx>=0?` · #${SLOTS[inIdx].n}`:''}</span>
         </div>`;
       }).join('')}
       </div>

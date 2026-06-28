@@ -797,6 +797,14 @@ export function coachWeekly(myM){
   if(!myM) return;
   const won = (myM.h===G.coach.teamId) ? myM.hs>myM.as : myM.as>myM.hs;
   const drew = myM.hs===myM.as;
+  const mt = myTeam();
+  const lad = typeof ladder === 'function' ? ladder() : [];
+  const myRow = lad.find(r=>r.id===G.coach.teamId);
+  const recentForm = myRow ? (myRow.form||[]).slice(-5).reverse() : [];
+  let streak = 0; for(const f of recentForm){ if(f===recentForm[0]) streak++; else break; }
+  const pf = myM.h===G.coach.teamId ? myM.hs : myM.as;
+  const pa = myM.h===G.coach.teamId ? myM.as : myM.hs;
+  const margin = Math.abs(pf - pa);
   if(won){
     G.coach.rep = clamp(G.coach.rep+.4, 1, 99);
     G.coach.conf = clamp(G.coach.conf+3, 0, 100);
@@ -806,12 +814,21 @@ export function coachWeekly(myM){
       const k = keys[Math.floor(rnd()*keys.length)];
       G.coach.attrs[k] = clamp(G.coach.attrs[k]+1, 20, 99);
     }
+    // Milestone board notes
+    if(streak >= 4 && rnd() < 0.6)
+      addNews(`${streak} straight for ${mt.nick}. The board is delighted — keep the momentum going.`, {title:`${streak}-Game Win Streak`, type:'board', tone:'good', teamId:mt.id, tag:'Board'});
+    else if(margin >= 18 && rnd() < 0.5)
+      addNews(`A commanding ${pf}–${pa} win. Chairman notes the performance was one of the club's best of the season.`, {title:'Board Pleased', type:'board', tone:'good', teamId:mt.id, tag:'Board'});
   } else if(!drew){
     G.coach.rep = clamp(G.coach.rep-.2, 1, 99);
     G.coach.conf = clamp(G.coach.conf-4, 0, 100);
     G.coach.careerL++;
+    if(streak >= 3 && rnd() < 0.55)
+      addNews(`${streak} losses in a row. The board is monitoring the situation — results this week matter.`, {title:'Board Watching Closely', type:'board', tone:'bad', teamId:mt.id, tag:'Board'});
+    else if(margin >= 20 && rnd() < 0.5)
+      addNews(`A ${margin}-point loss. The board has asked ${G.coach.name} to review the defensive system this week.`, {title:'Post-Loss Board Review', type:'board', tone:'bad', teamId:mt.id, tag:'Board'});
   }
-  if(G.coach.conf < 20) addNews(`The ${myTeam().nick} board is losing patience with ${G.coach.name}. Results need to turn quickly.`, {
+  if(G.coach.conf < 20) addNews(`The ${mt.nick} board is losing patience with ${G.coach.name}. Results need to turn quickly.`, {
     title: 'Board Pressure Mounts',
     type: 'board',
     tone: 'bad',
