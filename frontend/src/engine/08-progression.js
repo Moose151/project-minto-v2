@@ -1173,6 +1173,27 @@ export function generateWeeklyMedia(round, myM){
         );
       }
     }
+
+    // Rival club interest in expiring players
+    if(G.round >= 4 && rnd() < 0.45){
+      const targets = squad.filter(p =>
+        p.years <= 1 && p.ovr >= 62 && p.age <= 33 && !p.injury &&
+        !(p._rivalInterestYear >= G.year)
+      );
+      if(targets.length){
+        const p = targets[Math.floor(rnd() * targets.length)];
+        const rival = pick(G.teams.filter(t => t.id !== G.coach.teamId));
+        if(rival){
+          p._rivalInterestYear = G.year;
+          // Small morale nudge — player feels valued by outside interest
+          p.morale = clamp((p.morale||50) + 2, 0, 99);
+          addNews(
+            `${rival.nick} are reportedly monitoring ${p.name} ahead of next season. The ${p.pos} is in the final year of his current deal and sources close to his camp say he is yet to be offered a new contract at ${mt3.nick}.`,
+            {title:'Rival Interest', type:'contract', tone:'bad', playerId:p.id, teamId:mt3.id, tag:'Contracts', r:G.round+1, y:G.year}
+          );
+        }
+      }
+    }
   }
 
   // Mid-season AI head coach sackings — two triggers:
