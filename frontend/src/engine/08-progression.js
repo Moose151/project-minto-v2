@@ -195,6 +195,7 @@ export function completeRound(roundIdx){
   generateWeeklyMedia(round, myM);
   generateStaffRecommendations();
   generatePlayerMessages();
+  checkPlayerMilestones();
   advanceScouting();
   checkAchievements('round', {round, myM});
   simOriginIfDue(roundIdx);
@@ -1397,6 +1398,46 @@ export function advanceScouting(){
   G.scouting.missions = G.scouting.missions.filter(m=>!done.includes(m));
 }
 
+const GAME_MILESTONES = [50, 100, 150, 200, 250, 300];
+const TRY_MILESTONES  = [25, 50, 75, 100, 150];
+
+export function checkPlayerMilestones(){
+  const mt = myTeam();
+  if(!mt || G.phase !== 'regular') return;
+  const round = G.round + 1;
+  for(const id of mt.players){
+    const p = G.players[id];
+    if(!p || p.injury || !p.s) continue;
+    const totalGames = (p.career && p.career.games || 0) + (p.s.g || 0);
+    const totalTries = (p.career && p.career.tries || 0) + (p.s.t || 0);
+    p._milestones = p._milestones || [];
+    for(const m of GAME_MILESTONES){
+      if(totalGames >= m && !p._milestones.includes('g'+m)){
+        p._milestones.push('g'+m);
+        const ord = m === 50?'50th':m === 100?'100th':m === 150?'150th':m === 200?'200th':m === 250?'250th':'300th';
+        p.morale = clamp((p.morale||50) + 5, 0, 99);
+        p.form   = clamp((p.form||50) + 3, 0, 100);
+        addNews(
+          `${p.name} played his ${ord} career NRL game today — a genuine milestone for the ${p.pos}. ${totalTries > 0 ? `${totalTries} career tries from ${totalGames} games.` : `${totalGames} games and counting.`}`,
+          {title:`${ord} NRL Game — ${p.name}`, type:'milestone', tone:'good', playerId:p.id, teamId:mt.id, tag:'Milestone', r:round, y:G.year}
+        );
+      }
+    }
+    for(const m of TRY_MILESTONES){
+      if(totalTries >= m && !p._milestones.includes('t'+m)){
+        p._milestones.push('t'+m);
+        const ord = m === 25?'25th':m === 50?'50th':m === 75?'75th':m === 100?'100th':'150th';
+        p.morale = clamp((p.morale||50) + 5, 0, 99);
+        p.form   = clamp((p.form||50) + 4, 0, 100);
+        addNews(
+          `${p.name} scored his ${ord} career try today — a remarkable achievement for the ${p.pos}. ${totalGames} NRL games, ${totalTries} tries.`,
+          {title:`${ord} Career Try — ${p.name}`, type:'milestone', tone:'good', playerId:p.id, teamId:mt.id, tag:'Milestone', r:round, y:G.year}
+        );
+      }
+    }
+  }
+}
+
 if (typeof window !== 'undefined') Object.assign(window, {
   VENDOR_FB_REV, VENDOR_MERCH_REV, VENDOR_FB_COSTS, VENDOR_MERCH_COSTS,
   generateOriginSchedule, simOriginIfDue, simInternationalWindow, vendorRevenuePerHead,
@@ -1410,5 +1451,5 @@ if (typeof window !== 'undefined') Object.assign(window, {
   PHYSICAL_ATTRS, TECHNICAL_ATTRS, MENTAL_ATTRS, positionKeyAttrs, developPlayer,
   handleIndividualTraining, payCoachWeekly, payClubWeekly, aiUseFreeAgents,
   auditContractPromises, coachWeekly, generateWeeklyMedia, generateStaffRecommendations,
-  generatePlayerMessages, advanceScouting,
+  generatePlayerMessages, checkPlayerMilestones, advanceScouting,
 });

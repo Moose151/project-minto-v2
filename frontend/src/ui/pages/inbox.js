@@ -42,7 +42,9 @@ Object.assign(UI, {
         : '',
       board:         `<button class="btn sm primary" onclick="UI.go('coach')">Coach</button>`,
       finance:       `<button class="btn sm primary" onclick="UI.go('club-management')">Club Management</button>`,
-      milestone:     `<button class="btn sm primary" onclick="UI.go('squad')">Squad</button>`,
+      milestone:     n.playerId && G.players[n.playerId] && (G.players[n.playerId].years||0) <= 1
+        ? `<button class="btn sm primary" onclick="UI.go('contracts')">Renew Contract</button>`
+        : `<button class="btn sm primary" onclick="UI.playerModal(${n.playerId})">View Player</button>`,
       league:        `<button class="btn sm primary" onclick="UI.go('ladder')">Ladder</button>`,
     }[n.type] || '';
     return [actionBtn, playerLink, teamLink].filter(Boolean).join('');
