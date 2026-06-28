@@ -1124,6 +1124,70 @@ export function generateWeeklyMedia(round, myM){
         {title:`Round ${G.round+1} Wrap`, type:'league', tone:'neutral', tag:'League', r:G.round+1, y:G.year}
       );
     }
+
+    // Upset detection: lower-ranked team beats top-4 side by 12+ pts
+    const lad2 = lad;
+    for(const m of playedRound){
+      if(m.h === G.coach.teamId || m.a === G.coach.teamId) continue; // skip my match
+      const hPos = lad2.findIndex(r=>r.id===m.h)+1, aPos = lad2.findIndex(r=>r.id===m.a)+1;
+      if(!hPos || !aPos) continue;
+      const favH = hPos < aPos;
+      const fav = favH ? m.h : m.a, dog = favH ? m.a : m.h;
+      const favScore = favH ? m.hs : m.as, dogScore = favH ? m.as : m.hs;
+      const favPos = Math.min(hPos, aPos), dogPos = Math.max(hPos, aPos);
+      const margin = dogScore - favScore;
+      if(margin >= 10 && favPos <= 4 && dogPos >= 8){
+        const tt = G.teams[dog], tf = G.teams[fav];
+        addNews(
+          pick([
+            `${tt.nick} stun ${tf.nick} ${dogScore}-${favScore} in one of the upsets of the season.`,
+            `Shock result in Round ${G.round+1}: ${tt.nick} dismantle ${tf.nick} ${dogScore}-${favScore}. Nobody saw that coming.`,
+            `${tt.nick} pull off a remarkable boilover against ${tf.nick} — ${dogScore}-${favScore}. The competition is wide open.`,
+          ]),
+          {title:'Upset!', type:'league', tone:'neutral', tag:'League', teamId:dog, r:G.round+1, y:G.year}
+        );
+        break; // max one upset alert per round
+      }
+    }
+  }
+
+  // Media pressure storylines — fire based on current form/position (max once per 2 rounds)
+  if(G.round >= 3 && G.round % 2 === 0){
+    const mt5 = myTeam();
+    const lad5 = typeof ladder === 'function' ? ladder() : [];
+    const myRow5 = lad5.find(r=>r.id===G.coach.teamId);
+    const myPos5 = lad5.findIndex(r=>r.id===G.coach.teamId)+1;
+    const lStr = recentLossStreak(G.coach.teamId);
+    const wStr = recentWinStreak(G.coach.teamId);
+    const expectPos = G.coach.expect && G.coach.expect.minPos || 8;
+    if(lStr >= 4){
+      addNews(
+        pick([
+          `The heat is on at ${mt5.nick} — four straight losses has the football world asking questions. Sources say the board met this week.`,
+          `Mounting pressure on the ${mt5.nick} coaching staff as the side's run of poor form extends to ${lStr} games. Changes expected.`,
+          `Media reports suggest unrest at ${mt5.nick} following a fourth consecutive defeat. Where does the season go from here?`,
+        ]),
+        {title:'Club Under Scrutiny', type:'media', tone:'bad', tag:'Media', teamId:mt5.id, r:G.round+1, y:G.year}
+      );
+    } else if(wStr >= 4 && myPos5 <= 4){
+      addNews(
+        pick([
+          `${mt5.nick} are flying — ${wStr} straight wins and the competition is starting to take notice.`,
+          `The ${mt5.nick} machine keeps rolling. Four wins on the trot and they're looking very hard to beat.`,
+          `A fourth straight win for ${mt5.nick} has rival coaches studying film and fans believing.`,
+        ]),
+        {title:'Flying High', type:'media', tone:'good', tag:'Media', teamId:mt5.id, r:G.round+1, y:G.year}
+      );
+    } else if(myPos5 > expectPos + 3 && G.round >= 8){
+      addNews(
+        pick([
+          `${mt5.nick} sit ${ord(myPos5)} — well below pre-season expectations. The board's patience has limits.`,
+          `A season that promised much for ${mt5.nick} is beginning to slip away. ${ord(myPos5)} with ${G.fixtures.length - G.round} rounds left.`,
+          `Questions are being asked about direction at ${mt5.nick}. The ${ord(expectPos)} target looks distant from ${ord(myPos5)}.`,
+        ]),
+        {title:'Season Under Threat', type:'media', tone:'bad', tag:'Media', teamId:mt5.id, r:G.round+1, y:G.year}
+      );
+    }
   }
 
   if((G.coach.shortlist || []).length && G.phase === 'regular' && (G.round+1) % 4 === 0){

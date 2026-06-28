@@ -6,6 +6,15 @@ _Updated every session._
 
 **Latest session work — Sin bin/send-off system, golden point, milestones, farewell, rival interest, live stats:**
 
+### 14. Upset alerts and media pressure storylines (`08-progression.js`)
+- After each round, checks other matches for upsets: lower-ranked team (pos ≥ 8) beats top-4 side by 10+ pts → "Upset!" inbox item with named teams and score
+- Max one upset alert per round; doesn't fire for matches involving the coached team (already covered by post-match analysis)
+- Media pressure storylines fire every 2 rounds based on coached team's form:
+  - 4+ loss streak → "Club Under Scrutiny" bad-tone news
+  - 4+ win streak + top 4 → "Flying High" good-tone news
+  - 3+ positions below target after round 8 → "Season Under Threat" bad-tone news
+- All use `pick()` from a pool of varied phrases to avoid repetition
+
 ### 13. Rival club poaching in offseason (`11-offseason.js`, `04-offseason-view.js`)
 - On offseason start, AI clubs make specific offers to your expiring OVR 60+ players (55% chance per rival per player)
 - Stored in `G.offseason.poachOffers = [{playerId, rivalId, salary, years}]`
