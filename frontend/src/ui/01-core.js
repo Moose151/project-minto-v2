@@ -3,6 +3,7 @@
 const HUBS = [
   { key: 'club', label: 'My Club', pages: [
     ['dashboard',      'Dashboard'],
+    ['offseason',      'Offseason'],
     ['inbox',          'Inbox'],
     ['coach',          'Coach'],
     ['club-management','Club Mgmt'],
@@ -40,6 +41,8 @@ const HUBS = [
   ]},
 ];
 
+const PAGE_META = Object.fromEntries(HUBS.flatMap(h => h.pages.map(([key, label]) => [key, { label, hub: h.key }])));
+
 export const UI = {
   page: 'dashboard',
   _lastPage: null, _backStack: [],
@@ -47,22 +50,34 @@ export const UI = {
 
   nav() {
     const navEl = document.getElementById('nav');
-    if (UI.inWizard()) { navEl.innerHTML = ''; return; }
+    if (UI.inWizard()) { navEl.innerHTML = ''; navEl.classList.add('empty'); return; }
+    navEl.classList.remove('empty');
 
     const inboxUnread = G && G.news ? G.news.filter(n => !n.read).length : 0;
     const activeHub = HUBS.find(h => h.pages.some(([k]) => k === UI.page)) || HUBS[0];
 
-    const hubsHtml = HUBS.map(h =>
-      `<button class="hub-tab${h.key === activeHub.key ? ' active' : ''}" onclick="UI.goHub('${h.key}')">${h.label}</button>`
-    ).join('');
-
-    const subHtml = activeHub.pages.map(([k, l]) =>
-      `<button class="sub-tab${UI.page === k ? ' active' : ''}" onclick="UI.go('${k}')">${l}${k === 'inbox' && inboxUnread > 0 ? `<span class="nav-badge">${inboxUnread}</span>` : ''}</button>`
-    ).join('');
+    const sectionsHtml = HUBS.map(h => {
+      const items = h.pages.map(([k, l]) => {
+        const badge = k === 'inbox' && inboxUnread > 0 ? `<span class="nav-badge">${inboxUnread}</span>` : '';
+        return `<button class="nav-item${UI.page === k ? ' active' : ''}" onclick="UI.go('${k}')">
+          <span>${l}</span>${badge}
+        </button>`;
+      }).join('');
+      return `<section class="nav-section${h.key === activeHub.key ? ' active' : ''}">
+        <button class="nav-section-head" onclick="UI.goHub('${h.key}')">${h.label}</button>
+        <div class="nav-items">${items}</div>
+      </section>`;
+    }).join('');
 
     navEl.innerHTML =
-      `<div id="hub-nav">${hubsHtml}</div>` +
-      `<div id="sub-nav"><button class="back-btn" onclick="UI.back()">← Back</button>${subHtml}</div>`;
+      `<div class="nav-rail-head">
+        <button class="nav-back" onclick="UI.back()" title="Go back">Back</button>
+        <div>
+          <div class="nav-context">Current Area</div>
+          <div class="nav-current">${activeHub.label}</div>
+        </div>
+      </div>
+      <div class="nav-scroll">${sectionsHtml}</div>`;
   },
 
   topbar() {
@@ -90,7 +105,9 @@ export const UI = {
     const phase = G.phase === 'regular'
       ? `Round ${G.round + 1} of ${G.fixtures.length}${onBye ? ' · BYE' : ''}`
       : G.phase === 'finals' ? (G.finals.week === 1 ? 'Semi Finals' : 'Grand Final') : 'Off-Season';
+    const pageLabel = PAGE_META[UI.page]?.label || 'Dashboard';
     el.innerHTML = `
+      <div class="top-stat page-chip"><span class="lbl">View</span><span class="val">${esc(pageLabel)}</span></div>
       <div class="top-stat"><span class="lbl">Club</span><span class="val"><span class="team-spine" style="background:${t.c1}"></span>${esc(teamName(t))}</span></div>
       <div class="top-stat"><span class="lbl">Season</span><span class="val">${G.year} · ${esc(phase)}${esc(dateLine)}</span></div>
       <div class="top-stat"><span class="lbl">Position</span><span class="val">${ord(pos)} (${rec.w}-${rec.l})</span></div>
@@ -144,9 +161,9 @@ export const UI = {
       document.getElementById('main').innerHTML = UI.wizard();
       return;
     }
-    UI.nav(); UI.topbar();
     const m = document.getElementById('main');
     if (G.phase === 'offseason' && !['offseason','options','history','halloffame','records','coach','stats','ladder','teams','squad','fixtures','calendar','fantasy','recruitment','player','tactics','matchday','injuryward','predictions','staff','contracts','scouting','club-management','achievements','inbox','watchgame'].includes(UI.page)) UI.page = 'offseason';
+    UI.nav(); UI.topbar();
     const samePage = UI._lastPage === UI.page;
     const prevTop = (samePage && !UI._forceTop) ? m.scrollTop : 0;
     const fn = UI['p_' + UI.page] || UI.p_dashboard;

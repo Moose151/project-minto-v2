@@ -26,7 +26,9 @@ Object.assign(UI, {
       : '';
     const actionBtn = {
       analysis:      `<button class="btn sm primary" onclick="UI.go('tactics')">Tactics</button>`,
-      injury:        `<button class="btn sm primary" onclick="UI.go('injuryward')">Injury Ward</button>`,
+      injury:        n.injPos
+        ? `<button class="btn sm primary" onclick="UI._recPos='${n.injPos}';UI._recTab='freeAgents';UI.go('recruitment')">Find ${n.injPos} cover</button>`
+        : `<button class="btn sm primary" onclick="UI.go('injuryward')">Injury Ward</button>`,
       contract:      `<button class="btn sm primary" onclick="UI.go('contracts')">Contracts</button>`,
       recommendation:`<button class="btn sm primary" onclick="UI.go('teamsheet')">Team Sheet</button>`,
       scouting:      `<button class="btn sm primary" onclick="UI.go('scouting')">Scouting</button>`,

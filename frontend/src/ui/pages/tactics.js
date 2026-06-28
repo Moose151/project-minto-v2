@@ -28,11 +28,29 @@ Object.assign(UI, {
     const opt = (role, scoreRole) => active.slice().sort((a,b)=>roleScore(b,scoreRole)-roleScore(a,scoreRole)).map(p=>
       `<option value="${p.id}" ${t.roles[role]===p.id?'selected':''}>${esc(p.name)} (${p.pos}) · ${Math.round(roleScore(p,scoreRole))}</option>`
     ).join('');
-    const roleSelect = (role, label, scoreRole, hint) => `<div class="field">
-      <label>${label}</label>
-      <select onchange="myTeam().roles.${role}=+this.value;UI.render()">${opt(role, scoreRole)}</select>
-      <p style="color:var(--muted);font-size:11px;margin-top:4px">${esc(hint)}</p>
-    </div>`;
+    const roleSelect = (role, label, scoreRole, hint) => {
+      const chosen = G.players[t.roles[role]];
+      return `<div class="tactic-role-card">
+        <div class="tactic-role-head">
+          <div><span>${esc(label)}</span>${chosen?`<b>${esc(chosen.name)}</b>`:'<b>Not set</b>'}</div>
+          ${chosen?`<span class="ovr ${ovrCls(chosen.ovr)}">${chosen.ovr}</span>`:''}
+        </div>
+        <select onchange="myTeam().roles.${role}=+this.value;UI.render()">${opt(role, scoreRole)}</select>
+        <p>${esc(hint)}</p>
+      </div>`;
+    };
+    const tacticControl = (title, subtitle, opts, value, apply) => `<section class="tactic-control">
+      <div class="tactic-control-copy"><h3>${esc(title)}</h3><p>${esc(subtitle)}</p></div>
+      <div class="tactic-choice-grid">${opts.map(([k,l,h])=>`<button class="tactic-choice ${value===k?'active':''}" title="${esc(h)}" onclick="${apply}='${k}';UI.render()">
+        <b>${esc(l)}</b><span>${esc(h)}</span>
+      </button>`).join('')}</div>
+    </section>`;
+    const currentPlan = [
+      ['Attack', (focusOpts.find(x=>x[0]===focus)||focusOpts[0])[1]],
+      ['Intent', (intentOpts.find(x=>x[0]===intent)||intentOpts[1])[1]],
+      ['Offloads', (offloadOpts.find(x=>x[0]===offloadRisk)||offloadOpts[1])[1]],
+      ['Defence', (defOpts.find(x=>x[0]===defStyle)||defOpts[0])[1]],
+    ].map(([l,v])=>`<div class="tactic-summary-chip"><span>${l}</span><b>${esc(v)}</b></div>`).join('');
     const slotRole = i => {
       const p = G.players[t.lineup[i]];
       const pos = SLOTS[i].pos;
@@ -46,32 +64,19 @@ Object.assign(UI, {
       </tr>`;
     };
     return `<h1 class="page">Tactics</h1>
-    <p class="page-sub">Pick your on-field leaders and specialists, then shape how roles and field position influence the match engine.</p>
-    <div class="grid2" style="margin-bottom:16px">
-      <div class="card"><h2 class="sec" style="margin-top:0">Match settings</h2>
-        <div class="field" style="margin-bottom:12px">
-          <label style="font-size:11px">Attack focus</label>
-          <p style="color:var(--muted);font-size:11px;margin:0 0 6px">Changes run distribution, kick volume, line-break chance and error risk.</p>
-          <div class="radio-row">${focusOpts.map(([k,l,h])=>`<div class="opt ${focus===k?'sel':''}" title="${esc(h)}" onclick="myTeam().matchPrefs.attackFocus='${k}';UI.render()">${esc(l)}</div>`).join('')}</div>
-          <p style="color:var(--muted);font-size:11px;margin-top:6px">${esc((focusOpts.find(x=>x[0]===focus)||focusOpts[0])[2])}</p>
+    <p class="page-sub">Set the match identity, specialists, and positional instructions that feed the match engine.</p>
+    <div class="tactics-layout">
+      <div class="card tactic-plan-card">
+        <div class="ts-card-head">
+          <div><span class="navsep">Match Identity</span><p>These choices alter run distribution, errors, line breaks, kicking volume, and defensive risk.</p></div>
+          <div class="tactic-summary">${currentPlan}</div>
         </div>
-        <div class="field" style="margin-bottom:12px">
-          <label style="font-size:11px">Game intent</label>
-          <div class="radio-row">${intentOpts.map(([k,l,h])=>`<div class="opt ${intent===k?'sel':''}" title="${esc(h)}" onclick="myTeam().matchPrefs.gameIntent='${k}';UI.render()">${esc(l)}</div>`).join('')}</div>
-          <p style="color:var(--muted);font-size:11px;margin-top:6px">${esc((intentOpts.find(x=>x[0]===intent)||intentOpts[1])[2])}</p>
-        </div>
-        <div class="field" style="margin-bottom:12px">
-          <label style="font-size:11px">Offload risk</label>
-          <div class="radio-row">${offloadOpts.map(([k,l,h])=>`<div class="opt ${offloadRisk===k?'sel':''}" title="${esc(h)}" onclick="myTeam().matchPrefs.offloadRisk='${k}';UI.render()">${esc(l)}</div>`).join('')}</div>
-          <p style="color:var(--muted);font-size:11px;margin-top:6px">${esc((offloadOpts.find(x=>x[0]===offloadRisk)||offloadOpts[1])[2])}</p>
-        </div>
-        <div class="field">
-          <label style="font-size:11px">Defensive style</label>
-          <div class="radio-row">${defOpts.map(([k,l,h])=>`<div class="opt ${defStyle===k?'sel':''}" title="${esc(h)}" onclick="myTeam().matchPrefs.defStyle='${k}';UI.render()">${esc(l)}</div>`).join('')}</div>
-          <p style="color:var(--muted);font-size:11px;margin-top:6px">${esc((defOpts.find(x=>x[0]===defStyle)||defOpts[0])[2])}</p>
-        </div>
+        ${tacticControl('Attack focus', 'Where the ball goes when your side has control.', focusOpts, focus, "myTeam().matchPrefs.attackFocus")}
+        ${tacticControl('Game intent', 'How hard your side pushes the scoreline and tempo.', intentOpts, intent, "myTeam().matchPrefs.gameIntent")}
+        ${tacticControl('Offload risk', 'How willing your carriers are to pass through contact.', offloadOpts, offloadRisk, "myTeam().matchPrefs.offloadRisk")}
+        ${tacticControl('Defensive style', 'How aggressively your line commits in contact.', defOpts, defStyle, "myTeam().matchPrefs.defStyle")}
       </div>
-      <div class="card"><h2 class="sec" style="margin-top:0">Latest opponent report</h2>
+      <div class="card tactic-report-card"><div class="ts-card-head"><div><span class="navsep">Opponent Report</span><p>Staff recommendations from the latest scout packet.</p></div></div>
         ${latestIntel ? `
           <p style="font-size:12px;color:var(--muted);margin:0 0 8px">${readLabel(latestIntel.confidence || 50)} · Round ${latestIntel.round}</p>
           <p style="font-size:12px;line-height:1.5;margin:0 0 8px">${esc(latestIntel.recommendation || 'No recommendation recorded.')}</p>
@@ -84,27 +89,31 @@ Object.assign(UI, {
             <button class="btn sm" onclick="UI.go('inbox')">Open report</button>
           </div>` : `<p style="color:var(--muted);font-size:12px;margin:0">No opponent report yet. Advance to Wednesday of match week for staff analysis.</p>`}
       </div>
-    </div>
-    <div class="grid2">
-      <div class="card"><h2 class="sec" style="margin-top:0">Team roles</h2>
+      <div class="card tactic-roles-card">
+        <div class="ts-card-head"><div><span class="navsep">Specialists</span><p>Pick the players who steer the side.</p></div><button class="btn sm" onclick="UI.go('teamsheet')">Team sheet</button></div>
+        <div class="tactic-role-grid">
         ${roleSelect('captain','Captain','captain','Leadership, composure, decision making and experience give a small cohesion/performance lift.')}
         ${roleSelect('goalKicker','Goal kicker','goalKicker','Takes conversions and penalty goals. If unavailable, the next best active option takes over.')}
         ${roleSelect('primaryKicker','Primary territorial kicker','kicker','Main source of long kicks, 40/20s and 20/40s.')}
         ${roleSelect('secondaryKicker','Secondary territorial kicker','kicker','Backup long-kicking option.')}
         ${roleSelect('primaryPlaymaker','Primary playmaker','playmaker','Main organiser for attacking shape.')}
         ${roleSelect('secondaryPlaymaker','Secondary playmaker','playmaker','Support organiser.')}
+        </div>
       </div>
-      <div class="card"><h2 class="sec" style="margin-top:0">Field position plan</h2>
-        <p style="color:var(--muted);font-size:12px;margin-bottom:10px">Safe improves control and kicking territory slightly. Expansive increases attack but carries more risk.</p>
-        ${FIELD_ZONES.map(([key,label])=>`<div class="field"><label>${label}</label><div class="radio-row">
-          ${ZONE_PLANS.map(pl=>`<div class="opt ${(t.zoneTactics&&t.zoneTactics[key])===pl?'sel':''}" onclick="myTeam().zoneTactics['${key}']='${pl}';UI.render()">${UI._roleLabel(pl)}</div>`).join('')}
-        </div></div>`).join('')}
+      <div class="card tactic-zone-card">
+        <div class="ts-card-head"><div><span class="navsep">Field Position Plan</span><p>Safe improves control and territory. Expansive increases attack and risk.</p></div></div>
+        <div class="zone-plan-grid">${FIELD_ZONES.map(([key,label])=>`<div class="zone-plan-row">
+          <b>${esc(label)}</b>
+          <div class="radio-row">${ZONE_PLANS.map(pl=>`<div class="opt ${(t.zoneTactics&&t.zoneTactics[key])===pl?'sel':''}" onclick="myTeam().zoneTactics['${key}']='${pl}';UI.render()">${UI._roleLabel(pl)}</div>`).join('')}</div>
+        </div>`).join('')}</div>
+      </div>
+      <div class="card tactic-position-card">
+        <div class="ts-card-head"><div><span class="navsep">Position Roles</span><p>Fine-tune how the starting XIII behave in their jersey.</p></div></div>
+        <div style="overflow-x:auto"><table><thead><tr><th class="noclick">Jersey</th><th class="noclick">Player</th><th class="noclick">Role</th><th class="noclick num">Fit</th></tr></thead><tbody>
+        ${Array.from({length:13},(_,i)=>slotRole(i)).join('')}
+        </tbody></table></div>
       </div>
     </div>
-    <div class="card" style="padding:6px;overflow-x:auto;margin-top:16px"><h2 class="sec" style="margin:8px 10px">Position roles</h2>
-      <table><thead><tr><th class="noclick">Jersey</th><th class="noclick">Player</th><th class="noclick">Role</th><th class="noclick num">Fit</th></tr></thead><tbody>
-      ${Array.from({length:13},(_,i)=>slotRole(i)).join('')}
-      </tbody></table>
     </div>`;
   },
   _roleLabel(v){ return String(v).replace(/([A-Z])/g,' $1').replace(/^./, c=>c.toUpperCase()); },

@@ -132,72 +132,98 @@ Object.assign(UI, {
     const posFilters = ['all','FB','WG','CE','FE','HB','PR','HK','SR','LK'].map(pos=>
       `<button class="btn sm ${UI._sheetPos===pos?'primary':''}" onclick="UI._sheetPos='${pos}';UI.render()">${pos==='all'?'All':pos}</button>`
     ).join('');
+    const roleGroup = (label, slots) => `<section class="ts-group">
+      <div class="ts-group-title">${label}</div>
+      <div class="ts-slot-list">${slots.map(makeRow).join('')}</div>
+    </section>`;
+    const roleGroups = [
+      roleGroup('Back three', [0,1,4]),
+      roleGroup('Centres', [2,3]),
+      roleGroup('Halves', [5,6]),
+      roleGroup('Middle unit', [7,8,9,12]),
+      roleGroup('Edges', [10,11]),
+    ].join('');
+    const onBye = G.phase==='regular' && ((G.byes && G.byes[G.round])||[]).includes(G.coach.teamId);
+    const submitted = !onBye && t.teamSubmitted === G.round;
+    const issues = lineupIssues(t);
+    const complianceHtml = onBye ? ''
+      : issues.length
+        ? `<div class="ts-submit-card bad">
+            <div><b>Selection Issues</b><p>${issues.slice(0,3).map(esc).join(' · ')}${issues.length>3?' ...':''}</p></div>
+            <button class="btn sm" onclick="UI.confirmTeamList()">Review</button>
+          </div>`
+        : submitted
+          ? `<div class="ts-submit-card good">
+              <div><b>Team list submitted</b><p>Round ${G.round+1} selection is locked in.</p></div>
+              <button class="btn sm" onclick="myTeam().teamSubmitted=null;UI.render()">Undo</button>
+            </div>`
+          : `<div class="ts-submit-card">
+              <div><b>Ready to submit</b><p>Confirm your 19 before advancing.</p></div>
+              <button class="btn primary" onclick="UI.confirmTeamList()">Confirm Team List</button>
+            </div>`;
+    const selectedCount = t.lineup.filter(id=>id!=null).length;
 
     return `<h1 class="page">Team Sheet</h1>
-    <p class="page-sub">Round ${G.round+1} selection. Drag players from the squad list onto a jersey, or tap a jersey to choose from a modal.</p>
-    <div class="btnrow fit-legend">
-      <span class="fit-pill fit-green">Preferred position</span>
-      <span class="fit-pill fit-yellow">Preferred position wrong side / similar halves role</span>
-      <span class="fit-pill fit-orange">Can cover</span>
-      <span class="fit-pill fit-red">Bad fit</span>
+    <p class="page-sub">Round ${G.round+1} selection desk. Drag from the squad pool, or click any jersey row to pick a player.</p>
+    <div class="ts-toolbar">
+      <div class="ts-toolbar-main">
+        <button class="btn primary" onclick="autoPick(myTeam());UI.render();UI.toast('Best 19 selected.')">Auto-pick best 19</button>
+        <button class="btn danger" onclick="UI.clearTeamSelection()">Clear</button>
+        <button class="btn sm ${UI._teamSheetMode==='stats'?'primary':''}" onclick="UI._teamSheetMode='stats';UI.render()">Stats</button>
+        <button class="btn sm ${UI._teamSheetMode==='skills'?'primary':''}" onclick="UI._teamSheetMode='skills';UI.render()">Skills</button>
+        ${['attacking','balanced','grinding'].map(pl=>`<button class="btn sm ${t.plan===pl?'primary':''}" onclick="myTeam().plan='${pl}';UI.render()">${pl[0].toUpperCase()+pl.slice(1)}</button>`).join('')}
+      </div>
+      <div class="ts-toolbar-links">
+        <button class="btn sm" onclick="UI.go('tactics')">Roles/tactics</button>
+        <button class="btn sm" onclick="UI.go('training')">Training</button>
+        <button class="btn sm" onclick="UI.go('matchday')">Match day</button>
+      </div>
     </div>
-    <div class="dash-strip" style="grid-template-columns:repeat(6,minmax(110px,1fr))">
-      <div class="dash-status ${avgOvr>=75?'good':avgOvr<60?'bad':''}"><div class="dash-label">Squad OVR</div><div class="dash-value ovr-stat" style="font-size:32px;font-family:var(--disp)">${avgOvr}</div><div class="dash-sub">17-man average</div></div>
-      <div class="dash-status ${avgCond<70?'bad':avgCond>=85?'good':''}"><div class="dash-label">Condition</div><div class="dash-value">${avgCond}<span style="font-size:14px">%</span></div><div class="dash-sub"><div style="height:4px;background:var(--line);border-radius:2px;margin:4px 0 2px"><div style="height:4px;width:${avgCond}%;background:${avgCond>=85?'var(--green)':avgCond<70?'var(--red)':'var(--accent)'};border-radius:2px"></div></div>match-day 17</div></div>
-      <div class="dash-status ${highFatigue?'bad':'good'}"><div class="dash-label">Fatigue Risk</div><div class="dash-value">${highFatigue}</div><div class="dash-sub">selected players at high load</div></div>
-      <div class="dash-status ${(t.cohesion||50)>=70?'good':(t.cohesion||50)<40?'bad':''}"><div class="dash-label">Cohesion</div><div class="dash-value">${Math.round(t.cohesion||50)}<span style="font-size:14px">%</span></div><div class="dash-sub"><div style="height:4px;background:var(--line);border-radius:2px;margin:4px 0 2px"><div style="height:4px;width:${Math.round(t.cohesion||50)}%;background:${(t.cohesion||50)>=70?'var(--green)':(t.cohesion||50)<40?'var(--red)':'var(--accent)'};border-radius:2px"></div></div>lineup rhythm</div></div>
-      <div class="dash-status"><div class="dash-label">Captain</div><div class="dash-value" style="font-size:20px">${cap?esc(cap.name.split(' ').slice(-1)[0]):'-'}</div><div class="dash-sub">${cap?'leadership '+cap.attrs.leadership:'set tactics'}</div></div>
-      <div class="dash-status"><div class="dash-label">Kickers</div><div class="dash-value" style="font-size:20px">${gk?esc(gk.name.split(' ').slice(-1)[0]):'-'}</div><div class="dash-sub">${pk?'territory '+esc(pk.name.split(' ').slice(-1)[0]):'set tactics'}</div></div>
-    </div>
-    ${(()=>{
-      const onBye = G.phase==='regular' && ((G.byes && G.byes[G.round])||[]).includes(G.coach.teamId);
-      const submitted = !onBye && t.teamSubmitted === G.round;
-      const issues = lineupIssues(t);
-      if(!onBye && !submitted && issues.length === 0){
-        return `<div class="card" style="border-color:var(--accent);padding:10px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">
-          <div>
-            <b style="color:var(--accent)">Team List Not Submitted</b>
-            <p style="font-size:12px;color:var(--muted);margin:2px 0 0">Confirm your 19 before the Tuesday deadline to advance.</p>
-          </div>
-          <button class="btn primary" onclick="UI.confirmTeamList()">Confirm Team List</button>
-        </div>`;
-      } else if(!onBye && submitted){
-        return `<div class="card" style="border-color:var(--green);padding:8px 14px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;gap:12px">
-          <span style="color:var(--green);font-weight:700">✓ Team list submitted for Round ${G.round+1}</span>
-          <button class="btn sm" onclick="myTeam().teamSubmitted=null;UI.render()">Undo</button>
-        </div>`;
-      }
-      return '';
-    })()}
-    <div class="btnrow">
-      <button class="btn primary" onclick="autoPick(myTeam());UI.render();UI.toast('Best 19 selected.')">Auto-pick best 19</button>
-      <button class="btn danger" onclick="UI.clearTeamSelection()">Clear selection</button>
-      <button class="btn sm ${UI._teamSheetMode==='stats'?'primary':''}" onclick="UI._teamSheetMode='stats';UI.render()">Season stats</button>
-      <button class="btn sm ${UI._teamSheetMode==='skills'?'primary':''}" onclick="UI._teamSheetMode='skills';UI.render()">Skill view</button>
-      ${['attacking','balanced','grinding'].map(pl=>`<button class="btn sm ${t.plan===pl?'primary':''}" onclick="myTeam().plan='${pl}';UI.render()">${pl[0].toUpperCase()+pl.slice(1)}</button>`).join('')}
-      <button class="btn sm" onclick="UI.go('tactics')">Roles/tactics</button>
-      <button class="btn sm" onclick="UI.go('training')">Training</button>
-      <button class="btn sm" onclick="UI.go('matchday')">Match day</button>
-    </div>
+    ${complianceHtml}
     <div class="team-sheet-layout">
-      <div class="pitch-card">
-        <div class="rl-pitch">
-          <span class="goal-post top"><svg width="52" height="28" viewBox="0 0 52 28"><rect x="0" y="22" width="52" height="6" fill="white" rx="2"/><rect x="4" y="0" width="6" height="28" fill="white" rx="2"/><rect x="42" y="0" width="6" height="28" fill="white" rx="2"/></svg></span>
-          <span class="goal-post bottom"><svg width="52" height="28" viewBox="0 0 52 28"><rect x="0" y="0" width="52" height="6" fill="white" rx="2"/><rect x="4" y="0" width="6" height="28" fill="white" rx="2"/><rect x="42" y="0" width="6" height="28" fill="white" rx="2"/></svg></span>
-          <span class="pitch-halfway"></span>
-          ${[20,30,40,60,70,80].map(y=>`<span class="pitch-mark ${y===20||y===80?'redline':''}" style="top:${y}%"></span>`).join('')}
-          ${COH_LINKS.map(line).join('')}
-          ${Array.from({length:13}, (_,i)=>chip(i)).join('')}
+      <div class="card ts-starters-card">
+        <div class="ts-card-head">
+          <div><span class="navsep">Starting XIII</span><p>${selectedCount}/19 selected · click a row to change it</p></div>
+          <div class="fit-legend">
+            <span class="fit-pill fit-green">Best</span><span class="fit-pill fit-yellow">Ok</span><span class="fit-pill fit-orange">Cover</span><span class="fit-pill fit-red">Risk</span>
+          </div>
+        </div>
+        ${roleGroups}
+      </div>
+      <div class="ts-middle">
+        <div class="ts-metrics">
+          <div class="dash-status ${avgOvr>=75?'good':avgOvr<60?'bad':''}"><div class="dash-label">17 OVR</div><div class="dash-value">${avgOvr}</div><div class="dash-sub">average selected</div></div>
+          <div class="dash-status ${avgCond<70?'bad':avgCond>=85?'good':''}"><div class="dash-label">Condition</div><div class="dash-value">${avgCond}<span style="font-size:14px">%</span></div><div class="dash-sub">match-day 17</div></div>
+          <div class="dash-status ${highFatigue?'bad':'good'}"><div class="dash-label">Fatigue</div><div class="dash-value">${highFatigue}</div><div class="dash-sub">high load players</div></div>
+          <div class="dash-status ${(t.cohesion||50)>=70?'good':(t.cohesion||50)<40?'bad':''}"><div class="dash-label">Cohesion</div><div class="dash-value">${Math.round(t.cohesion||50)}<span style="font-size:14px">%</span></div><div class="dash-sub">lineup rhythm</div></div>
+        </div>
+        <div class="pitch-card ts-compact-pitch">
+          <div class="rl-pitch">
+            <span class="pitch-halfway"></span>
+            ${[20,30,40,60,70,80].map(y=>`<span class="pitch-mark ${y===20||y===80?'redline':''}" style="top:${y}%"></span>`).join('')}
+            ${COH_LINKS.map(line).join('')}
+            ${Array.from({length:13}, (_,i)=>chip(i)).join('')}
+          </div>
+        </div>
+        <div class="card bench-card ts-bench-card">
+          <div class="ts-card-head"><span class="navsep">Interchange</span><p>14-17 active bench</p></div>
+          ${bench}
+          <div class="ts-card-head ts-reserve-head"><span class="navsep">Reserves</span><p>18-19 named cover</p></div>
+          ${reserves}
         </div>
       </div>
-      <div class="card bench-card">
-        <div class="navsep" style="margin:0 0 8px">Active Bench (14-17)</div>
-        ${bench}
-        <div class="navsep" style="margin:12px 0 8px">Named Reserves (18-19)</div>
-        ${reserves}
-        <div class="navsep" style="margin:12px 0 8px">Full squad</div>
-        <div class="btnrow" style="margin-top:0">${sortSelect}</div>
-        <div class="btnrow" style="margin-top:0">${posFilters}</div>
+      <div class="card ts-pool-card">
+        <div class="ts-card-head">
+          <div><span class="navsep">Squad Pool</span><p>Drag onto a jersey or open a profile.</p></div>
+          <div class="ts-role-summary">
+            <b>${cap?esc(cap.name.split(' ').slice(-1)[0]):'-'}</b><span>Captain</span>
+            <b>${gk?esc(gk.name.split(' ').slice(-1)[0]):'-'}</b><span>Goal kicker</span>
+          </div>
+        </div>
+        <div class="ts-pool-controls">
+          ${sortSelect}
+          <div class="ts-pos-filters">${posFilters}</div>
+        </div>
         <div class="squad-drag-list">${unpicked.map(squadRow).join('')}</div>
       </div>
     </div>`;

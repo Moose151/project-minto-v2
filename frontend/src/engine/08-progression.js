@@ -243,6 +243,11 @@ export function completeRound(roundIdx){
       for(const id of mt.players){
         const p = G.players[id]; if(p && p.squad==='top') p.morale = clamp((p.morale||50)+boost, 5, 99);
       }
+      // Win streak also lifts board confidence slightly at 4-game and 5-game milestones
+      if(wStreak >= 4){
+        const confBoost = wStreak >= 5 ? 2 : 1;
+        G.coach.conf = clamp((G.coach.conf||50) + confBoost, 0, 100);
+      }
       if(wStreak === 3 || wStreak === 5){
         addNews(`${mt.nick} are on a ${wStreak}-game winning run — the squad is energised.`, {title:`${wStreak}-Game Winning Streak`, type:'club', tone:'good', tag:'Form', teamId:G.coach.teamId});
       }
@@ -250,6 +255,11 @@ export function completeRound(roundIdx){
       const penalty = Math.round((lStreak >= 5 ? 3 : lStreak >= 4 ? 2 : 1) * (1.4 - mmFactor * 0.4));
       for(const id of mt.players){
         const p = G.players[id]; if(p && p.squad==='top') p.morale = clamp((p.morale||50)-Math.max(1,penalty), 5, 99);
+      }
+      // Losing streak also erodes board confidence: -1 at 4-game, -2 at 5-game+
+      if(lStreak >= 4){
+        const confHit = lStreak >= 5 ? 2 : 1;
+        G.coach.conf = clamp((G.coach.conf||50) - confHit, 0, 100);
       }
       if(lStreak === 3 || lStreak === 5){
         addNews(`${mt.nick} have now lost ${lStreak} in a row. Confidence in the group is wavering.`, {title:`${lStreak}-Game Losing Streak`, type:'club', tone:'bad', tag:'Form', teamId:G.coach.teamId});
@@ -981,16 +991,32 @@ export function generateWeeklyMedia(round, myM){
     tag: `Round ${G.round+1}`,
   });
 
+  // Post-match form: outstanding performers get a form boost, poor performers lose form
+  for(const [id, line] of Object.entries(mineDet)){
+    const p = G.players[+id];
+    if(!p) continue;
+    if(line.r >= 8.5) p.form = clamp((p.form||50)+6, 0, 100);
+    else if(line.r >= 7.5) p.form = clamp((p.form||50)+3, 0, 100);
+    else if(line.r <= 4.5) p.form = clamp((p.form||50)-4, 0, 100);
+    else if(line.r <= 5.5) p.form = clamp((p.form||50)-1, 0, 100);
+  }
+
   const injuries = Object.entries(mineDet).filter(([id,l])=>l.inj).map(([id,l])=>({p:G.players[id], l}));
   if(injuries.length){
     const item = injuries[0];
-    addNews(`${item.p.name} picked up ${item.l.inj} against ${opp.nick} and is expected to miss ${item.p.injury ? item.p.injury.weeks : 0} week${item.p.injury && item.p.injury.weeks===1?'':'s'}.`, {
+    const weeksOut = item.p.injury ? item.p.injury.weeks : 0;
+    const isStarter = (mt.lineup||[]).slice(0,13).includes(item.p.id);
+    const replacementHint = weeksOut >= 3 && isStarter
+      ? ` Consider checking the <b>Free Agent</b> pool for ${item.p.pos} cover.`
+      : '';
+    addNews(`${item.p.name} picked up ${item.l.inj} against ${opp.nick} and is expected to miss ${weeksOut} week${weeksOut===1?'':'s'}.${replacementHint}`, {
       title: injuries.length > 1 ? 'Casualty Ward Fills' : 'Injury Report',
       type: 'injury',
       tone: 'bad',
       playerId: item.p.id,
       teamId: mt.id,
       tag: 'Medical',
+      injPos: item.p.pos,
     });
   }
 
