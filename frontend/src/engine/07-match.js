@@ -101,14 +101,39 @@ export function _matchSetup(m, isFinal){
   return {th, ta, venue, slot, weather, crowd, ticketPrice, bwTryMod, bwKickMod, crowdHomeMod, hTryMod, aTryMod, hKickMod, aKickMod, expH, expA, ph, pa, conservative, isCoachH, isCoachA, isMagicRound, mrHost, hAdj};
 }
 
+function genSinBins(th, ta, lo, hi){
+  const events = [], REASONS = ['professional foul','repeated infringements','high tackle','dangerous contact','slowing play','shoulder charge'];
+  let hMod = 1, aMod = 1;
+  for(const [t, side] of [[th,'h'],[ta,'a']]){
+    if(rnd() >= 0.09) continue;
+    const lineup = (t.lineup||[]).slice(0,13).map(id=>G.players[id]).filter(Boolean);
+    if(!lineup.length) continue;
+    const p = pick(lineup), reason = pick(REASONS), sendOff = rnd() < 0.08;
+    const min = ri(lo+2, hi-6);
+    if(sendOff){
+      events.push({min, evType:'sendoff', stoppage:true,
+        txt:`🟥 SENT OFF — ${p.name} (${t.nick}) given his marching orders for ${reason}! ${t.nick} to play the rest of the match with 12 men.`});
+      if(side==='h'){ hMod*=0.76; aMod*=1.16; } else { aMod*=0.76; hMod*=1.16; }
+    } else {
+      events.push({min, evType:'sinbin', stoppage:true,
+        txt:`🟨 SIN BIN — ${p.name} (${t.nick}) sent to the bin for ${reason}! 10 minutes in the bin.`});
+      events.push({min:Math.min(min+10,hi+2), evType:'narrative', stoppage:false,
+        txt:`${p.name} returns from the sin bin. ${t.nick} back to full strength.`});
+      if(side==='h'){ hMod*=0.87; aMod*=1.08; } else { aMod*=0.87; hMod*=1.08; }
+    }
+  }
+  return {hMod, aMod, events};
+}
+
 export function simMatchFirstHalf(m, isFinal){
   if(m.played || m._htPending) return {h1Events:[]};
   const s = _matchSetup(m, isFinal);
   const {th, ta, venue, slot, weather, crowd, ticketPrice, bwTryMod, bwKickMod, hTryMod, aTryMod, hKickMod, aKickMod, expH, expA, ph, pa, conservative, isCoachH, isCoachA} = s;
   const ctx_h = {weather, conservative: isCoachH&&conservative, kickMod: hKickMod};
   const ctx_a = {weather, conservative: isCoachA&&conservative, kickMod: aKickMod};
-  const h1_triesH = poisson(expH * 0.5);
-  const h1_triesA = poisson(expA * 0.5);
+  const sb1 = genSinBins(th, ta, 3, 38);
+  const h1_triesH = poisson(expH * 0.5 * sb1.hMod);
+  const h1_triesA = poisson(expA * 0.5 * sb1.aMod);
   const det1_h = {}, det1_a = {};
   const h1_goalsH = simTeamStats(th, h1_triesH, det1_h, ph.kick*hKickMod, ctx_h, {isHalf:true, skipStats:true, oppDefStyle:ta.matchPrefs&&ta.matchPrefs.defStyle, targetPlayerId:ta.matchPrefs&&ta.matchPrefs.targetPlayerId});
   const h1_goalsA = simTeamStats(ta, h1_triesA, det1_a, pa.kick*aKickMod, ctx_a, {isHalf:true, skipStats:true, oppDefStyle:th.matchPrefs&&th.matchPrefs.defStyle, targetPlayerId:th.matchPrefs&&th.matchPrefs.targetPlayerId});
@@ -120,7 +145,7 @@ export function simMatchFirstHalf(m, isFinal){
   m._htPending = true;
   // Set det with htScore so team-talk panel shows correct HT score
   m.det = {h:det1_h, a:det1_a, events:[], suspensions:[], venue, weather, crowd, ticketPrice, slot, weatherTryMod:bwTryMod, weatherKickMod:bwKickMod, htScore:{h:h1_hs, a:h1_as}, weatherEffects:weatherMatchEffects(weather)};
-  return {h1Events: _buildHalfFeedEvents(det1_h, det1_a, th, ta, h1_hs, h1_as)};
+  return {h1Events: _buildHalfFeedEvents(det1_h, det1_a, th, ta, h1_hs, h1_as, {extraEvents:sb1.events})};
 }
 
 /* ---------- second half: 40–60 minutes ---------- */
@@ -140,8 +165,9 @@ export function simMatchSecondHalf(m, isFinal, powerMod){
   const expH2 = clamp(2.85*Math.pow(ratH2,1.65)*rf(.87,1.13)*hTryMod2*crowdHomeMod*coachPM*tacticalFocusTryMod(th, ta)*intent2.hMod,0.7,9);
   const expA2 = clamp(2.85*Math.pow(ratA2,1.65)*rf(.87,1.13)*aTryMod2*tacticalFocusTryMod(ta, th)/Math.sqrt(crowdHomeMod)*intent2.aMod,0.7,9);
   // 40–60 min: one quarter of expected full-game tries
-  const h2_triesH = poisson(expH2 * 0.25);
-  const h2_triesA = poisson(expA2 * 0.25);
+  const sb2 = genSinBins(th, ta, 42, 58);
+  const h2_triesH = poisson(expH2 * 0.25 * sb2.hMod);
+  const h2_triesA = poisson(expA2 * 0.25 * sb2.aMod);
   const ctx_h2 = {weather, conservative:isCoachH&&conservative, kickMod:hKickMod};
   const ctx_a2 = {weather, conservative:isCoachA&&conservative, kickMod:aKickMod};
   const det2_h = {}, det2_a = {};
@@ -153,7 +179,7 @@ export function simMatchSecondHalf(m, isFinal, powerMod){
   m._60Pending = true;
   delete m._htPending;
   const h2aEvents = _buildHalfFeedEvents(det2_h, det2_a, th, ta, hs2, as2,
-    {lo:41, hi:59, startH:h1.hs1, startA:h1.as1});
+    {lo:41, hi:59, startH:h1.hs1, startA:h1.as1, extraEvents:sb2.events});
   return {h2aEvents};
 }
 
@@ -174,8 +200,9 @@ export function simMatchFinalChunk(m, isFinal, extraPowerMod){
   const expH3 = clamp(2.85*Math.pow(ratH3,1.65)*rf(.87,1.13)*hTryMod3*crowdHomeMod*coachPM*tacticalFocusTryMod(th, ta)*intent3.hMod,0.7,9);
   const expA3 = clamp(2.85*Math.pow(ratA3,1.65)*rf(.87,1.13)*aTryMod3*tacticalFocusTryMod(ta, th)/Math.sqrt(crowdHomeMod)*intent3.aMod,0.7,9);
   // 60–80 min: one quarter of expected full-game tries
-  const h3_triesH = poisson(expH3 * 0.25);
-  const h3_triesA = poisson(expA3 * 0.25);
+  const sb3 = genSinBins(th, ta, 62, 78);
+  const h3_triesH = poisson(expH3 * 0.25 * sb3.hMod);
+  const h3_triesA = poisson(expA3 * 0.25 * sb3.aMod);
   const ctx_h3 = {weather, conservative:isCoachH&&conservative, kickMod:hKickMod};
   const ctx_a3 = {weather, conservative:isCoachA&&conservative, kickMod:aKickMod};
   const det3_h = {}, det3_a = {};
@@ -204,7 +231,7 @@ export function simMatchFinalChunk(m, isFinal, extraPowerMod){
   applyTribunalBans(det);
   delete m._60Pending;
   const h2bEvents = _buildHalfFeedEvents(det3_h, det3_a, th, ta, hs, as,
-    {lo:62, hi:79, startH:h2.hs2, startA:h2.as2});
+    {lo:62, hi:79, startH:h2.hs2, startA:h2.as2, extraEvents:sb3.events});
   return {h2bEvents};
 }
 
@@ -446,6 +473,7 @@ export function _buildHalfFeedEvents(det_h, det_a, th, ta, finalScoreH, finalSco
     }
   }
 
+  if(opts && opts.extraEvents) for(const ev of opts.extraEvents) all.push(ev);
   all.sort((a,b)=>a.min-b.min);
   return all;
 }
@@ -1163,6 +1191,8 @@ export function buildMatchEventStream(m, isFinal){
     if(t.includes('forces a drop-out'))                            return {...ev, evType:'dropout',  stoppage:true};
     if(t.includes('knock-on')||t.includes('drops it cold')||t.includes('coughs it up')||t.includes('spills')||t.includes("can't hold"))
                                                                    return {...ev, evType:'error',    stoppage:true};
+    if(t.includes('SIN BIN')||t.includes('🟨'))                    return {...ev, evType:'sinbin',   stoppage:true};
+    if(t.includes('SENT OFF')||t.includes('🟥'))                   return {...ev, evType:'sendoff',  stoppage:true};
     return {...ev, evType:'narrative', stoppage:false};
   };
   const events = raw.map(tag);

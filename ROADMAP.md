@@ -1,6 +1,6 @@
 # Project Minto V2 — Roadmap
 
-_Last updated: 2026-06-28 (session 2)_
+_Last updated: 2026-06-28 (session 3)_
 
 Two tracks run in parallel: a **technical track** (the Tauri/Rust migration)
 and a **feature track** (deepening the game). The agreed priority is to lay the
@@ -83,6 +83,8 @@ Target: **full FM-level tactical depth**.
 - HIA / concussion protocol: Cat 1 (out for match + next), Cat 2 (15-min
   assessment, return if cleared).
 - Live feed surfaces tackle count, field position, possession, sub events.
+- ✅ **Golden point extra time**: Finals draws go to golden point; winner determined by best kicker attributes; adds 1 point to winner's score; live feed shows "SCORES LEVEL" narrative then FG event then FULL TIME at min:83.
+- ✅ **Sin bin / send-off system**: Each match chunk (0–40, 40–60, 60–80) has a chance to sin bin a player from either side (~9% per team per chunk); sin bin reduces team's expected tries for that chunk and boosts opponent; send-offs (rarer) last the full remaining game. Events show 🟨/🟥 in the live feed with named player, reason, and return event.
 
 ### B. In-match management ✅ SUBSTANTIALLY COMPLETE
 - Continuous event-stream watch-game replaces the old split-phase system; subs and
@@ -147,10 +149,13 @@ Target: **full FM-level tactical depth**.
 - ✅ **Board relationship system**: board confidence (`G.coach.conf`) affects contract renewal/sacking at season end. Press conference, team talks, and match results all move confidence. Mid-season board review fires at the halfway round. Coach page shows season target, trajectory, and projected outcome. Board Season Briefing fires at season start with target, cap, confidence sentiment, and contract status.
 - ✅ **Player morale system**: rotation-based morale (dropped players lose morale each week; regular starters gain it). Win/loss streak morale (3+ game runs now affect whole squad mood each round). Squad mood visible on training page. One-on-one meetings from inbox. Man Management attribute now meaningfully scales team talk and meeting effectiveness.
 - ✅ **Transfer request system**: players with morale < 28 AND 5+ weeks dropped trigger a formal request. Three response options: release, promise game time, or reject (each with distinct morale/confidence effects). Dashboard and squad alerts surface requests immediately.
+- ✅ **Player career milestone notifications**: inbox news fires when a player reaches 50/100/150/200/250/300 career games or 25/50/75/100/150 career tries. Milestone inbox action links to contract page if player is expiring, otherwise to player modal.
+- ✅ **Rival club interest**: every 3 rounds, expiring-contract players with OVR ≥ 62 have a 45% chance of attracting a named rival club's interest — nudges morale slightly and fires inbox alert. Flag `p._rivalInterestYear` prevents duplicate per season.
+- ✅ **Farewell notification on retirement**: when a club player retires in the offseason, an inbox item summarises their career (games, tries, premierships, avg rating) and notes Hall of Fame induction if applicable. Fires before player is deleted from state.
 - **Lower leagues & expansion:** second-tier competition, promotion/relegation,
   club merger/dissolution, loan system.
 - Deeper **youth academy** pathway and youth-grade competition.
-- **Mid-season loan/trade window**: allow player movement at the mid-season break — transfer requests now provide a natural hook.
+- **Free agent signings** (NRL-accurate): clubs can sign free agents at any time for injury cover; no formal mid-season window. Transfer requests result in release-with-payout or resolution. Build a free agent market page where out-of-contract players are listed and can be approached.
 - Deeper **board/finance**: transfer/loan budgets, stadium expansion projects, sponsorship negotiation.
 - Better **bye/draw** handling: forced even-team byes, Origin-round blocks,
   multi-bye distribution.
@@ -171,6 +176,7 @@ Target: **full FM-level tactical depth**.
 - ✅ Squad page rewritten — position filter pills with counts, 4-card summary strip (cap/size/availability/alerts), mini-bars for cond/morale, rotation status badges (Out Xw / Xw starter), contract year warnings.
 - ✅ Recruitment Squad Needs panel — position depth grid at top of page (squad count vs available, thin/depth/OK colour-coding), position pills with available-player counts on Browse and Free Agents tabs.
 - ✅ Watch-game coaching panel — half tracking (1st/2nd label), live situation strip ("Leading by X" / "Trailing by X — chase?" / "Level"), squad mood snippet at HT showing starting 13 average morale.
+- ✅ **Live match stats strip** — inline strip below scoreboard shows tries, possession %, line breaks, and errors for each side updated in real time as events fire. DOM-updated in place (no full re-render).
 - Remaining: smoother transitions, reworked player avatars (current SVG heavy at small sizes), onboarding for new managers.
 
 ### G. World simulation realism
@@ -185,8 +191,7 @@ Target: **full FM-level tactical depth**.
 > Phases 1 and 2 are complete. Features B, C, E, and F have substantial progress.
 
 1. **Continue desktop UI overhaul** — watch-game panel, Recruitment, and Squad done. Remaining: smoother transitions, avatar quality, onboarding.
-2. **Mid-season loan/trade window** — transfer requests are live; now build a window where requests trigger actual available-to-trade status and AI clubs can pick them up. Or end-of-season free agency to give
-   squad management real in-season decisions.
+2. **Free agent market page** — list out-of-contract players; allow signing for injury cover at any time (NRL-accurate, no formal window). Transfer requests provide the natural hook.
 3. **Phase 3 step 1** (RNG + player gen in Rust) — learn Rust on a safe slice. Requires
    `cargo` on PATH: `. "$HOME/.cargo/env"`.
 4. **Phase 3 step 3 + Feature A** (match engine port *with* added depth) — set-by-set possession

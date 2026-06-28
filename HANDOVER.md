@@ -4,7 +4,18 @@ _Updated every session._
 
 ## ⏸️ Session Pause Note (for the next assistant)
 
-**Latest session work — Tactics + Team Sheet UI rewrites, post-match form boosts, injury replacement alert:**
+**Latest session work — Sin bin/send-off system, golden point, milestones, farewell, rival interest, live stats:**
+
+### 11. Sin bin / send-off system (`07-match.js`, `matchday.js`)
+- Each match chunk (0–40, 40–60, 60–80) independently rolls a 9% chance per team for a sin bin
+- Sin bin: 10-minute penalty; reduces that team's expected tries for the chunk by ~13% and boosts opponent by ~8%
+- Send-off (8% of sin bin incidents): player removed for rest of match; bigger swing (~24% penalty / 16% boost)
+- Events fire in the live feed with named player, reason, and (for sin bins) a "returns from bin" narrative event at min+10
+- Live display: sin bin events show in gold `#c9a227` font; send-offs in red
+- `evType:'sinbin'` and `evType:'sendoff'` added to event stream tagging in `buildMatchEventStream`
+- NRL sin bin reasons: professional foul, repeated infringements, high tackle, dangerous contact, slowing play, shoulder charge
+
+**Previous session work — Tactics + Team Sheet UI rewrites, post-match form boosts, injury replacement alert:**
 
 ### 1. Tactics page rewrite (`tactics.js`, `styles.css`)
 - New desktop two-column layout: left = Match Identity panel, right = Opponent Report + Specialists
@@ -32,6 +43,34 @@ _Updated every session._
 ### 5. Build and git
 - `npm run build` clean
 - Committed and pushed: all changes in one commit `d9a14f2`
+
+### 6. Live match stats strip (`matchday.js`)
+- Stats bar below the live scoreboard: Tries / Line Breaks / Errors on each side + Possession %
+- Updates in-place: tries from `try` events by checking team nick in text; LBs from narrative text pattern matching; errors from `error` events; possession from possession tick count
+- `UI._liveStats = {hTries, aTries, hPoss, aPoss, hLB, aLB, hErr, aErr}` initialized in `_startLiveWatch`
+- `_updateLiveStatsBar()` method updates DOM elements without re-render
+
+### 7. Player career milestone notifications (`08-progression.js`, `inbox.js`)
+- Career game milestones: 50, 100, 150, 200, 250, 300 NRL games → +5 morale, +3 form, inbox item
+- Career try milestones: 25, 50, 75, 100, 150 career tries → +5 morale, +4 form, inbox item
+- Tracked in `p._milestones` array (persists across seasons); no duplicate firing
+- Milestone inbox item shows "Renew Contract" CTA if player's contract has ≤1 year left
+
+### 8. Rival club interest in expiring players (`08-progression.js`)
+- When a top-squad player (62+ OVR, ≤1 contract year, age ≤33) enters final contract year, random rival club "publicly shows interest" at ~45% chance per 3-round cycle
+- Fires once per player per season (`p._rivalInterestYear = G.year`)
+- Player gets +2 morale nudge; inbox contract item names the rival club
+- Creates urgency for contract renewal before offseason
+
+### 9. Player retirement farewell from coached team (`11-offseason.js`)
+- When a player from YOUR squad retires, a milestone inbox item fires with their career stats (games, tries, premierships, avg rating) and Hall of Fame note
+- Previously retirements only appeared as bullet points in the offseason review list
+
+### 10. Golden point extra time for finals draws (`10-finals.js`, `07-match.js`)
+- Finals matches level at full time now go to golden point extra time (NRL-accurate)
+- Winner determined by each team's best kicker's combined placeKick/kickAccuracy/composure rating
+- Live feed: "SCORES LEVEL → extra time" at min:80; GP field goal named at min:82; FULL TIME at min:83
+- `_w()/_l()` updated to use `_gpWinner` flag; `_preGpHs/_preGpAs` stored for accurate FT display
 
 ---
 

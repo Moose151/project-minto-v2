@@ -952,11 +952,13 @@ Object.assign(UI, {
   _fireLiveEvent(ev, myM){
     const box = document.getElementById('wg-feedBox');
     if(!box) return;
-    const isScore = ev.evType==='try'||ev.evType==='penalty'||ev.evType==='fieldgoal';
-    const isHT   = ev.evType==='halftime';
-    const isFT   = ev.evType==='fulltime';
-    const isSub  = ev.evType==='sub';
-    const isInj  = ev.evType==='injury';
+    const isScore   = ev.evType==='try'||ev.evType==='penalty'||ev.evType==='fieldgoal';
+    const isHT      = ev.evType==='halftime';
+    const isFT      = ev.evType==='fulltime';
+    const isSub     = ev.evType==='sub';
+    const isInj     = ev.evType==='injury';
+    const isSinBin  = ev.evType==='sinbin';
+    const isSendOff = ev.evType==='sendoff';
 
     // Apply sub queue at stoppages
     if(ev.stoppage && !isHT && UI._subQueue && UI._subQueue.length){
@@ -969,10 +971,12 @@ Object.assign(UI, {
       }
     }
 
-    const color = isScore ? 'color:var(--accent);font-weight:700'
-                : isHT   ? 'color:var(--accent);font-weight:600'
-                : isSub  ? 'color:var(--muted)'
-                : isInj  ? 'color:var(--red)' : '';
+    const color = isScore   ? 'color:var(--accent);font-weight:700'
+                : isHT     ? 'color:var(--accent);font-weight:600'
+                : isSub    ? 'color:var(--muted)'
+                : isInj    ? 'color:var(--red)'
+                : isSinBin ? 'color:#c9a227;font-weight:600'
+                : isSendOff? 'color:var(--red);font-weight:700' : '';
     const mins = isHT ? 40 : isFT ? 80 : (ev.min || 0);
     const secs = 0;
     const minLabel = isHT ? 'HT' : isFT ? 'FT' : `${mins}:${String(secs).padStart(2,'0')}`;
