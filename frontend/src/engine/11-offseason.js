@@ -63,6 +63,22 @@ export function startOffseason(){
       if(retire){
         const hof = considerHallOfFame(p, t);
         G.offseason.retirements.push({name:p.name, age:p.age, team:t.nick, games:p.career.games, hallOfFame:!!hof});
+        // Special farewell for players retiring from the coached team
+        if(t.id === G.coach.teamId){
+          const c = p.career || {};
+          const avgRating = c.games && c.rSum ? (c.rSum/c.games).toFixed(1) : null;
+          const hofLine = hof ? ' He has been inducted into the Hall of Fame.' : '';
+          const statsLine = [
+            c.games ? `${c.games} career games` : '',
+            c.tries ? `${c.tries} tries` : '',
+            c.premierships ? `${c.premierships} premiership${c.premierships>1?'s':''}` : '',
+            avgRating ? `${avgRating} career avg` : '',
+          ].filter(Boolean).join(', ');
+          addNews(
+            `${p.name} (${p.pos}, ${p.age}) has announced his retirement from the game. ${statsLine ? statsLine + '.' : ''} It\'s been a privilege to have him in the group.${hofLine}`,
+            {title:`${p.name} Retires`, type:'milestone', tone:'neutral', tag:'Club News', r: G.round || 1, y: G.year}
+          );
+        }
         delete G.players[id];
         return false;
       }
