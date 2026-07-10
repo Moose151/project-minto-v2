@@ -126,6 +126,15 @@ td.num,th.num{text-align:right}
 .history-controls{display:grid; grid-template-columns:minmax(180px,1fr) 170px 210px auto; gap:10px; align-items:end; margin-bottom:12px}
 .player-history-controls{grid-template-columns:minmax(180px,1fr) 190px auto; margin:4px 10px 10px}
 .hist-player{display:inline-flex; align-items:center; gap:6px; cursor:pointer; text-decoration:underline; text-decoration-thickness:1px; text-underline-offset:2px}
+.version-history-card{grid-column:1 / -1}
+.version-history-list{display:grid; gap:10px; max-height:420px; overflow-y:auto; padding-right:4px}
+.version-row{border:1px solid var(--line); border-radius:8px; padding:12px; background:rgba(255,255,255,.018)}
+.version-row-head{display:flex; align-items:flex-start; gap:10px; margin-bottom:8px}
+.version-row-head b{display:block; font-family:var(--disp); font-size:20px; line-height:1.05; text-transform:uppercase; letter-spacing:.03em}
+.version-row-head p{color:var(--dim); font-size:11px; margin-top:2px}
+.version-pill{display:inline-flex; align-items:center; justify-content:center; min-width:62px; border:1px solid var(--accent-line); border-radius:999px; color:var(--accent); background:var(--accent-a12); padding:3px 8px; font-size:12px; font-weight:900}
+.version-row ul{margin:0; padding-left:20px; color:var(--muted)}
+.version-row li{font-size:12.5px; line-height:1.45; margin:3px 0}
 .rep-row{display:flex; gap:6px; flex-wrap:wrap; align-items:center; margin:6px 0 12px}
 .nat-chip,.rep-chip,.state-chip{display:inline-flex; align-items:center; gap:4px; border:1px solid var(--line2); border-radius:999px; padding:3px 8px; font-size:11px; font-weight:800; letter-spacing:.03em; background:rgba(255,255,255,.035)}
 .nat-chip{color:var(--ink)}

@@ -9,7 +9,8 @@ UI, with the simulation engine moving into Rust over time. The original
 HTML/web version lives in `../project-minto` and is **frozen as a reference**.
 
 See [SCOPE.md](SCOPE.md) for the vision and boundaries, [ROADMAP.md](ROADMAP.md)
-for the plan, and [HANDOVER.md](HANDOVER.md) for current state.
+for the plan, [HANDOVER.md](HANDOVER.md) for current state, and
+[VERSION_HISTORY.md](VERSION_HISTORY.md) for beta release notes.
 
 ## Layout
 

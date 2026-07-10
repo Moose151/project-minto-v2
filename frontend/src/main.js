@@ -17,6 +17,7 @@ import './engine/09-ladder.js';
 import './engine/10-finals.js';
 import './engine/11-offseason.js';
 import './engine/12-save.js';
+import './version-history.js';
 
 // UI core (extends window.UI and assigns page handlers)
 import './ui/01-core.js';

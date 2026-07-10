@@ -4,8 +4,29 @@ import { UI } from "../01-core.js";
 Object.assign(UI, {
   p_options(){
     setTimeout(()=>UI._loadSaveSlots(), 0);
+    const appVersion = (typeof window !== 'undefined' && window.APP_VERSION) || '0.0.0';
+    const history = (typeof window !== 'undefined' && window.VERSION_HISTORY) || [];
+    const latest = history[0] || null;
+    const versionRows = history.map(v => `<div class="version-row">
+      <div class="version-row-head">
+        <span class="version-pill">v${esc(v.version)}</span>
+        <div><b>${esc(v.title)}</b><p>${esc(v.date)}${v.commit ? ` · ${esc(v.commit)}` : ''}</p></div>
+      </div>
+      <ul>${(v.notes || []).map(n=>`<li>${esc(n)}</li>`).join('')}</ul>
+    </div>`).join('');
     return `<h1 class="page">Options</h1>
     <div class="grid2">
+      <div class="card">
+        <h2 class="sec" style="margin-top:0">Version</h2>
+        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:10px">
+          <div>
+            <div style="font-family:var(--disp);font-size:42px;line-height:1;font-weight:800;color:var(--accent)">v${esc(appVersion)}</div>
+            <p style="color:var(--muted);font-size:12px;margin-top:4px">Beta build${latest ? ` · ${esc(latest.title)}` : ''}</p>
+          </div>
+          <span class="god-badge" style="display:inline-flex;border-color:var(--accent);color:var(--accent);background:var(--accent-a12)">Beta</span>
+        </div>
+        <p style="color:var(--muted);font-size:12px;margin:0">Version numbers stay in the <b style="color:var(--ink)">0.x.x</b> range while Project Minto V2 is in beta. Update the history before each push to main.</p>
+      </div>
       <div class="card">
         <h2 class="sec" style="margin-top:0">Saves</h2>
         <div id="save-slots-list"><p style="color:var(--muted);font-size:13px">Loading saves…</p></div>
@@ -27,6 +48,10 @@ Object.assign(UI, {
           ? `<div class="god-badge" style="display:inline-flex;margin-bottom:12px">God Mode Active</div>
              <div class="field"><label>Salary cap</label><input type="number" value="${G.config.cap}" step="10000" onchange="UI.setGodCap(this.value)"></div>`
           : `<button class="btn danger" onclick="UI.enableGodMode()">Enable God Mode</button>`}
+      </div>
+      <div class="card version-history-card">
+        <h2 class="sec" style="margin-top:0">Version History</h2>
+        <div class="version-history-list">${versionRows || '<p style="color:var(--muted);font-size:13px">No version history yet.</p>'}</div>
       </div>
     </div>`;
   },
