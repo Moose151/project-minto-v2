@@ -102,11 +102,26 @@ Object.assign(UI, {
       }).join('');
     };
 
+    const recommendedFocus = (() => {
+      if(loadWatch.some(p => p.cond < 66 || (p.load||0) > 74)) return 'recovery';
+      const youthUpside = devPlayers.filter(p=>p.age<=21).length;
+      if(youthUpside >= 4) return 'youth';
+      const recentFor = ladder().find(r=>r.id===t.id);
+      if(recentFor && recentFor.pa > recentFor.pf + 30) return 'defence';
+      return t.focus || 'balanced';
+    })();
+    const focusLabel = focusOpts.find(x=>x[0]===t.focus)?.[1] || 'Balanced';
+
     return `<h1 class="page">Training</h1><p class="page-sub">Set team focus and individual training targets to shape player development.</p>
+    ${UI.workflowStrip ? UI.workflowStrip() : ''}
     ${reviewDue?`<div class="card" style="border-color:var(--accent);margin-bottom:12px">
       <div style="font-family:var(--disp);font-size:22px;font-weight:700;color:var(--accent)">Training review due</div>
-      <p class="page-sub">Set a team focus and check overloaded players before advancing beyond Monday.</p>
-      <div class="btnrow"><button class="btn primary" onclick="UI.markTrainingReviewed()">Mark review complete</button><button class="btn" onclick="UI.go('calendar')">Calendar</button></div>
+      <p class="page-sub">Current focus: <b style="color:var(--ink)">${esc(focusLabel)}</b>. ${loadWatch.length ? `${loadWatch.length} player${loadWatch.length===1?'':'s'} need load attention.` : 'No urgent load flags.'}</p>
+      <div class="btnrow">
+        ${recommendedFocus!==t.focus?`<button class="btn" onclick="myTeam().focus='${recommendedFocus}';UI.render();UI.toast('Training focus updated.')">Use staff recommendation</button>`:''}
+        <button class="btn primary" onclick="UI.markTrainingReviewed()">Complete review</button>
+        <button class="btn" onclick="UI.go('teamsheet')">Team list</button>
+      </div>
     </div>`:''}
 
     <h2 class="sec">Team focus</h2>
@@ -261,6 +276,6 @@ Object.assign(UI, {
     ensureCalendar();
     G.calendar.trainingReviewedDay = G.calendar.day;
     UI.toast('Training review complete.');
-    UI.render();
+    UI.go('teamsheet');
   }
 });

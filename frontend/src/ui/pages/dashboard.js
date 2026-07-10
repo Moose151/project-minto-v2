@@ -164,6 +164,7 @@ Object.assign(UI, {
     })();
     const news = (G.news || []).slice(0,12).map(n=>UI._newsCard(n)).join('') || '<p class="page-sub">Quiet week.</p>';
     return `<h1 class="page">Dashboard</h1><p class="page-sub">${esc(teamName(t))} · ${G.year} · Board expectation: ${esc(G.coach.expect.label)}</p>
+    ${UI.workflowStrip ? UI.workflowStrip() : ''}
     <div class="dash-strip">
       ${UI._dashStatus('Ladder', ord(pos), `${rec.w}-${rec.l}, ${rec.pts} pts`, pos<=4?'good':pos>G.teams.length*.7?'bad':'')}
       ${UI._dashStatus('Board', `${Math.round(G.coach.conf)}%`, 'confidence', G.coach.conf>=70?'good':G.coach.conf<35?'bad':'')}

@@ -65,6 +65,7 @@ Object.assign(UI, {
     };
     return `<h1 class="page">Tactics</h1>
     <p class="page-sub">Set the match identity, specialists, and positional instructions that feed the match engine.</p>
+    ${UI.workflowStrip ? UI.workflowStrip() : ''}
     <div class="tactics-layout">
       <div class="card tactic-plan-card">
         <div class="ts-card-head">

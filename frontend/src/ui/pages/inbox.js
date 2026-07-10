@@ -40,6 +40,7 @@ Object.assign(UI, {
       transfer:      n.playerId && G.players[n.playerId]
         ? `<button class="btn sm primary" style="background:var(--red)" onclick="UI.handleTransferRequest(${n.playerId})">Handle request</button>`
         : '',
+      match:         `<button class="btn sm primary" onclick="UI.go('match-report')">Match Report</button>`,
       board:         `<button class="btn sm primary" onclick="UI.go('coach')">Coach</button>`,
       finance:       `<button class="btn sm primary" onclick="UI.go('club-management')">Club Management</button>`,
       milestone:     n.playerId && G.players[n.playerId] && (G.players[n.playerId].years||0) <= 1
@@ -139,6 +140,24 @@ Object.assign(UI, {
     const unreadBadge = totalUnread > 0
       ? `<span style="background:var(--red);color:#fff;border-radius:10px;font-size:10px;font-weight:700;padding:1px 6px;margin-left:6px">${totalUnread}</span>`
       : '';
+    const priorityTypes = new Set(['transfer','injury','contract','recommendation','analysis','board','recruitment','player']);
+    const priority = news
+      .filter(n => !n.read || priorityTypes.has(n.type))
+      .slice(0,4);
+    const priorityHtml = priority.length ? `<div class="inbox-priority">
+      ${priority.map(n=>{
+        const body = n.body || n.txt || '';
+        const key = JSON.stringify(UI._inboxKey(n)).replace(/"/g, '&quot;');
+        return `<div class="inbox-priority-card ${n.tone||'neutral'}">
+          <div>
+            <span>${esc(n.tag || n.type || 'News')}</span>
+            <b>${esc(n.title || n.tag || 'Club News')}</b>
+            <p>${esc(body.length > 92 ? body.slice(0,92)+'...' : body)}</p>
+          </div>
+          <div class="btnrow">${UI._inboxActions(n) || `<button class="btn sm" onclick="UI._toggleInboxItem(${key})">Open</button>`}</div>
+        </div>`;
+      }).join('')}
+    </div>` : '';
 
     const reader = selected ? `<article class="inbox-reader">
       <div class="inbox-reader-head">
@@ -154,6 +173,8 @@ Object.assign(UI, {
 
     return `<h1 class="page">Inbox${unreadBadge}</h1>
     <p class="page-sub">Post-match reports, club communications, and staff updates.</p>
+    ${UI.workflowStrip ? UI.workflowStrip() : ''}
+    ${priorityHtml}
     <div class="btnrow" style="flex-wrap:wrap;gap:4px;margin-bottom:8px">${catTabs}</div>
     ${totalUnread > 0
       ? `<div style="text-align:right;margin-bottom:6px"><button class="btn sm" onclick="UI._markAllRead()">Mark all as read</button></div>`

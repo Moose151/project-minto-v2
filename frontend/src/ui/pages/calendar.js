@@ -77,6 +77,7 @@ Object.assign(UI, {
     }).join('');
     return `<h1 class="page">Calendar</h1>
     <p class="page-sub">${calendarDateLabel()} · Round ${roundIdx+1} · ${esc(matchLine)}</p>
+    ${UI.workflowStrip ? UI.workflowStrip() : ''}
     <div class="grid3" style="margin-bottom:12px">
       <div class="card"><div class="navsep" style="margin:0">Current Stop</div><div style="font-family:var(--disp);font-size:24px;font-weight:700;margin-top:4px">${esc(stop ? stop.label : 'Training block')}</div><p class="page-sub">${reviewPending?`${stop.key==='recovery'?'Medical':'Training'} review still pending.`:stop && stop.key==='match' ? (bye?'Bye weekend':'Ready for match day') : 'Advance one day at a time.'}</p>${reviewPending?`<button class="btn sm primary" onclick="UI.go('${stop.key==='recovery'?'injuryward':'training'}')">Review ${stop.key==='recovery'?'medical':'training'}</button>`:''}</div>
       <div class="card"><div class="navsep" style="margin:0">Fatigue Watch</div><div style="font-family:var(--disp);font-size:24px;font-weight:700;margin-top:4px;color:${lowCond.length?'var(--accent)':'var(--green)'}">${lowCond.length}</div><p class="page-sub">Main-squad players below 72 condition or above 62 load.</p></div>

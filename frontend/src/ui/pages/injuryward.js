@@ -65,6 +65,7 @@ Object.assign(UI, {
     </div>` : injured.length ? `<div class="card" style="padding:10px 14px;margin-bottom:12px"><p style="color:var(--muted);font-size:12px;margin:0">No medical staff hired. A Physio on staff gives injured players a weekly chance of accelerated recovery. <span class="click" style="color:var(--accent);cursor:pointer" onclick="UI.go('staff')">Hire one →</span></p></div>` : '';
     return `<h1 class="page">Injury Ward</h1>
     <p class="page-sub">Manage unavailable players. Playing through minor injuries allows selection, but increases re-injury risk and can worsen the injury.</p>
+    ${UI.workflowStrip ? UI.workflowStrip() : ''}
     ${reviewDue?`<div class="card" style="border-color:var(--accent);margin-bottom:12px">
       <div style="font-family:var(--disp);font-size:22px;font-weight:700;color:var(--accent)">Recovery and judiciary review due</div>
       <p class="page-sub">Review injuries, suspensions, and any play-hurt decisions before moving into next week.</p>
@@ -97,6 +98,6 @@ Object.assign(UI, {
     ensureCalendar();
     G.calendar.medicalReviewedDay = G.calendar.day;
     UI.toast('Recovery and judiciary review complete.');
-    UI.render();
+    UI.go('dashboard');
   }
 });

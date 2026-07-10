@@ -20,6 +20,7 @@ Object.assign(UI, {
     if(!m){
       const onBye = G.phase==='regular' && (G.byes && G.byes[G.round] || []).includes(t.id);
       return `<h1 class="page">Match Day</h1>
+        ${UI.workflowStrip ? UI.workflowStrip() : ''}
         ${onBye
           ? `<div style="text-align:center;padding:40px 0">
               <div style="font-size:56px;font-weight:900;font-family:var(--disp);color:var(--accent);letter-spacing:.08em">BYE</div>
@@ -239,6 +240,7 @@ Object.assign(UI, {
         </div>`) : '';
     return `<h1 class="page">Match Day</h1>
     <p class="page-sub">Round ${G.round+1} match desk. Review the setup, deliver the talk, then choose a quick sim or live watch.</p>
+    ${UI.workflowStrip ? UI.workflowStrip() : ''}
     <div class="matchday-hero">
       <div class="matchday-team">
         ${teamLogo(h,54)}

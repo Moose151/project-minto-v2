@@ -134,6 +134,79 @@ export const UI = {
       : 'Next Day';
   },
 
+  _workflowState(){
+    if(!G || G.phase !== 'regular' || typeof ensureCalendar !== 'function') return null;
+    const cal = ensureCalendar();
+    const day = cal.day || 0;
+    const dow = typeof calendarDayInWeek === 'function' ? calendarDayInWeek(day) : day % 7;
+    const stop = typeof calendarStopForDay === 'function' ? calendarStopForDay(day) : null;
+    const t = myTeam();
+    const roundIdx = typeof calendarRoundForDay === 'function' ? calendarRoundForDay(day) : (G.round || 0);
+    const onBye = ((G.byes && G.byes[roundIdx]) || []).includes(G.coach.teamId);
+    const trainingDone = cal.trainingReviewedDay === day;
+    const medicalDone = cal.medicalReviewedDay === day;
+    const teamDone = onBye || t.teamSubmitted === G.round;
+    const issues = typeof lineupIssues === 'function' && !onBye ? lineupIssues(t) : [];
+    return {cal, day, dow, stop, t, roundIdx, onBye, trainingDone, medicalDone, teamDone, issues};
+  },
+
+  _workflowPrimary(){
+    const s = UI._workflowState();
+    if(!s) return {label:'Dashboard', page:'dashboard'};
+    if(s.stop && s.stop.key === 'training' && !s.trainingDone) return {label:'Review Training', page:'training', primary:true};
+    if(s.stop && s.stop.key === 'selection' && !s.onBye && (s.issues.length || !s.teamDone)) return {label:s.issues.length ? 'Fix Team Sheet' : 'Submit Team List', page:'teamsheet', primary:true};
+    if(s.stop && s.stop.key === 'match' && !s.onBye) return {label:'Match Day', page:'matchday', primary:true};
+    if(s.stop && s.stop.key === 'recovery' && !s.medicalDone) return {label:'Review Recovery', page:'injuryward', primary:true};
+    const nextStop = (() => {
+      for(let i=1;i<=7;i++){
+        const ev = calendarStopForDay(s.day + i);
+        if(ev && ['training','selection','match','recovery'].includes(ev.key)) return ev;
+      }
+      return null;
+    })();
+    return nextStop ? {label:`Next: ${nextStop.label}`, page:nextStop.page} : {label:'Next Day', advance:true};
+  },
+
+  workflowStrip(){
+    const s = UI._workflowState();
+    if(!s) return '';
+    const steps = [
+      {dow:0, key:'training', label:'Training', page:'training', done:s.trainingDone},
+      {dow:1, key:'selection', label:'Team List', page:'teamsheet', done:s.teamDone, warn:!s.onBye && s.issues.length},
+      {dow:2, key:'prep', label:'Prep', page:'tactics', done:s.teamDone},
+      {dow:null, key:'match', label:s.onBye?'Bye':'Match', page:'matchday', done:false},
+      {dow:6, key:'recovery', label:'Recovery', page:'injuryward', done:s.medicalDone},
+    ];
+    const matchDow = (() => {
+      const m = typeof calendarMyMatch === 'function' ? calendarMyMatch(s.roundIdx) : null;
+      return m && typeof slotDow === 'function' ? slotDow(m.slot) : 5;
+    })();
+    const items = steps.map(st => {
+      const stepDow = st.key === 'match' ? matchDow : st.dow;
+      const active = s.stop && (s.stop.key === st.key || (st.key === 'prep' && (s.dow === 2 || s.dow === 3) && (!s.stop || s.stop.key === 'travel')));
+      const done = st.done || (stepDow != null && s.dow > stepDow && !active);
+      const cls = ['flow-step', active?'active':'', done?'done':'', st.warn?'warn':''].filter(Boolean).join(' ');
+      const detail = st.key === 'selection' && st.warn ? `${s.issues.length} issue${s.issues.length===1?'':'s'}` :
+        st.key === 'match' && s.onBye ? 'rest week' :
+        stepDow != null && typeof CAL_WEEKDAYS !== 'undefined' ? CAL_WEEKDAYS[stepDow] : '';
+      return `<button class="${cls}" onclick="UI.go('${st.page}')">
+        <span>${esc(st.label)}</span><b>${esc(detail)}</b>
+      </button>`;
+    }).join('');
+    const primary = UI._workflowPrimary();
+    const action = primary.advance
+      ? `<button class="btn primary" onclick="UI.advance()">${esc(primary.label)}</button>`
+      : `<button class="btn primary" onclick="UI.go('${primary.page}')">${esc(primary.label)}</button>`;
+    return `<div class="flow-strip">
+      <div class="flow-copy">
+        <b>Round ${s.roundIdx + 1} Rhythm</b>
+        <span>${esc(typeof calendarDateLabel === 'function' ? calendarDateLabel(s.day) : '')}${s.stop ? ` · ${esc(s.stop.label)}` : ''}</span>
+      </div>
+      <div class="flow-steps">${items}</div>
+      <div class="flow-action">${action}</div>
+    </div>`;
+  },
+
   go(page) {
     if (UI.page && UI.page !== page) UI._backStack.push(UI.page);
     UI.page = page;

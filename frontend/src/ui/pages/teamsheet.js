@@ -165,6 +165,7 @@ Object.assign(UI, {
 
     return `<h1 class="page">Team Sheet</h1>
     <p class="page-sub">Round ${G.round+1} selection desk. Drag from the squad pool, or click any jersey row to pick a player.</p>
+    ${UI.workflowStrip ? UI.workflowStrip() : ''}
     <div class="ts-toolbar">
       <div class="ts-toolbar-main">
         <button class="btn primary" onclick="autoPick(myTeam());UI.render();UI.toast('Best 19 selected.')">Auto-pick best 19</button>
@@ -325,8 +326,10 @@ Object.assign(UI, {
       return;
     }
     t.teamSubmitted = G.round;
-    UI.toast('Team list confirmed and submitted for Round ' + (G.round + 1) + '.');
-    UI.render();
+    const stop = typeof calendarStopForDay === 'function' ? calendarStopForDay(ensureCalendar().day) : null;
+    UI.toast('Team list confirmed for Round ' + (G.round + 1) + '.');
+    if(stop && stop.key === 'selection') UI.go('tactics');
+    else UI.render();
   },
 });
 
